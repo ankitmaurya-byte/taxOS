@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+*.db
+*.db-shm
+*.db-wal
+db-shm/
+db-wal/
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
+.vite/
+*/apps/api/src/db/migrations/
+**/migrations/
+apps/api/taxos.db-shm
+apps/api/taxos.db-wal
+*.tsbuildinfo

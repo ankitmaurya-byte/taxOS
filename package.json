@@ -1,0 +1,25 @@
+{
+  "name": "taxos",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter api dev\" \"pnpm --filter web dev\"",
+    "build": "pnpm --filter api build && pnpm --filter web build",
+    "db:migrate": "pnpm --filter api db:migrate",
+    "db:seed": "pnpm --filter api db:seed",
+    "db:generate": "pnpm --filter api db:generate"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt",
+      "better-sqlite3",
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "pnpm": "^10.33.0"
+  }
+}

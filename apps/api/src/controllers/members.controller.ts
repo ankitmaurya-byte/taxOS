@@ -1,0 +1,148 @@
+import { Request, Response, NextFunction } from 'express'
+import { and, eq } from 'drizzle-orm'
+import { assignPermissionsSchema, createInviteSchema, createRoleTemplateSchema } from 'shared'
+import { db } from '../db'
+import { invites, organizations, permissions, roleTemplates, users } from '../db/schema'
+import { getRecommendedTemplateName, listVisibleTemplates, sanitizeAssignablePermissions } from '../lib/rbac'
+import { sendInviteEmail } from '../lib/mailer'
+import { generateAppToken, getFutureIso, isExpired } from '../lib/tokens'
+
+export function listMembers(req: Request, res: Response) {
+  const members = db.select().from(users)
+    .where(eq(users.orgId, req.user!.orgId!))
+    .all()
+  const permissionRecords = db.select().from(permissions)
+    .where(eq(permissions.organizationId, req.user!.orgId!))
+    .all()
+  res.json(members.map((member) => ({
+    ...member,
+    permissionRecord: permissionRecords.find((record) => record.userId === member.id) || null,
+  })))
+}
+
+export async function inviteMember(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createInviteSchema.parse(req.body)
+    if (req.user!.role !== 'founder' && req.user!.role !== 'admin') {
+      return res.status(403).json({ error: 'Only admins and founders can invite members' })
+    }
+
+    const existingUser = db.select().from(users).where(eq(users.email, data.email)).get()
+    if (existingUser) return res.status(409).json({ error: 'A user already exists for this email' })
+
+    const activeInvite = db.select().from(invites)
+      .where(and(eq(invites.email, data.email), eq(invites.organizationId, req.user!.orgId!)))
+      .all()
+      .find((invite) => invite.status === 'pending' && !isExpired(invite.expiresAt))
+    if (activeInvite) return res.status(409).json({ error: 'An active invite already exists for this email' })
+
+    let templateId = data.templateId
+    let permissionSet = data.permissions
+
+    if (!templateId && !permissionSet && data.useCase) {
+      const recommendedName = getRecommendedTemplateName(data.useCase)
+      const template = listVisibleTemplates(req.user!.role, req.user!.orgId).find((item) => item.name === recommendedName)
+      if (template) {
+        templateId = template.id
+        permissionSet = template.permissions as any
+      }
+    }
+
+    if (templateId) {
+      const template = db.select().from(roleTemplates).where(eq(roleTemplates.id, templateId)).get()
+      if (!template) return res.status(404).json({ error: 'Template not found' })
+      if (template.scope === 'organization' && template.organizationId !== req.user!.orgId) {
+        return res.status(403).json({ error: 'Template does not belong to this organization' })
+      }
+      permissionSet = template.permissions as any
+    }
+
+    const inviteToken = generateAppToken()
+    const invite = db.insert(invites).values({
+      email: data.email,
+      role: 'team_member',
+      organizationId: req.user!.orgId!,
+      invitedByUserId: req.user!.userId,
+      templateId: templateId || null,
+      permissions: sanitizeAssignablePermissions(permissionSet || {}, 'team_member'),
+      token: inviteToken,
+      expiresAt: getFutureIso(72),
+    }).returning().get()
+
+    const org = db.select().from(organizations).where(eq(organizations.id, req.user!.orgId!)).get()
+    await sendInviteEmail(data.email, invite.token, org?.name || 'your organization')
+    res.status(201).json(invite)
+  } catch (err) { next(err) }
+}
+
+export async function updateMemberPermissions(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = assignPermissionsSchema.parse(req.body)
+    const user = db.select().from(users)
+      .where(and(eq(users.id, req.params.id as string), eq(users.orgId, req.user!.orgId!)))
+      .get()
+    if (!user) return res.status(404).json({ error: 'Member not found' })
+    if (user.role !== 'team_member') return res.status(400).json({ error: 'Only team members can receive custom permissions' })
+
+    let permissionSet = data.permissions || undefined
+    if (data.templateId) {
+      const template = db.select().from(roleTemplates).where(eq(roleTemplates.id, data.templateId)).get()
+      if (!template) return res.status(404).json({ error: 'Template not found' })
+      if (template.scope === 'organization' && template.organizationId !== req.user!.orgId) {
+        return res.status(403).json({ error: 'Template does not belong to this organization' })
+      }
+      permissionSet = template.permissions as any
+    }
+
+    const existing = db.select().from(permissions)
+      .where(and(eq(permissions.userId, user.id), eq(permissions.organizationId, req.user!.orgId!)))
+      .get()
+
+    if (existing) {
+      db.update(permissions).set({
+        templateId: data.templateId || null,
+        permissions: sanitizeAssignablePermissions(permissionSet || {}, user.role),
+        updatedAt: new Date().toISOString(),
+      }).where(eq(permissions.id, existing.id)).run()
+    } else {
+      db.insert(permissions).values({
+        userId: user.id,
+        organizationId: req.user!.orgId!,
+        templateId: data.templateId || null,
+        permissions: sanitizeAssignablePermissions(permissionSet || {}, user.role),
+        createdByUserId: req.user!.userId,
+      }).run()
+    }
+
+    res.json({ message: 'Member permissions updated' })
+  } catch (err) { next(err) }
+}
+
+export function getRecommendation(req: Request, res: Response) {
+  const useCase = typeof req.query.useCase === 'string' ? req.query.useCase : ''
+  const recommendedName = getRecommendedTemplateName(useCase)
+  const template = listVisibleTemplates(req.user!.role, req.user!.orgId).find((item) => item.name === recommendedName) || null
+  res.json({ recommendedName, template })
+}
+
+export function listMemberTemplates(req: Request, res: Response) {
+  res.json(listVisibleTemplates(req.user!.role, req.user!.orgId))
+}
+
+export async function createOrganizationTemplate(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createRoleTemplateSchema.parse(req.body)
+    if (req.user!.role === 'founder' && data.scope !== 'organization') {
+      return res.status(403).json({ error: 'Founders can only create organization templates' })
+    }
+    const template = db.insert(roleTemplates).values({
+      name: data.name,
+      scope: req.user!.role === 'founder' ? 'organization' : data.scope,
+      organizationId: req.user!.role === 'founder' ? req.user!.orgId : data.scope === 'organization' ? req.user!.orgId : null,
+      createdByUserId: req.user!.userId,
+      permissions: data.permissions,
+      isSystemTemplate: false,
+    }).returning().get()
+    res.status(201).json(template)
+  } catch (err) { next(err) }
+}

@@ -1,0 +1,76 @@
+// Used in: App.tsx — wraps all authenticated routes with sidebar, topbar, and overlay panels
+import { useState } from 'react'
+import { Outlet } from 'react-router-dom'
+import { Sidebar } from './Sidebar'
+import { TopBar } from './TopBar'
+import { PanelLeft } from 'lucide-react'
+import { GetHelpPanel } from '@/components/GetHelpPanel'
+import { InkleAIPanel } from '@/components/InkleAIPanel'
+import { UpgradePlanModal } from '@/components/UpgradePlanModal'
+import { NotificationsPanel } from '@/components/notifications/NotificationsPanel'
+import { ToastViewport } from '@/components/notifications/ToastViewport'
+
+export function Layout() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [showGetHelp, setShowGetHelp] = useState(false)
+  const [showInkleAI, setShowInkleAI] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-[#F9FAFB]">
+      <Sidebar collapsed={sidebarCollapsed} />
+
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        {/* Top bar row */}
+        <div className="flex items-center justify-between h-14 px-8 bg-white border-b border-[#E5E7EB] relative">
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="flex items-center justify-center w-7 h-7 rounded border border-[#E5E7EB] bg-white hover:bg-[#F3F4F6] text-[#9CA3AF] hover:text-[#374151] transition-colors"
+          >
+            <PanelLeft size={14} />
+          </button>
+          <div className="relative">
+            {/* TopBar — passes callbacks to open Get Help and Inkle AI panels */}
+            <TopBar
+              onUpgradeClick={() => {
+                setShowUpgradeModal(true)
+                setShowGetHelp(false)
+                setShowInkleAI(false)
+                setShowNotifications(false)
+              }}
+              onGetHelpClick={() => {
+                setShowGetHelp(!showGetHelp)
+                setShowInkleAI(false)
+                setShowNotifications(false)
+              }}
+              onInkleAIClick={() => {
+                setShowInkleAI(!showInkleAI)
+                setShowGetHelp(false)
+                setShowNotifications(false)
+              }}
+              onNotificationsClick={() => {
+                setShowNotifications(!showNotifications)
+                setShowGetHelp(false)
+                setShowInkleAI(false)
+              }}
+            />
+            {/* Get Help popup — positioned relative to TopBar */}
+            {showGetHelp && <GetHelpPanel onClose={() => setShowGetHelp(false)} />}
+            {showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} />}
+          </div>
+        </div>
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto p-8">
+          <Outlet />
+        </main>
+      </div>
+
+      {/* Inkle AI slide-over panel — fixed right edge */}
+      {showInkleAI && <InkleAIPanel onClose={() => setShowInkleAI(false)} />}
+      {showUpgradeModal && <UpgradePlanModal onClose={() => setShowUpgradeModal(false)} />}
+      <ToastViewport />
+    </div>
+  )
+}

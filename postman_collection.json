@@ -1,0 +1,683 @@
+{
+  "info": {
+    "name": "TaxOS API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Complete API collection for TaxOS backend"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "entityId",
+      "value": ""
+    },
+    {
+      "key": "filingId",
+      "value": ""
+    },
+    {
+      "key": "documentId",
+      "value": ""
+    },
+    {
+      "key": "deadlineId",
+      "value": ""
+    },
+    {
+      "key": "approvalId",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "auth": { "type": "noauth" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.token) pm.collectionVariables.set('token', res.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "auth": { "type": "noauth" },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"secret123\",\n  \"name\": \"John Doe\",\n  \"orgName\": \"Acme Inc\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.token) pm.collectionVariables.set('token', res.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "auth": { "type": "noauth" },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"secret123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Entities",
+      "item": [
+        {
+          "name": "List Entities",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/entities",
+              "host": ["{{baseUrl}}"],
+              "path": ["entities"]
+            }
+          }
+        },
+        {
+          "name": "Create Entity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.id) pm.collectionVariables.set('entityId', res.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/entities",
+              "host": ["{{baseUrl}}"],
+              "path": ["entities"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legalName\": \"Acme Corp\",\n  \"entityType\": \"C-Corp\",\n  \"stateOfIncorporation\": \"Delaware\",\n  \"ein\": \"12-3456789\",\n  \"fiscalYearEnd\": \"12-31\",\n  \"country\": \"US\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Entity",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/entities/{{entityId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["entities", "{{entityId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Entity",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/entities/{{entityId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["entities", "{{entityId}}"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legalName\": \"Acme Corp Updated\",\n  \"ein\": \"98-7654321\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Entity",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/entities/{{entityId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["entities", "{{entityId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Filings",
+      "item": [
+        {
+          "name": "List Filings",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/filings?status=&entityId=&year=",
+              "host": ["{{baseUrl}}"],
+              "path": ["filings"],
+              "query": [
+                { "key": "status", "value": "", "disabled": true },
+                { "key": "entityId", "value": "", "disabled": true },
+                { "key": "year", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Filing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.id) pm.collectionVariables.set('filingId', res.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/filings",
+              "host": ["{{baseUrl}}"],
+              "path": ["filings"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityId\": \"{{entityId}}\",\n  \"formType\": \"1120\",\n  \"formName\": \"U.S. Corporation Income Tax Return\",\n  \"taxYear\": 2025\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Filing",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/filings/{{filingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["filings", "{{filingId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Filing Status",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/filings/{{filingId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["filings", "{{filingId}}", "status"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ai_prep\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Approve Filing",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/filings/{{filingId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["filings", "{{filingId}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Filing",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/filings/{{filingId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["filings", "{{filingId}}", "reject"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Numbers on line 12 look incorrect\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Pause Filing",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/filings/{{filingId}}/pause",
+              "host": ["{{baseUrl}}"],
+              "path": ["filings", "{{filingId}}", "pause"]
+            }
+          }
+        },
+        {
+          "name": "Escalate to CPA",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/filings/{{filingId}}/escalate-cpa",
+              "host": ["{{baseUrl}}"],
+              "path": ["filings", "{{filingId}}", "escalate-cpa"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Deadlines",
+      "item": [
+        {
+          "name": "List Deadlines",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/deadlines?entityId=",
+              "host": ["{{baseUrl}}"],
+              "path": ["deadlines"],
+              "query": [
+                { "key": "entityId", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Deadline",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/deadlines/{{deadlineId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["deadlines", "{{deadlineId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "List Documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/documents?filingId=&reviewStatus=",
+              "host": ["{{baseUrl}}"],
+              "path": ["documents"],
+              "query": [
+                { "key": "filingId", "value": "", "disabled": true },
+                { "key": "reviewStatus", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.id) pm.collectionVariables.set('documentId', res.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/documents/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["documents", "upload"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "filingId",
+                  "value": "{{filingId}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Document",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/documents/{{documentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["documents", "{{documentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Mark Document Reviewed",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/documents/{{documentId}}/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["documents", "{{documentId}}", "review"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Approvals",
+      "item": [
+        {
+          "name": "List Approvals",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/approvals",
+              "host": ["{{baseUrl}}"],
+              "path": ["approvals"]
+            }
+          }
+        },
+        {
+          "name": "Resolve Approval",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/approvals/{{approvalId}}/resolve",
+              "host": ["{{baseUrl}}"],
+              "path": ["approvals", "{{approvalId}}", "resolve"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"reason\": \"Looks good\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Escalate Approval",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/approvals/{{approvalId}}/escalate",
+              "host": ["{{baseUrl}}"],
+              "path": ["approvals", "{{approvalId}}", "escalate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "item": [
+        {
+          "name": "List Audit Logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/audit?filingId=&actorType=&from=&to=",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit"],
+              "query": [
+                { "key": "filingId", "value": "", "disabled": true },
+                { "key": "actorType", "value": "", "disabled": true },
+                { "key": "from", "value": "", "disabled": true },
+                { "key": "to", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Audit Logs CSV",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/audit/export?filingId=",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "export"],
+              "query": [
+                { "key": "filingId", "value": "", "disabled": true }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Agents",
+      "item": [
+        {
+          "name": "Start Intake Conversation",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/agents/intake/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["agents", "intake", "start"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filingId\": \"{{filingId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Send Intake Message",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/agents/intake/message",
+              "host": ["{{baseUrl}}"],
+              "path": ["agents", "intake", "message"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filingId\": \"{{filingId}}\",\n  \"message\": \"We have 2 W-2 employees\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Run Deadline Calculator",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/agents/deadline/run",
+              "host": ["{{baseUrl}}"],
+              "path": ["agents", "deadline", "run"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityId\": \"{{entityId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Extract Document Data",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/agents/document/extract",
+              "host": ["{{baseUrl}}"],
+              "path": ["agents", "document", "extract"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentId\": \"{{documentId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Prefill Filing Form",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/agents/prefill/run",
+              "host": ["{{baseUrl}}"],
+              "path": ["agents", "prefill", "run"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filingId\": \"{{filingId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Run Audit Risk Score",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/agents/audit-risk/run",
+              "host": ["{{baseUrl}}"],
+              "path": ["agents", "audit-risk", "run"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filingId\": \"{{filingId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Tax QA Ask",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/agents/tax-qa/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["agents", "tax-qa", "ask"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"When is Form 1120 due for a C-Corp with Dec fiscal year?\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
