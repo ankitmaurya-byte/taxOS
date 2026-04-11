@@ -15,15 +15,15 @@ const ROUTE_RULES: Array<{ paths: string[]; rule: AccessRule }> = [
   { paths: ['/dashboard'], rule: { roles: ['admin', 'cpa'] } },
   { paths: ['/home'], rule: { roles: ['founder', 'team_member'] } },
   { paths: ['/profile'], rule: { roles: ['admin', 'founder', 'team_member', 'cpa'] } },
-  { paths: ['/profile/create-account'], rule: { roles: ['admin', 'founder'], permission: 'canCreateAccounts' } },
+  { paths: ['/profile/create-account'], rule: { roles: ['admin', 'founder'] } },
   { paths: ['/admin/founder-applications'], rule: { roles: ['admin'] } },
-  { paths: ['/filings', '/filings/:id', '/filings/room', '/filings/room/:id'], rule: { permission: 'canViewFilings' } },
-  { paths: ['/estimated-tax', '/deadlines', '/action-centre'], rule: { permission: 'canViewFilings' } },
-  { paths: ['/documents', '/documents/vault'], rule: { permission: 'canViewDocuments' } },
-  { paths: ['/approvals'], rule: { permission: 'canApproveFilings' } },
+  { paths: ['/filings', '/filings/:id', '/filings/room', '/filings/room/:id'], rule: { roles: ['founder', 'team_member', 'cpa'], permission: 'canViewFilings' } },
+  { paths: ['/estimated-tax', '/deadlines', '/action-centre'], rule: { roles: ['founder', 'team_member', 'cpa'], permission: 'canViewFilings' } },
+  { paths: ['/documents', '/documents/vault'], rule: { roles: ['founder', 'team_member', 'cpa'], permission: 'canViewDocuments' } },
+  { paths: ['/approvals'], rule: { roles: ['founder', 'team_member', 'cpa'], permission: 'canApproveFilings' } },
   { paths: ['/audit'], rule: { roles: ['admin', 'founder', 'cpa'] } },
-  { paths: ['/entities', '/entities/overview', '/entities/address-book', '/entities/:entityId', '/registrations', '/rd-tax-credits', '/command-center', '/incorporation', '/dissolution'], rule: { roles: ['admin', 'founder'] } },
-  { paths: ['/advisor', '/chat'], rule: { roles: ['admin', 'founder', 'team_member', 'cpa'] } },
+  { paths: ['/entities', '/entities/overview', '/entities/address-book', '/entities/:entityId', '/registrations', '/rd-tax-credits', '/command-center', '/incorporation', '/dissolution'], rule: { roles: ['founder'] } },
+  { paths: ['/advisor', '/chat'], rule: { roles: ['admin', 'founder', 'cpa'] } },
 ]
 
 function normalizePattern(pattern: string) {
@@ -39,7 +39,6 @@ function pathMatches(pattern: string, pathname: string) {
 export function hasPermission(user: AccessUser | null | undefined, permission?: PermissionKey) {
   if (!permission) return true
   if (!user) return false
-  if (user.role === 'admin' || user.role === 'founder' || user.role === 'cpa') return true
   return Boolean(user.permissions?.[permission])
 }
 

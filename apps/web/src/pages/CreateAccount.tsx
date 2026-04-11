@@ -22,7 +22,7 @@ export function CreateAccountPage() {
 
   const canCreate = user?.role === 'admin' || user?.role === 'founder'
   const isAdmin = user?.role === 'admin'
-  const [mode, setMode] = useState<'team' | 'cpa'>('team')
+  const [mode, setMode] = useState<'team' | 'cpa'>(isAdmin ? 'cpa' : 'team')
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
@@ -33,10 +33,14 @@ export function CreateAccountPage() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (canCreate && templates.length === 0 && !templatesLoading) {
+    setMode(isAdmin ? 'cpa' : 'team')
+  }, [isAdmin])
+
+  useEffect(() => {
+    if (!isAdmin && canCreate && templates.length === 0 && !templatesLoading) {
       fetchTemplates()
     }
-  }, [canCreate, templates.length, templatesLoading])
+  }, [canCreate, isAdmin, templates.length, templatesLoading])
 
   const visibleTemplates = useMemo(
     () => templates.filter((template: ApiTemplate) => isAdmin || template.scope === 'global' || template.organizationId === user?.orgId),
@@ -91,12 +95,7 @@ export function CreateAccountPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-[#E5E7EB] bg-white p-6">
-        {isAdmin && (
-          <div className="flex gap-3">
-            <button type="button" onClick={() => setMode('team')} className={`rounded-lg px-4 py-2 text-sm ${mode === 'team' ? 'bg-[#6C5CE7] text-white' : 'bg-[#F3F4F6] text-[#374151]'}`}>Team Member</button>
-            <button type="button" onClick={() => setMode('cpa')} className={`rounded-lg px-4 py-2 text-sm ${mode === 'cpa' ? 'bg-[#6C5CE7] text-white' : 'bg-[#F3F4F6] text-[#374151]'}`}>CPA</button>
-          </div>
-        )}
+        {isAdmin && <div className="rounded-lg bg-[#F9FAFB] px-4 py-3 text-sm text-[#374151]">TaxOS admins can only create CPA accounts from this screen.</div>}
 
         <div className="grid gap-4 md:grid-cols-2">
           <input value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="Email" className="h-11 rounded-lg border border-[#E5E7EB] px-3 text-sm" />

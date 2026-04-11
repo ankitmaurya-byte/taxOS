@@ -20,7 +20,7 @@ import {
 const router: Router = Router()
 router.use(authMiddleware)
 router.use(requireActiveAccount)
-router.use(requireRole('admin', 'founder'))
+router.use(requireRole('founder'))
 
 router.get('/', listEntities)       // GET    /api/entities      → entities.controller.listEntities
 router.post('/', createEntity)      // POST   /api/entities      → entities.controller.createEntity

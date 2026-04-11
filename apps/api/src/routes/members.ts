@@ -8,10 +8,10 @@ router.use(authMiddleware)
 router.use(requireActiveAccount)
 
 router.get('/', requirePermission('canManageTeam'), listMembers)
-router.get('/templates', requireRole('founder', 'admin'), listMemberTemplates)
-router.post('/templates', requireRole('founder', 'admin'), createOrganizationTemplate)
-router.post('/invite', requireRole('founder', 'admin'), requirePermission('canCreateAccounts'), inviteMember)
-router.put('/:id/permissions', requireRole('founder', 'admin'), requirePermission('canManageTeam'), updateMemberPermissions)
-router.get('/recommendation', requireRole('founder', 'admin'), getRecommendation)
+router.get('/templates', requireRole('founder'), listMemberTemplates)
+router.post('/templates', requireRole('founder'), createOrganizationTemplate)
+router.post('/invite', requireRole('founder'), requirePermission('canCreateAccounts'), inviteMember)
+router.put('/:id/permissions', requireRole('founder'), requirePermission('canManageTeam'), updateMemberPermissions)
+router.get('/recommendation', requireRole('founder'), getRecommendation)
 
 export default router

@@ -33,6 +33,7 @@ import { Request, Response, NextFunction } from 'express'
 import { eq, and } from 'drizzle-orm'
 import { db } from '../db'
 import { documents } from '../db/schema'
+import { AppError, withContext } from '../lib/errors'
 
 // ─── GET /api/documents ──────────────────────────────
 // Frontend caller: api.getDocuments() → pages/Documents.tsx, DocumentVault.tsx
@@ -69,7 +70,7 @@ export function listDocuments(req: Request, res: Response) {
 //   documents.storageUrl   ← /uploads/<multer-generated-filename>
 export async function uploadDocument(req: Request, res: Response, next: NextFunction) {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
+    if (!req.file) throw new AppError('No file uploaded', 400)
 
     const doc = db.insert(documents).values({
       filingId: req.body.filingId || null,
@@ -81,7 +82,7 @@ export async function uploadDocument(req: Request, res: Response, next: NextFunc
     }).returning().get()
 
     res.status(201).json(doc)
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'uploadDocument')) }
 }
 
 // ─── GET /api/documents/:id ──────────────────────────

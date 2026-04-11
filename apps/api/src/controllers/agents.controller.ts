@@ -55,6 +55,7 @@ import { DocumentAgent } from '../agents/document'
 import { PrefillAgent } from '../agents/prefill'
 import { AuditRiskAgent } from '../agents/auditRisk'
 import { TaxQaAgent } from '../agents/taxQa'
+import { AppError, withContext } from '../lib/errors'
 
 // ─── Agent Singletons ────────────────────────────────
 // Instantiated once at module load. Each extends BaseAgent (agents/base.ts)
@@ -81,7 +82,7 @@ export async function startIntake(req: Request, res: Response, next: NextFunctio
   try {
     const { filingId } = req.body
     const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
-    if (!filing) return res.status(404).json({ error: 'Filing not found' })
+    if (!filing) throw new AppError('Filing not found', 404)
 
     const entity = db.select().from(entities).where(eq(entities.id, filing.entityId)).get()
 
@@ -92,7 +93,7 @@ export async function startIntake(req: Request, res: Response, next: NextFunctio
       req.user!.orgId,
     )
     res.json(result)
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'startIntake')) }
 }
 
 // ─── POST /api/agents/intake/message ─────────────────
@@ -118,7 +119,7 @@ export async function streamIntakeMsg(req: Request, res: Response, next: NextFun
     }
     res.write('data: [DONE]\n\n')
     res.end()
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'streamIntakeMsg')) }
 }
 
 // ─── POST /api/agents/deadline/run ───────────────────
@@ -132,7 +133,7 @@ export async function runDeadlines(req: Request, res: Response, next: NextFuncti
     const { entityId } = req.body
     await deadlineAgent.calculateDeadlines(entityId, req.user!.orgId)
     res.json({ message: 'Deadlines recalculated' })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'runDeadlines')) }
 }
 
 // ─── POST /api/agents/document/extract ───────────────
@@ -151,7 +152,7 @@ export async function extractDocument(req: Request, res: Response, next: NextFun
     const { documentId } = req.body
     const result = await documentAgent.extract(documentId, req.user!.orgId)
     res.json(result)
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'extractDocument')) }
 }
 
 // ─── POST /api/agents/prefill/run ────────────────────
@@ -172,7 +173,7 @@ export async function runPrefill(req: Request, res: Response, next: NextFunction
     const { filingId } = req.body
     const result = await prefillAgent.prefillForm(filingId, req.user!.orgId)
     res.json(result)
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'runPrefill')) }
 }
 
 // ─── POST /api/agents/audit-risk/run ─────────────────
@@ -187,7 +188,7 @@ export async function runAuditRisk(req: Request, res: Response, next: NextFuncti
     const { filingId } = req.body
     const result = await auditRiskAgent.scoreRisk(filingId, req.user!.orgId)
     res.json(result)
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'runAuditRisk')) }
 }
 
 // ─── POST /api/agents/tax-qa/ask ─────────────────────
@@ -212,5 +213,5 @@ export async function streamTaxQa(req: Request, res: Response, next: NextFunctio
     }
     res.write('data: [DONE]\n\n')
     res.end()
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'streamTaxQa')) }
 }

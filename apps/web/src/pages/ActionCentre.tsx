@@ -10,6 +10,7 @@ type Tab = 'all' | 'tax' | 'books'
 export function ActionCentrePage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Tab>('all')
+  const user = useAuthStore(s => s.user)
 
   const approvals = useAuthStore(s => s.approvals)
   const deadlines = useAuthStore(s => s.deadlines)
@@ -126,12 +127,14 @@ export function ActionCentrePage() {
       )}
 
       {/* Floating chat button */}
-      <button
-        onClick={() => navigate('/chat')}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-[#6C5CE7] text-white rounded-full shadow-lg hover:bg-[#5B4BD5] transition-colors flex items-center justify-center"
-      >
-        <MessageCircle size={24} />
-      </button>
+      {user?.role !== 'team_member' && (
+        <button
+          onClick={() => navigate('/chat')}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-[#6C5CE7] text-white rounded-full shadow-lg hover:bg-[#5B4BD5] transition-colors flex items-center justify-center"
+        >
+          <MessageCircle size={24} />
+        </button>
+      )}
     </div>
   )
 }

@@ -2,12 +2,10 @@ import { Router } from 'express'
 import {
   assignCpaOrganization,
   createCpa,
-  createTemplate,
   listCpas,
   listFounderApplications,
-  listTemplates,
+  listOrganizationOverview,
   reviewFounderApplication,
-  updateTemplate,
 } from '../controllers/admin.controller'
 import { authMiddleware, requireActiveAccount, requireRole } from '../middleware/auth'
 
@@ -21,9 +19,7 @@ router.get('/founder-applications', listFounderApplications)
 router.post('/founder-applications/:id/review', reviewFounderApplication)
 router.post('/cpas', createCpa)
 router.get('/cpas', listCpas)
+router.get('/organizations-overview', listOrganizationOverview)
 router.post('/cpas/:id/assign-org', assignCpaOrganization)
-router.get('/role-templates', listTemplates)
-router.post('/role-templates', createTemplate)
-router.put('/role-templates/:id', updateTemplate)
 
 export default router

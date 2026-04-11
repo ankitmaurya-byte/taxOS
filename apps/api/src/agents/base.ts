@@ -3,7 +3,7 @@ import { auditLogger } from '../lib/auditLog'
 
 export abstract class BaseAgent {
   protected client: GoogleGenerativeAI
-  protected modelVersion = 'gemini-1.5-flash'
+  protected modelVersion = 'gemini-2.5-flash'
 
 constructor() {
   const apiKey = process.env.GEMINI_API_KEY

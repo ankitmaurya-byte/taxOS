@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { api } from '@/lib/api'
 import { Bot, Send, ThumbsUp, ThumbsDown, Plus, MessageCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '@/stores/auth'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -18,14 +19,44 @@ interface Conversation {
   time: string
 }
 
+const CHAT_CONFIG = {
+  admin: {
+    title: 'TaxOS Admin Copilot',
+    description: 'Review founder onboarding, CPA assignments, and platform-level operations.',
+    placeholder: 'Ask about founders, CPAs, or platform operations...',
+    prefix: 'You are assisting a TaxOS platform admin. Focus on founder onboarding reviews, CPA assignment workflows, account governance, and platform operations. Do not answer as if the admin is operating a founder workspace unless explicitly asked.',
+  },
+  founder: {
+    title: 'Founder Tax Copilot',
+    description: 'Manage your company filings, deadlines, entities, and compliance decisions.',
+    placeholder: 'Ask about filings, entities, deadlines, or founder approvals...',
+    prefix: 'You are assisting a founder inside TaxOS. Focus on entity management, filings, deadlines, founder approvals, documents, and compliance actions for their organization.',
+  },
+  cpa: {
+    title: 'CPA Review Copilot',
+    description: 'Support filing review, tax reasoning, document checks, and escalation decisions.',
+    placeholder: 'Ask about review steps, filing issues, or tax analysis...',
+    prefix: 'You are assisting a CPA inside TaxOS. Focus on filing review, tax analysis, document validation, risk flags, and handoff decisions for assigned organizations.',
+  },
+  team_member: {
+    title: 'Workspace Assistant',
+    description: 'Help within the modules your founder enabled for you.',
+    placeholder: 'Ask about your assigned workspace tasks...',
+    prefix: 'You are assisting a team member inside TaxOS. Focus on the tasks they may perform in filings, documents, and approvals based on granted permissions.',
+  },
+} as const
+
 export function ChatPage() {
   const navigate = useNavigate()
+  const user = useAuthStore((state) => state.user)
+  const role = user?.role || 'team_member'
+  const config = CHAT_CONFIG[role as keyof typeof CHAT_CONFIG] || CHAT_CONFIG.team_member
   const [conversations, setConversations] = useState<Conversation[]>([
     {
       id: '1',
-      title: 'Tax Filing Help',
+      title: config.title,
       messages: [],
-      preview: 'Ask me anything about taxes...',
+      preview: config.description,
       time: 'Just now',
     },
   ])
@@ -62,7 +93,7 @@ export function ChatPage() {
     setIsStreaming(true)
     try {
       let fullResponse = ''
-      await api.streamTaxQa(userMsg, (chunk: string) => {
+      await api.streamTaxQa(`${config.prefix}\n\nUser question: ${userMsg}`, (chunk: string) => {
         fullResponse += chunk
         setConversations((prev) =>
           prev.map((c) => {
@@ -161,11 +192,10 @@ export function ChatPage() {
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mb-4">
                 <Bot size={24} className="text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-[#111827] mb-2">TaxOS AI Advisor</h3>
-              <p className="text-sm text-[#6B7280] max-w-sm">
-                Ask me anything about US tax compliance, filings, deadlines, or your entities. I'll
-                provide answers with confidence levels and cite IRS sources.
-              </p>
+               <h3 className="text-lg font-semibold text-[#111827] mb-2">{config.title}</h3>
+               <p className="text-sm text-[#6B7280] max-w-sm">
+                 {config.description}
+               </p>
             </div>
           )}
 
@@ -212,7 +242,7 @@ export function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask a tax question..."
+              placeholder={config.placeholder}
               className="flex-1 bg-white border border-[#E5E7EB] rounded-lg px-4 py-2.5 text-[13px] text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:border-[#6C5CE7] transition-colors"
             />
             <button

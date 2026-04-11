@@ -6,6 +6,7 @@ import { invites, organizations, permissions, roleTemplates, users } from '../db
 import { getRecommendedTemplateName, listVisibleTemplates, sanitizeAssignablePermissions } from '../lib/rbac'
 import { sendInviteEmail } from '../lib/mailer'
 import { generateAppToken, getFutureIso, isExpired } from '../lib/tokens'
+import { AppError, withContext } from '../lib/errors'
 
 export function listMembers(req: Request, res: Response) {
   const members = db.select().from(users)
@@ -23,18 +24,18 @@ export function listMembers(req: Request, res: Response) {
 export async function inviteMember(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createInviteSchema.parse(req.body)
-    if (req.user!.role !== 'founder' && req.user!.role !== 'admin') {
-      return res.status(403).json({ error: 'Only admins and founders can invite members' })
+    if (req.user!.role !== 'founder') {
+      throw new AppError('Only founders can invite team members', 403)
     }
 
     const existingUser = db.select().from(users).where(eq(users.email, data.email)).get()
-    if (existingUser) return res.status(409).json({ error: 'A user already exists for this email' })
+    if (existingUser) throw new AppError('A user already exists for this email', 409)
 
     const activeInvite = db.select().from(invites)
       .where(and(eq(invites.email, data.email), eq(invites.organizationId, req.user!.orgId!)))
       .all()
       .find((invite) => invite.status === 'pending' && !isExpired(invite.expiresAt))
-    if (activeInvite) return res.status(409).json({ error: 'An active invite already exists for this email' })
+    if (activeInvite) throw new AppError('An active invite already exists for this email', 409)
 
     let templateId = data.templateId
     let permissionSet = data.permissions
@@ -50,9 +51,9 @@ export async function inviteMember(req: Request, res: Response, next: NextFuncti
 
     if (templateId) {
       const template = db.select().from(roleTemplates).where(eq(roleTemplates.id, templateId)).get()
-      if (!template) return res.status(404).json({ error: 'Template not found' })
+      if (!template) throw new AppError('Template not found', 404)
       if (template.scope === 'organization' && template.organizationId !== req.user!.orgId) {
-        return res.status(403).json({ error: 'Template does not belong to this organization' })
+        throw new AppError('Template does not belong to this organization', 403)
       }
       permissionSet = template.permissions as any
     }
@@ -72,7 +73,7 @@ export async function inviteMember(req: Request, res: Response, next: NextFuncti
     const org = db.select().from(organizations).where(eq(organizations.id, req.user!.orgId!)).get()
     await sendInviteEmail(data.email, invite.token, org?.name || 'your organization')
     res.status(201).json(invite)
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'inviteMember')) }
 }
 
 export async function updateMemberPermissions(req: Request, res: Response, next: NextFunction) {
@@ -81,15 +82,15 @@ export async function updateMemberPermissions(req: Request, res: Response, next:
     const user = db.select().from(users)
       .where(and(eq(users.id, req.params.id as string), eq(users.orgId, req.user!.orgId!)))
       .get()
-    if (!user) return res.status(404).json({ error: 'Member not found' })
-    if (user.role !== 'team_member') return res.status(400).json({ error: 'Only team members can receive custom permissions' })
+    if (!user) throw new AppError('Member not found', 404)
+    if (user.role !== 'team_member') throw new AppError('Only team members can receive custom permissions', 400)
 
     let permissionSet = data.permissions || undefined
     if (data.templateId) {
       const template = db.select().from(roleTemplates).where(eq(roleTemplates.id, data.templateId)).get()
-      if (!template) return res.status(404).json({ error: 'Template not found' })
+      if (!template) throw new AppError('Template not found', 404)
       if (template.scope === 'organization' && template.organizationId !== req.user!.orgId) {
-        return res.status(403).json({ error: 'Template does not belong to this organization' })
+        throw new AppError('Template does not belong to this organization', 403)
       }
       permissionSet = template.permissions as any
     }
@@ -115,7 +116,7 @@ export async function updateMemberPermissions(req: Request, res: Response, next:
     }
 
     res.json({ message: 'Member permissions updated' })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'updateMemberPermissions')) }
 }
 
 export function getRecommendation(req: Request, res: Response) {
@@ -133,7 +134,7 @@ export async function createOrganizationTemplate(req: Request, res: Response, ne
   try {
     const data = createRoleTemplateSchema.parse(req.body)
     if (req.user!.role === 'founder' && data.scope !== 'organization') {
-      return res.status(403).json({ error: 'Founders can only create organization templates' })
+      throw new AppError('Founders can only create organization templates', 403)
     }
     const template = db.insert(roleTemplates).values({
       name: data.name,
@@ -144,5 +145,5 @@ export async function createOrganizationTemplate(req: Request, res: Response, ne
       isSystemTemplate: false,
     }).returning().get()
     res.status(201).json(template)
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'createOrganizationTemplate')) }
 }

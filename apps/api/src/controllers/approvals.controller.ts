@@ -38,6 +38,7 @@ import { db } from '../db'
 import { approvalQueue, filingReviewLocks, filings, users } from '../db/schema'
 import { resolveApprovalSchema } from 'shared'
 import { auditLogger } from '../lib/auditLog'
+import { AppError, withContext } from '../lib/errors'
 
 function getActiveLock(filingId: string) {
   return db.select().from(filingReviewLocks)
@@ -88,19 +89,19 @@ export async function resolveApproval(req: Request, res: Response, next: NextFun
     const approval = db.select().from(approvalQueue)
       .where(and(eq(approvalQueue.id, req.params.id as string), eq(approvalQueue.orgId, req.user!.orgId)))
       .get()
-    if (!approval) return res.status(404).json({ error: 'Approval not found' })
-    if (approval.status !== 'pending') return res.status(400).json({ error: 'Approval already resolved' })
+    if (!approval) throw new AppError('Approval not found', 404)
+    if (approval.status !== 'pending') throw new AppError('Approval already resolved', 400)
 
     if (req.user!.role === 'cpa') {
       const lock = getActiveLock(approval.filingId)
       if (lock && lock.cpaUserId !== req.user!.userId) {
-        return res.status(409).json({ error: `This filing is already being handled by ${getReviewerName(lock.cpaUserId)}.` })
+        throw new AppError(`This filing is already being handled by ${getReviewerName(lock.cpaUserId)}.`, 409)
       }
       const completed = db.select().from(filingReviewLocks)
         .where(and(eq(filingReviewLocks.filingId, approval.filingId), eq(filingReviewLocks.status, 'completed')))
         .get()
       if (completed && completed.cpaUserId !== req.user!.userId) {
-        return res.status(409).json({ error: 'This filing was already approved by another CPA.' })
+        throw new AppError('This filing was already approved by another CPA.', 409)
       }
     }
 
@@ -150,7 +151,7 @@ export async function resolveApproval(req: Request, res: Response, next: NextFun
     }
 
     res.json({ message: `Approval ${data.status}` })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'resolveApproval')) }
 }
 
 // ─── POST /api/approvals/:id/escalate ────────────────

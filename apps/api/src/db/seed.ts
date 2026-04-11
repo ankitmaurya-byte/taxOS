@@ -146,6 +146,11 @@ async function seed() {
       major_business_activity TEXT NOT NULL DEFAULT 'Software Development',
       fiscal_year_end TEXT NOT NULL DEFAULT '12-31',
       foreign_subsidiaries TEXT DEFAULT '[]',
+      directors TEXT DEFAULT '[]',
+      officers TEXT DEFAULT '[]',
+      shareholders TEXT DEFAULT '[]',
+      cap_table TEXT DEFAULT '[]',
+      sensitive_data TEXT DEFAULT '[]',
       country TEXT NOT NULL DEFAULT 'US',
       status TEXT NOT NULL DEFAULT 'active',
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP

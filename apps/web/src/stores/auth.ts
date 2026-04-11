@@ -319,6 +319,7 @@ interface AuthState {
   documents: Document[]
   founderApplications: FounderApplication[]
   cpas: Cpa[]
+  adminOrganizations: any[]
   members: Member[]
   templates: Template[]
   entities: Entity[]
@@ -350,6 +351,7 @@ interface AuthState {
   fetchDocuments: (params?: Record<string, string>) => Promise<void>
   fetchFounderApplications: () => Promise<void>
   fetchCpas: () => Promise<void>
+  fetchAdminOrganizations: () => Promise<void>
   fetchMembers: () => Promise<void>
   fetchTemplates: () => Promise<void>
   fetchEntities: () => Promise<void>
@@ -386,7 +388,7 @@ interface AuthState {
   escalateToCpa: (id: string) => Promise<void>
   extractDocument: (documentId: string) => Promise<void>
   createEntity: (data: { legalName: string; entityType: string; stateOfIncorporation: string; ein?: string; fiscalYearEnd?: string; foreignSubsidiaries?: string[]; country?: string }) => Promise<void>
-  updateEntity: (id: string, data: Partial<{ legalName: string; entityType: string; stateOfIncorporation: string; ein: string; fiscalYearEnd: string; foreignSubsidiaries: string[]; country: string; status: string }>) => Promise<void>
+  updateEntity: (id: string, data: Partial<{ legalName: string; entityType: string; stateOfIncorporation: string; ein: string; majorBusinessActivity: string | null; fiscalYearEnd: string; foreignSubsidiaries: string[]; country: string; status: string; directors: Record<string, unknown>[]; officers: Record<string, unknown>[]; shareholders: Record<string, unknown>[]; capTable: Record<string, unknown>[]; sensitiveData: Record<string, unknown>[] }>) => Promise<void>
   deleteEntity: (id: string) => Promise<void>
   resolveApproval: (id: string, status: 'approved' | 'rejected', reason?: string) => Promise<void>
   escalateApproval: (id: string) => Promise<void>
@@ -411,6 +413,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   documents: [],
   founderApplications: [],
   cpas: [],
+  adminOrganizations: [],
   members: [],
   templates: [],
   entities: [],
@@ -449,6 +452,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       documents: [],
       founderApplications: [],
       cpas: [],
+      adminOrganizations: [],
       members: [],
       deadlines: [],
       auditLog: [],
@@ -549,6 +553,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  fetchAdminOrganizations: async () => {
+    try {
+      const data = await api.admin.getOrganizationOverview() as any[]
+      set({ adminOrganizations: data })
+    } catch {
+      set({ adminOrganizations: [] })
+    }
+  },
+
   fetchMembers: async () => {
     set({ membersLoading: true })
     try {
@@ -563,10 +576,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ templatesLoading: true })
     try {
       const user = get().user
-      const isAdmin = user?.role === 'admin'
-      const data = isAdmin
-        ? (await api.admin.getTemplates() as Template[])
-        : (await api.members.getTemplates() as Template[])
+      const data = user?.role === 'founder'
+        ? (await api.members.getTemplates() as Template[])
+        : []
       set({ templates: data, templatesLoading: false })
     } catch {
       set({ templatesLoading: false })
@@ -772,12 +784,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   createTemplate: async (data) => {
-    const user = get().user
-    if (user?.role === 'admin') {
-      await api.admin.createTemplate(data)
-    } else {
-      await api.members.createTemplate(data)
-    }
+    await api.members.createTemplate(data)
     await get().fetchTemplates()
   },
 

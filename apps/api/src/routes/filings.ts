@@ -31,9 +31,9 @@ router.get('/:id', requirePermission('canViewFilings'), getFiling)
 router.post('/:id/claim-review', requireRole('cpa'), claimFilingReview)
 router.post('/:id/release-review', requireRole('cpa'), releaseFilingReview)
 router.put('/:id/status', requirePermission('canEditFilings'), updateFilingStatus)
-router.post('/:id/approve', requireRole('admin', 'founder'), requirePermission('canApproveFilings'), approveFiling)
-router.post('/:id/reject', requireRole('admin', 'founder'), requirePermission('canEditFilings'), rejectFiling)
-router.post('/:id/pause', requireRole('admin', 'founder'), requirePermission('canEditFilings'), pauseFiling)
-router.post('/:id/escalate-cpa', requireRole('admin', 'founder'), requirePermission('canEditFilings'), escalateToCpa)
+router.post('/:id/approve', requireRole('founder'), requirePermission('canApproveFilings'), approveFiling)
+router.post('/:id/reject', requireRole('founder'), requirePermission('canEditFilings'), rejectFiling)
+router.post('/:id/pause', requireRole('founder'), requirePermission('canEditFilings'), pauseFiling)
+router.post('/:id/escalate-cpa', requireRole('founder'), requirePermission('canEditFilings'), escalateToCpa)
 
 export default router

@@ -29,7 +29,18 @@ export const FOUNDER_PERMISSIONS: Permissions = {
   canManageOrganization: true,
 }
 
-export const ADMIN_PERMISSIONS: Permissions = { ...FOUNDER_PERMISSIONS }
+export const ADMIN_PLATFORM_PERMISSIONS: Permissions = {
+  canViewDashboard: true,
+  canViewFilings: false,
+  canEditFilings: false,
+  canApproveFilings: false,
+  canViewDocuments: false,
+  canEditDocuments: false,
+  canManageTeam: false,
+  canCreateAccounts: false,
+  canManageTemplates: false,
+  canManageOrganization: false,
+}
 
 export const CPA_PERMISSIONS: Permissions = {
   canViewDashboard: true,
@@ -100,7 +111,7 @@ export function getRecommendedTemplateName(useCase?: string) {
 }
 
 export function getRoleDefaultPermissions(role: string): Permissions {
-  if (role === 'admin') return ADMIN_PERMISSIONS
+  if (role === 'admin') return ADMIN_PLATFORM_PERMISSIONS
   if (role === 'founder') return FOUNDER_PERMISSIONS
   if (role === 'cpa') return CPA_PERMISSIONS
   return EMPTY_PERMISSIONS
@@ -121,7 +132,7 @@ export function sanitizeAssignablePermissions(input: Partial<Permissions>, role:
 }
 
 export function canAssignRole(actorRole: string, targetRole: string) {
-  if (actorRole === 'admin') return true
+  if (actorRole === 'admin') return targetRole === 'cpa'
   if (actorRole === 'founder') return targetRole === 'team_member'
   return false
 }

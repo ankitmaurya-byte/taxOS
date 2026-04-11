@@ -41,6 +41,7 @@ import { entities, deadlines, filings } from '../db/schema'
 import { createEntitySchema, updateEntitySchema, estimatedTaxProjectionSchema } from 'shared'
 import { getApplicableDeadlines, calculateUrgencyScore } from '../lib/deadlineEngine'
 import { auditLogger } from '../lib/auditLog'
+import { AppError, withContext } from '../lib/errors'
 
 const ENTITY_TAX_RATES: Record<string, number> = {
   'C-Corp': 0.21,
@@ -97,9 +98,11 @@ export function listEntities(req: Request, res: Response) {
 export async function createEntity(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createEntitySchema.parse(req.body)
+    const majorBusinessActivity = data.majorBusinessActivity ?? undefined
     const entity = db.insert(entities).values({
       ...data,
       orgId: req.user!.orgId,
+      majorBusinessActivity,
       foreignSubsidiaries: data.foreignSubsidiaries as any,
     }).returning().get()
 
@@ -132,7 +135,7 @@ export async function createEntity(req: Request, res: Response, next: NextFuncti
     })
 
     res.status(201).json(entity)
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'createEntity')) }
 }
 
 // ─── GET /api/entities/:id ───────────────────────────
@@ -241,12 +244,13 @@ export async function updateEntity(req: Request, res: Response, next: NextFuncti
       .get()
     if (!existing) return res.status(404).json({ error: 'Entity not found' })
 
+    const majorBusinessActivity = data.majorBusinessActivity ?? undefined
     const updated = db.update(entities)
-      .set({ ...data, foreignSubsidiaries: data.foreignSubsidiaries as any })
+      .set({ ...data, majorBusinessActivity, foreignSubsidiaries: data.foreignSubsidiaries as any })
       .where(eq(entities.id, req.params.id as string))
       .returning().get()
     res.json(updated)
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'updateEntity')) }
 }
 
 // ─── DELETE /api/entities/:id ────────────────────────

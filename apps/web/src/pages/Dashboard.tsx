@@ -7,12 +7,14 @@ export function DashboardPage() {
   const filings = useAuthStore((state) => state.filings) as ApiFiling[]
   const founderApplications = useAuthStore((state) => state.founderApplications) as ApiFounderApplication[]
   const cpas = useAuthStore((state) => state.cpas) as ApiCpa[]
-  const { fetchFilings, fetchFounderApplications, fetchCpas, founderApplicationsLoading, cpasLoading, filingsLoading } = useAuthStore()
+  const adminOrganizations = useAuthStore((state) => state.adminOrganizations) as any[]
+  const { fetchFilings, fetchFounderApplications, fetchCpas, fetchAdminOrganizations, founderApplicationsLoading, cpasLoading, filingsLoading } = useAuthStore()
 
   useEffect(() => {
     if (user?.role === 'admin') {
       fetchFounderApplications()
       fetchCpas()
+      fetchAdminOrganizations()
     }
     if (user?.role === 'cpa') {
       fetchFilings()
@@ -27,7 +29,7 @@ export function DashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold text-[#111827]">Dashboard</h1>
         <p className="mt-1 text-sm text-[#6B7280]">
-          {isAdmin ? 'Admin review and access control overview.' : isCpa ? 'Your assigned filing workload and review state.' : 'Role dashboard.'}
+          {isAdmin ? 'Platform oversight for founders, team members, and CPA coverage.' : isCpa ? 'Your assigned filing workload and review state.' : 'Role dashboard.'}
         </p>
       </div>
 
@@ -41,13 +43,13 @@ export function DashboardPage() {
               </p>
             </div>
             <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
-              <p className="text-sm text-[#6B7280]">CPAs</p>
+              <p className="text-sm text-[#6B7280]">Active CPAs</p>
               <p className="mt-2 text-3xl font-semibold text-[#111827]">              {cpas.filter((c: ApiCpa) => c.role === 'cpa').length}</p>
             </div>
             <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
-              <p className="text-sm text-[#6B7280]">Approved founders</p>
+              <p className="text-sm text-[#6B7280]">Organizations tracked</p>
               <p className="mt-2 text-3xl font-semibold text-[#111827]">
-                {founderApplications.filter((item: ApiFounderApplication) => item.status === 'approved').length}
+                {adminOrganizations.length}
               </p>
             </div>
           </div>
@@ -65,6 +67,26 @@ export function DashboardPage() {
                 </div>
               ))}
               {founderApplicationsLoading && <p className="text-sm text-[#6B7280]">Loading...</p>}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
+            <h2 className="text-lg font-medium text-[#111827]">Platform organization overview</h2>
+            <div className="mt-4 space-y-3">
+              {adminOrganizations.slice(0, 6).map((organization) => (
+                <div key={organization.id} className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-4">
+                  <div>
+                    <p className="font-medium text-[#111827]">{organization.name}</p>
+                    <p className="text-sm text-[#6B7280]">
+                      {organization.founderCount} founder{organization.founderCount === 1 ? '' : 's'} · {organization.teamMemberCount} team member{organization.teamMemberCount === 1 ? '' : 's'} · {organization.assignedCpaCount} CPA assignment{organization.assignedCpaCount === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-[#F3F4F6] px-3 py-1 text-xs text-[#374151]">
+                    {organization.founderNames?.join(', ') || 'No founder'}
+                  </span>
+                </div>
+              ))}
+              {!adminOrganizations.length && !cpasLoading && !founderApplicationsLoading && <p className="text-sm text-[#6B7280]">No organizations found.</p>}
             </div>
           </div>
         </>

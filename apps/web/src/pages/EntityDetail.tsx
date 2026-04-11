@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import {
   ChevronDown,
   ChevronRight,
+  CheckCircle2,
   Phone,
   Shield,
   Lock,
@@ -19,8 +20,17 @@ import {
   X,
   Copy,
   FileSpreadsheet,
+  ExternalLink,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+
+const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/api\/?$/, '')
+
+function resolveStorageUrl(storageUrl?: string) {
+  if (!storageUrl) return '#'
+  if (storageUrl.startsWith('http://') || storageUrl.startsWith('https://')) return storageUrl
+  return `${API_BASE}${storageUrl}`
+}
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -61,13 +71,26 @@ export function EntityDetailPage() {
   const fetchEntities = useAuthStore(s => s.fetchEntities)
   const updateEntity = useAuthStore(s => s.updateEntity)
   const deleteEntity = useAuthStore(s => s.deleteEntity)
+  const filings = useAuthStore(s => s.filings)
+  const documents = useAuthStore(s => s.documents)
+  const fetchFilings = useAuthStore(s => s.fetchFilings)
+  const fetchDocuments = useAuthStore(s => s.fetchDocuments)
 
   useEffect(() => {
     if (entityId) fetchEntity(entityId)
   }, [entityId, fetchEntity])
 
+  useEffect(() => {
+    fetchFilings()
+    fetchDocuments()
+  }, [fetchFilings, fetchDocuments])
+
   const entity = entities.find(e => e.id === entityId)
   const isLoading = false
+  const entityFilingIds = new Set(filings.filter((filing: any) => filing.entityId === entityId).map((filing: any) => filing.id))
+  const supportingDocs = documents
+    .filter((document: any) => document.filingId && entityFilingIds.has(document.filingId))
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   const setTab = (tab: TabKey) => {
     setSearchParams({ tab })
@@ -147,18 +170,81 @@ export function EntityDetailPage() {
               try { await updateEntity(entityId!, data) } finally { setUpdateLoading(false) }
             }} />
           )}
-          {activeTab === 'directors-officers' && <DirectorsOfficersTab entity={entity} />}
-          {activeTab === 'shareholders' && <ShareholdersTab entity={entity} />}
-          {activeTab === 'cap-table' && <CapTableTab entity={entity} />}
-          {activeTab === 'sensitive-data' && <SensitiveDataTab entity={entity} />}
+          {activeTab === 'directors-officers' && <DirectorsOfficersTab entity={entity} onUpdate={async (data: any) => {
+            setUpdateLoading(true)
+            try { await updateEntity(entityId!, data) } finally { setUpdateLoading(false) }
+          }} />}
+          {activeTab === 'shareholders' && <ShareholdersTab entity={entity} onUpdate={async (data: any) => {
+            setUpdateLoading(true)
+            try { await updateEntity(entityId!, data) } finally { setUpdateLoading(false) }
+          }} />}
+          {activeTab === 'cap-table' && <CapTableTab entity={entity} onUpdate={async (data: any) => {
+            setUpdateLoading(true)
+            try { await updateEntity(entityId!, data) } finally { setUpdateLoading(false) }
+          }} />}
+          {activeTab === 'sensitive-data' && <SensitiveDataTab entity={entity} onUpdate={async (data: any) => {
+            setUpdateLoading(true)
+            try { await updateEntity(entityId!, data) } finally { setUpdateLoading(false) }
+          }} />}
         </div>
 
         {/* Supporting docs sidebar - only on overview */}
         {activeTab === 'overview' && (
           <div className="w-64 flex-shrink-0">
-            <div className="border border-[#E5E7EB] rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-[#111827] mb-2">Supporting Docs</h3>
-              <p className="text-sm text-[#6B7280]">-</p>
+            <div className="border border-[#E5E7EB] rounded-xl bg-white p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-[#111827]">Supporting Docs</h3>
+                  <p className="mt-1 text-xs text-[#6B7280]">Documents linked through this entity's filings.</p>
+                </div>
+                <span className="rounded-full bg-[#F3F0FF] px-2.5 py-1 text-xs font-medium text-[#6C5CE7]">
+                  {supportingDocs.length}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {supportingDocs.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-[#E5E7EB] bg-[#FCFCFD] p-3 text-sm text-[#6B7280]">
+                    No supporting documents linked yet.
+                  </div>
+                ) : (
+                  supportingDocs.slice(0, 5).map((doc: any) => (
+                    <a
+                      key={doc.id}
+                      href={resolveStorageUrl(doc.storageUrl)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block rounded-lg border border-[#E5E7EB] p-3 transition-colors hover:border-[#D8D1F7] hover:bg-[#FAFAFF]"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-[#111827]">{doc.fileName}</p>
+                          <p className="mt-1 text-xs text-[#6B7280]">
+                            {new Date(doc.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: '2-digit',
+                            })}
+                          </p>
+                        </div>
+                        <ExternalLink size={14} className="mt-0.5 flex-shrink-0 text-[#9CA3AF]" />
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-xs">
+                        <span className="text-[#6B7280]">
+                          {doc.mimeType?.includes('pdf') ? 'PDF' : doc.mimeType?.includes('sheet') || doc.mimeType?.includes('csv') ? 'Spreadsheet' : 'Document'}
+                        </span>
+                        {doc.reviewedByHuman ? (
+                          <span className="inline-flex items-center gap-1 font-medium text-[#15803D]">
+                            <CheckCircle2 size={12} /> Reviewed
+                          </span>
+                        ) : (
+                          <span className="font-medium text-[#B45309]">Needs review</span>
+                        )}
+                      </div>
+                    </a>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -374,7 +460,7 @@ function CollapsibleSection({
 
 /* ─── Directors & Officers Tab ─── */
 // Used in: EntityDetailPage — rendered when ?tab=directors-officers
-function DirectorsOfficersTab({ entity }: { entity: any }) {
+function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) => Promise<void> }) {
   const [directors, setDirectors] = useState<any[]>(entity.directors || [])
   const [officers, setOfficers] = useState<any[]>(entity.officers || [])
   const [showDirectorForm, setShowDirectorForm] = useState(false)
@@ -387,16 +473,25 @@ function DirectorsOfficersTab({ entity }: { entity: any }) {
     authorisedSignatory: false,
   })
 
-  const addDirector = () => {
+  useEffect(() => {
+    setDirectors(entity.directors || [])
+    setOfficers(entity.officers || [])
+  }, [entity.directors, entity.officers])
+
+  const addDirector = async () => {
     if (!directorForm.name) return
-    setDirectors((prev) => [...prev, { ...directorForm, status: 'Active' }])
+    const nextDirectors = [...directors, { ...directorForm, status: 'Active' }]
+    setDirectors(nextDirectors)
+    await onUpdate({ directors: nextDirectors })
     setDirectorForm({ name: '', dateAppointed: '' })
     setShowDirectorForm(false)
   }
 
-  const addOfficer = () => {
+  const addOfficer = async () => {
     if (!officerForm.name) return
-    setOfficers((prev) => [...prev, { ...officerForm, status: 'Active' }])
+    const nextOfficers = [...officers, { ...officerForm, status: 'Active' }]
+    setOfficers(nextOfficers)
+    await onUpdate({ officers: nextOfficers })
     setOfficerForm({ name: '', role: '', dateAppointed: '', authorisedSignatory: false })
     setShowOfficerForm(false)
   }
@@ -638,7 +733,7 @@ function DirectorsOfficersTab({ entity }: { entity: any }) {
 
 /* ─── Shareholders Tab ─── */
 // Used in: EntityDetailPage — rendered when ?tab=shareholders
-function ShareholdersTab({ entity }: { entity: any }) {
+function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) => Promise<void> }) {
   const [shareholders, setShareholders] = useState<any[]>(entity.shareholders || [])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
@@ -649,9 +744,15 @@ function ShareholdersTab({ entity }: { entity: any }) {
     address: '',
   })
 
-  const addShareholder = () => {
+  useEffect(() => {
+    setShareholders(entity.shareholders || [])
+  }, [entity.shareholders])
+
+  const addShareholder = async () => {
     if (!form.name) return
-    setShareholders((prev) => [...prev, { ...form }])
+    const nextShareholders = [...shareholders, { ...form }]
+    setShareholders(nextShareholders)
+    await onUpdate({ shareholders: nextShareholders })
     setForm({ name: '', ownership: '', tin: '', country: 'US', address: '' })
     setShowForm(false)
   }
@@ -777,7 +878,11 @@ function ShareholdersTab({ entity }: { entity: any }) {
                   <td className="px-4 py-3 text-sm text-[#6B7280]">
                     <button
                       onClick={() =>
-                        setShareholders((prev) => prev.filter((_, idx) => idx !== i))
+                        (async () => {
+                          const nextShareholders = shareholders.filter((_, idx) => idx !== i)
+                          setShareholders(nextShareholders)
+                          await onUpdate({ shareholders: nextShareholders })
+                        })()
                       }
                       className="hover:text-red-500"
                     >
@@ -796,22 +901,28 @@ function ShareholdersTab({ entity }: { entity: any }) {
 
 /* ─── Cap Table Tab ─── */
 // Used in: EntityDetailPage — rendered when ?tab=cap-table
-function CapTableTab({ entity }: { entity: any }) {
+function CapTableTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) => Promise<void> }) {
   const [capTableEntries, setCapTableEntries] = useState<any[]>(entity.capTable || [])
   const [searchQuery, setSearchQuery] = useState('')
   const fileInputRef = useState<HTMLInputElement | null>(null)
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    setCapTableEntries(entity.capTable || [])
+  }, [entity.capTable])
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setCapTableEntries((prev) => [
-      ...prev,
+    const nextEntries = [
+      ...capTableEntries,
       {
         date: new Date().toISOString(),
         note: '-',
         fileName: file.name,
       },
-    ])
+    ]
+    setCapTableEntries(nextEntries)
+    await onUpdate({ capTable: nextEntries })
     e.target.value = ''
   }
 
@@ -904,7 +1015,11 @@ function CapTableTab({ entity }: { entity: any }) {
                         className="text-[#6B7280] hover:text-red-500"
                         title="Delete"
                         onClick={() =>
-                          setCapTableEntries((prev) => prev.filter((_, idx) => idx !== i))
+                          (async () => {
+                            const nextEntries = capTableEntries.filter((_, idx) => idx !== i)
+                            setCapTableEntries(nextEntries)
+                            await onUpdate({ capTable: nextEntries })
+                          })()
                         }
                       >
                         <Trash2 size={16} />
@@ -923,14 +1038,20 @@ function CapTableTab({ entity }: { entity: any }) {
 
 /* ─── Sensitive Data Tab ─── */
 // Used in: EntityDetailPage — rendered when ?tab=sensitive-data
-function SensitiveDataTab({ entity }: { entity: any }) {
+function SensitiveDataTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) => Promise<void> }) {
   const [sensitiveData, setSensitiveData] = useState<any[]>(entity.sensitiveData || [])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', description: '' })
 
-  const addSensitiveData = () => {
+  useEffect(() => {
+    setSensitiveData(entity.sensitiveData || [])
+  }, [entity.sensitiveData])
+
+  const addSensitiveData = async () => {
     if (!form.name) return
-    setSensitiveData((prev) => [...prev, { ...form }])
+    const nextSensitiveData = [...sensitiveData, { ...form }]
+    setSensitiveData(nextSensitiveData)
+    await onUpdate({ sensitiveData: nextSensitiveData })
     setForm({ name: '', description: '' })
     setShowForm(false)
   }
@@ -1012,7 +1133,11 @@ function SensitiveDataTab({ entity }: { entity: any }) {
                   <td className="px-4 py-3 text-sm text-[#6B7280]">
                     <button
                       onClick={() =>
-                        setSensitiveData((prev) => prev.filter((_, idx) => idx !== i))
+                        (async () => {
+                          const nextSensitiveData = sensitiveData.filter((_, idx) => idx !== i)
+                          setSensitiveData(nextSensitiveData)
+                          await onUpdate({ sensitiveData: nextSensitiveData })
+                        })()
                       }
                       className="hover:text-red-500"
                     >

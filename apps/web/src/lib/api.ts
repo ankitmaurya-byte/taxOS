@@ -130,6 +130,9 @@ const reviewFounderApplication = (id: string, decision: 'approved' | 'rejected',
 const getCpas = () =>
   request<any[]>('/admin/cpas')
 
+const getOrganizationOverview = () =>
+  request<any[]>('/admin/organizations-overview')
+
 const createCpa = (payload: { email: string; password: string; name: string }) =>
   request<any>('/admin/cpas', {
     method: 'POST',
@@ -141,21 +144,6 @@ const assignCpaOrganization = (id: string, organizationId: string) =>
     method: 'POST',
     data: { organizationId },
   }, { successMessage: 'CPA assigned to organization.' })
-
-const getAdminTemplates = () =>
-  request<any[]>('/admin/role-templates')
-
-const createAdminTemplate = (payload: { name: string; scope: string; permissions: Record<string, boolean> }) =>
-  request<any>('/admin/role-templates', {
-    method: 'POST',
-    data: payload,
-  }, { successMessage: 'Template created.' })
-
-const updateAdminTemplate = (id: string, payload: { name?: string; scope?: string; permissions?: Record<string, boolean> }) =>
-  request<{ message: string }>(`/admin/role-templates/${id}`, {
-    method: 'PUT',
-    data: payload,
-  }, { successMessage: 'Template updated.' })
 
 // ─── Members ─────────────────────────────────────────────────────────────────
 
@@ -456,11 +444,9 @@ export const api = {
   getFounderApplications,
   reviewFounderApplication,
   getCpas,
+  getOrganizationOverview,
   createCpa,
   assignCpaOrganization,
-  getAdminTemplates,
-  createAdminTemplate,
-  updateAdminTemplate,
 
   // Members
   getMembers,
@@ -537,11 +523,9 @@ export const api = {
     getFounderApplications,
     reviewFounderApplication,
     getCpas,
+    getOrganizationOverview,
     createCpa,
     assignCpaOrganization,
-    getTemplates: getAdminTemplates,
-    createTemplate: createAdminTemplate,
-    updateTemplate: updateAdminTemplate,
   },
   members: {
     getAll: getMembers,

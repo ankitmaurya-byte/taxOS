@@ -148,6 +148,11 @@ export const entities = sqliteTable('entities', {
   foreignSubsidiaries: text('foreign_subsidiaries', { mode: 'json' })
     .$type<string[]>()
     .default([]),
+  directors: text('directors', { mode: 'json' }).$type<Record<string, unknown>[]>().default([]),
+  officers: text('officers', { mode: 'json' }).$type<Record<string, unknown>[]>().default([]),
+  shareholders: text('shareholders', { mode: 'json' }).$type<Record<string, unknown>[]>().default([]),
+  capTable: text('cap_table', { mode: 'json' }).$type<Record<string, unknown>[]>().default([]),
+  sensitiveData: text('sensitive_data', { mode: 'json' }).$type<Record<string, unknown>[]>().default([]),
   country: text('country').default('US').notNull(),
   status: text('status', {
     enum: ['active', 'inactive', 'dissolved']

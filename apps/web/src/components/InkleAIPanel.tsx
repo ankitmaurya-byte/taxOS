@@ -1,6 +1,7 @@
 // Used in: Layout.tsx — slide-over AI chat panel triggered by "Inkle AI" button in TopBar
 import { useState, useRef, useEffect } from 'react'
 import { api } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth'
 import {
   X,
   Pencil,
@@ -45,7 +46,41 @@ interface InkleAIPanelProps {
   onClose: () => void
 }
 
+const ROLE_PANEL_CONFIG = {
+  admin: {
+    title: 'Admin Copilot',
+    subtitle: 'Platform operations, founders, and CPA assignment help',
+    empty: 'Ask about founder reviews, CPA assignment, or platform access policy.',
+    placeholder: 'Ask the admin copilot...',
+    prefix: 'You are assisting a TaxOS platform admin. Focus on founder onboarding, CPA assignment, access policy, and platform operations.',
+  },
+  founder: {
+    title: 'Founder Copilot',
+    subtitle: 'Entities, filings, deadlines, and approvals',
+    empty: 'Ask about your entity setup, filings, founder approvals, deadlines, or documents.',
+    placeholder: 'Ask the founder copilot...',
+    prefix: 'You are assisting a founder inside TaxOS. Focus on organization workflows, filings, deadlines, documents, and approvals.',
+  },
+  cpa: {
+    title: 'CPA Copilot',
+    subtitle: 'Review support, tax reasoning, and document validation',
+    empty: 'Ask about CPA review steps, tax reasoning, risk checks, or filing support.',
+    placeholder: 'Ask the CPA copilot...',
+    prefix: 'You are assisting a CPA inside TaxOS. Focus on filing review, tax reasoning, risk validation, and document review support.',
+  },
+  team_member: {
+    title: 'Workspace Assistant',
+    subtitle: 'Permission-aware help for your assigned modules',
+    empty: 'Ask about the filings, documents, or approvals available in your workspace.',
+    placeholder: 'Ask your workspace assistant...',
+    prefix: 'You are assisting a team member inside TaxOS. Focus on the tasks available to them based on granted permissions.',
+  },
+} as const
+
 export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
+  const user = useAuthStore((state) => state.user)
+  const role = user?.role || 'team_member'
+  const config = ROLE_PANEL_CONFIG[role as keyof typeof ROLE_PANEL_CONFIG] || ROLE_PANEL_CONFIG.team_member
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
@@ -72,7 +107,7 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
 
     try {
       let fullResponse = ''
-      await api.streamTaxQa(userMsg, (chunk: string) => {
+      await api.streamTaxQa(`${config.prefix}\n\nUser question: ${userMsg}`, (chunk: string) => {
         fullResponse += chunk
         setMessages((prev) => {
           const msgs = [...prev]
@@ -155,12 +190,12 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-[#111827]">Inkle AI Agent</h3>
+                <h3 className="text-sm font-semibold text-[#111827]">{config.title}</h3>
                 <span className="text-[10px] font-semibold text-[#10B981] bg-[#D1FAE5] px-1.5 py-0.5 rounded">
                   Beta
                 </span>
               </div>
-              <p className="text-xs text-[#6B7280]">Your assistant for tax & books</p>
+              <p className="text-xs text-[#6B7280]">{config.subtitle}</p>
             </div>
           </div>
           <button
@@ -186,8 +221,7 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
                     <Sparkles size={20} className="text-white" />
                   </div>
                   <p className="text-sm text-[#6B7280] max-w-xs">
-                    Hi! I'm your Inkle AI assistant. Ask me about taxes, filings, bookkeeping, or
-                    try an action from the library.
+                    {config.empty}
                   </p>
                 </div>
               )}
@@ -249,7 +283,7 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
                       handleSend()
                     }
                   }}
-                  placeholder="Type your message"
+                  placeholder={config.placeholder}
                   rows={2}
                   className="w-full px-4 py-3 text-[13px] text-[#111827] placeholder:text-[#9CA3AF] outline-none resize-none"
                 />

@@ -48,6 +48,7 @@ import { filings, approvalQueue, agentConversations, documents, filingReviewLock
 import { createFilingSchema, updateFilingStatusSchema, type FilingStatus } from 'shared'
 import { auditLogger } from '../lib/auditLog'
 import { ensureCpaHasOrgAccess } from '../lib/rbac'
+import { AppError, withContext } from '../lib/errors'
 
 // Valid status transitions (state machine).
 // Key = current status, value = array of allowed next statuses.
@@ -145,7 +146,7 @@ export async function createFiling(req: Request, res: Response, next: NextFuncti
     })
 
     res.status(201).json(filing)
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'createFiling')) }
 }
 
 // ─── GET /api/filings/:id ───────────────────────────
@@ -191,26 +192,26 @@ export async function updateFilingStatus(req: Request, res: Response, next: Next
     const filing = db.select().from(filings)
       .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
       .get()
-    if (!filing) return res.status(404).json({ error: 'Filing not found' })
+    if (!filing) throw new AppError('Filing not found', 404)
 
     const cpaReviewError = ensureCpaReviewAccess(req, filing.id, filing.orgId)
-    if (cpaReviewError) return res.status(409).json({ error: cpaReviewError })
+    if (cpaReviewError) throw new AppError(cpaReviewError, 409)
 
     const allowed = ALLOWED_TRANSITIONS[filing.status] || []
     if (!allowed.includes(newStatus)) {
-      return res.status(400).json({ error: `Cannot transition from ${filing.status} to ${newStatus}` })
+      throw new AppError(`Cannot transition from ${filing.status} to ${newStatus}`, 400)
     }
 
     // HITL gate: submitted requires founder approval
     if (newStatus === 'submitted') {
       if (!filing.founderApprovedAt) {
-        return res.status(403).json({ error: 'HITL_GATE: Cannot submit without founder approval' })
+        throw new AppError('HITL_GATE: Cannot submit without founder approval', 403)
       }
     }
 
     // HITL gate: only CPA can advance to founder_approval
     if (newStatus === 'founder_approval' && req.user!.role === 'founder') {
-      return res.status(403).json({ error: 'HITL_GATE: CPA must advance filing to founder approval stage' })
+      throw new AppError('HITL_GATE: CPA must advance filing to founder approval stage', 403)
     }
 
     const now = new Date().toISOString()
@@ -237,7 +238,7 @@ export async function updateFilingStatus(req: Request, res: Response, next: Next
     })
 
     res.json({ message: `Status updated to ${newStatus}` })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'updateFilingStatus')) }
 }
 
 // ─── POST /api/filings/:id/approve ──────────────────
@@ -256,10 +257,10 @@ export async function approveFiling(req: Request, res: Response, next: NextFunct
     const filing = db.select().from(filings)
       .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
       .get()
-    if (!filing) return res.status(404).json({ error: 'Filing not found' })
+    if (!filing) throw new AppError('Filing not found', 404)
 
     if (filing.status !== 'founder_approval') {
-      return res.status(400).json({ error: 'Filing is not in founder_approval stage' })
+      throw new AppError('Filing is not in founder_approval stage', 400)
     }
 
     const now = new Date().toISOString()
@@ -296,7 +297,7 @@ export async function approveFiling(req: Request, res: Response, next: NextFunct
     })
 
     res.json({ message: 'Filing approved and submitted' })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'approveFiling')) }
 }
 
 // ─── POST /api/filings/:id/reject ───────────────────
@@ -310,12 +311,12 @@ export async function approveFiling(req: Request, res: Response, next: NextFunct
 export async function rejectFiling(req: Request, res: Response, next: NextFunction) {
   try {
     const { reason } = req.body
-    if (!reason) return res.status(400).json({ error: 'Rejection reason is required' })
+    if (!reason) throw new AppError('Rejection reason is required', 400)
 
     const filing = db.select().from(filings)
       .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
       .get()
-    if (!filing) return res.status(404).json({ error: 'Filing not found' })
+    if (!filing) throw new AppError('Filing not found', 404)
 
     db.update(filings).set({
       status: 'cpa_review',
@@ -348,7 +349,7 @@ export async function rejectFiling(req: Request, res: Response, next: NextFuncti
     })
 
     res.json({ message: 'Filing rejected and sent back to CPA review' })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'rejectFiling')) }
 }
 
 // ─── POST /api/filings/:id/pause ────────────────────

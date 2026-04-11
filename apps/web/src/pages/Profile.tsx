@@ -29,7 +29,7 @@ export function ProfilePage() {
           </div>
           {profile.canCreateAccount && (
             <Link to="/profile/create-account" className="rounded-lg bg-[#6C5CE7] px-4 py-2 text-sm font-medium text-white">
-              Create Account
+              {profile.role === 'admin' ? 'Create CPA' : 'Create Account'}
             </Link>
           )}
         </div>

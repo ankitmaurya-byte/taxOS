@@ -15,12 +15,14 @@ import adminRoutes from './routes/admin'
 import memberRoutes from './routes/members'
 import profileRoutes from './routes/profile'
 import { errorHandler } from './middleware/errorHandler'
+import { requestLogger } from './middleware/requestLogger'
 require('dotenv').config()
 
 const app: express.Express = express()
 const PORT = process.env.PORT || 3001
 app.use(cors())
 app.use(express.json())
+app.use(requestLogger)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
 // Routes

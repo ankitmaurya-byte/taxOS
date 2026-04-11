@@ -28,6 +28,7 @@ import {
 } from '../lib/mailer'
 import { generateAppToken, getFutureIso, isExpired } from '../lib/tokens'
 import { parseCertificateOfIncorporation } from '../lib/certificateParser'
+import { AppError, withContext } from '../lib/errors'
 
 function getFounderApplicationByUserId(userId: string) {
   return db.select().from(founderApplications).where(eq(founderApplications.userId, userId)).get()
@@ -60,10 +61,10 @@ export async function registerFounder(req: Request, res: Response, next: NextFun
     const data = founderRegistrationSchema.parse(req.body)
     
     const existingUser = db.select().from(users).where(eq(users.email, data.email)).get()
-    if (existingUser) return res.status(409).json({ error: 'Email already registered' })
+    if (existingUser) throw new AppError('Email already registered', 409)
 
     const existingApplication = db.select().from(founderApplications).where(eq(founderApplications.email, data.email)).get()
-    if (existingApplication) return res.status(409).json({ error: 'A founder registration already exists for this email' })
+    if (existingApplication) throw new AppError('A founder registration already exists for this email', 409)
 
     const passwordHash = await bcrypt.hash(data.password, 10)
     const organization = db.insert(organizations).values({
@@ -102,32 +103,32 @@ export async function registerFounder(req: Request, res: Response, next: NextFun
     await sendVerificationEmail(user.email, token)
     await sendFounderApplicationReceivedEmail(user.email, user.name)
     res.status(201).json({ message: 'Verification email sent', email: user.email })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'registerFounder')) }
 }
 
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const data = loginSchema.parse(req.body)
     const user = db.select().from(users).where(eq(users.email, data.email)).get()
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' })
+    if (!user) throw new AppError('Invalid credentials', 401)
 
     const valid = await bcrypt.compare(data.password, user.passwordHash)
-    if (!valid) return res.status(401).json({ error: 'Invalid credentials' })
+    if (!valid) throw new AppError('Invalid credentials', 401)
 
     if (!user.isVerified || user.status === 'pending_email_verification') {
-      return res.status(403).json({ error: 'Please verify your email before signing in' })
+      throw new AppError('Please verify your email before signing in', 403)
     }
     if (user.status === 'rejected' || user.status === 'suspended') {
-      return res.status(403).json({ error: 'Your account is not active' })
+      throw new AppError('Your account is not active', 403)
     }
     if (!user.orgId) {
-      return res.status(403).json({ error: 'Account is not assigned to an organization' })
+      throw new AppError('Account is not assigned to an organization', 403)
     }
 
     db.update(users).set({ lastLoginAt: new Date().toISOString() }).where(eq(users.id, user.id)).run()
     const token = generateToken({ userId: user.id, orgId: user.orgId, role: user.role as any, status: user.status })
     res.json({ token, user: serializeUser(user) })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'login')) }
 }
 
 export function getMe(req: Request, res: Response) {
@@ -140,13 +141,13 @@ export async function verifyEmail(req: Request, res: Response, next: NextFunctio
   try {
     const { token } = verifyEmailSchema.parse(req.body)
     const record = db.select().from(emailVerificationTokens).where(eq(emailVerificationTokens.token, token)).get()
-    if (!record) return res.status(404).json({ error: 'Verification link not found' })
-    if (record.usedAt) return res.status(400).json({ error: 'Verification link already used' })
-    if (isExpired(record.expiresAt)) return res.status(400).json({ error: 'Verification link has expired' })
-    if (!record.userId) return res.status(400).json({ error: 'Verification link is invalid' })
+    if (!record) throw new AppError('Verification link not found', 404)
+    if (record.usedAt) throw new AppError('Verification link already used', 400)
+    if (isExpired(record.expiresAt)) throw new AppError('Verification link has expired', 400)
+    if (!record.userId) throw new AppError('Verification link is invalid', 400)
 
     const user = db.select().from(users).where(eq(users.id, record.userId)).get()
-    if (!user) return res.status(404).json({ error: 'User not found' })
+    if (!user) throw new AppError('User not found', 404)
 
     const nextStatus = user.role === 'founder' ? 'pending_onboarding' : 'active'
     const now = new Date().toISOString()
@@ -161,21 +162,21 @@ export async function verifyEmail(req: Request, res: Response, next: NextFunctio
     const updatedUser = db.select().from(users).where(eq(users.id, user.id)).get()!
     const authToken = generateToken({ userId: updatedUser.id, orgId: updatedUser.orgId!, role: updatedUser.role as any, status: updatedUser.status })
     res.json({ message: 'Email verified successfully', token: authToken, user: serializeUser(updatedUser) })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'verifyEmail')) }
 }
 
 export async function resendVerification(req: Request, res: Response, next: NextFunction) {
   try {
     const { email } = resendVerificationSchema.parse(req.body)
     const user = db.select().from(users).where(eq(users.email, email)).get()
-    if (!user) return res.status(404).json({ error: 'User not found' })
-    if (user.isVerified) return res.status(400).json({ error: 'Email is already verified' })
+    if (!user) throw new AppError('User not found', 404)
+    if (user.isVerified) throw new AppError('Email is already verified', 400)
 
     const token = generateAppToken()
     db.insert(emailVerificationTokens).values({ userId: user.id, token, expiresAt: getFutureIso(24) }).run()
     await sendVerificationEmail(user.email, token)
     res.json({ message: 'Verification email sent' })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'resendVerification')) }
 }
 
 export function getOnboardingStatus(req: Request, res: Response) {
@@ -189,12 +190,12 @@ export function getOnboardingStatus(req: Request, res: Response) {
 export async function completeFounderOnboarding(req: Request, res: Response, next: NextFunction) {
   try {
     const user = db.select().from(users).where(eq(users.id, req.user!.userId)).get()
-    if (!user || user.role !== 'founder') return res.status(404).json({ error: 'Founder not found' })
-    if (!user.orgId) return res.status(400).json({ error: 'Organization not found' })
-    if (!user.isVerified) return res.status(403).json({ error: 'Email verification is required first' })
+    if (!user || user.role !== 'founder') throw new AppError('Founder not found', 404)
+    if (!user.orgId) throw new AppError('Organization not found', 400)
+    if (!user.isVerified) throw new AppError('Email verification is required first', 403)
 
     const application = getFounderApplicationByUserId(user.id)
-    if (!application) return res.status(404).json({ error: 'Founder application not found' })
+    if (!application) throw new AppError('Founder application not found', 404)
 
     const data = founderOnboardingSchema.parse(req.body)
     const parsedCertificate = req.file ? await parseCertificateOfIncorporation(req.file.path, req.file.originalname) : null
@@ -232,7 +233,7 @@ export async function completeFounderOnboarding(req: Request, res: Response, nex
 
     db.update(users).set({ status: 'pending_admin_review' }).where(eq(users.id, user.id)).run()
     res.json({ message: 'Onboarding completed. Your account is now pending admin verification.' })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'completeFounderOnboarding')) }
 }
 
 export function getInvite(req: Request, res: Response) {
@@ -249,15 +250,15 @@ export async function acceptInvite(req: Request, res: Response, next: NextFuncti
   try {
     const data = acceptInviteSchema.parse(req.body)
     const invite = db.select().from(invites).where(eq(invites.token, data.token)).get()
-    if (!invite) return res.status(404).json({ error: 'Invite not found' })
-    if (invite.status !== 'pending') return res.status(400).json({ error: 'Invite is no longer active' })
+    if (!invite) throw new AppError('Invite not found', 404)
+    if (invite.status !== 'pending') throw new AppError('Invite is no longer active', 400)
     if (isExpired(invite.expiresAt)) {
       db.update(invites).set({ status: 'expired' }).where(eq(invites.id, invite.id)).run()
-      return res.status(400).json({ error: 'Invite has expired' })
+      throw new AppError('Invite has expired', 400)
     }
 
     const existing = db.select().from(users).where(eq(users.email, invite.email)).get()
-    if (existing) return res.status(409).json({ error: 'An account already exists for this email' })
+    if (existing) throw new AppError('An account already exists for this email', 409)
 
     const passwordHash = await bcrypt.hash(data.password, 10)
     const user = db.insert(users).values({
@@ -281,7 +282,7 @@ export async function acceptInvite(req: Request, res: Response, next: NextFuncti
 
     db.update(invites).set({ status: 'accepted', acceptedAt: new Date().toISOString() }).where(eq(invites.id, invite.id)).run()
     res.status(201).json({ message: 'Invite accepted. Your account is active.' })
-  } catch (err) { next(err) }
+  } catch (err) { next(withContext(err as Error, 'acceptInvite')) }
 }
 
 export function bootstrapAdminProfile() {

@@ -20,6 +20,6 @@ router.use(requireActiveAccount)
 
 router.get('/', requirePermission('canApproveFilings'), listApprovals)
 router.post('/:id/resolve', requirePermission('canApproveFilings'), resolveApproval)
-router.post('/:id/escalate', requireRole('admin', 'founder'), requirePermission('canApproveFilings'), escalateApproval)
+router.post('/:id/escalate', requireRole('founder'), requirePermission('canApproveFilings'), escalateApproval)
 
 export default router
