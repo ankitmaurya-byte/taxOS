@@ -21,7 +21,7 @@ export function AcceptInvitePage() {
     setError('')
     try {
       await api.acceptInvite({ token, name, password })
-      setSuccess('Invite accepted. Check your email for the verification link.')
+      setSuccess('Invite accepted. Your account is active and ready to sign in.')
     } catch (err: any) {
       setError(err.message)
     }

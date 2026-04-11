@@ -24,7 +24,6 @@ import { EMPTY_PERMISSIONS, FOUNDER_PERMISSIONS, getEffectivePermissionsForUser 
 import {
   sendFounderApplicationReceivedEmail,
   sendFounderApprovedEmail,
-  sendInviteEmail,
   sendVerificationEmail,
 } from '../lib/mailer'
 import { generateAppToken, getFutureIso, isExpired } from '../lib/tokens'
@@ -58,7 +57,6 @@ function serializeUser(user: typeof users.$inferSelect) {
 
 export async function registerFounder(req: Request, res: Response, next: NextFunction) {
   try {
-    console.log(req.body)
     const data = founderRegistrationSchema.parse(req.body)
     
     const existingUser = db.select().from(users).where(eq(users.email, data.email)).get()
@@ -268,8 +266,8 @@ export async function acceptInvite(req: Request, res: Response, next: NextFuncti
       passwordHash,
       name: data.name,
       role: invite.role,
-      status: 'pending_email_verification',
-      isVerified: false,
+      status: 'active',
+      isVerified: true,
       invitedByUserId: invite.invitedByUserId,
     }).returning().get()
 
@@ -282,18 +280,7 @@ export async function acceptInvite(req: Request, res: Response, next: NextFuncti
     }).run()
 
     db.update(invites).set({ status: 'accepted', acceptedAt: new Date().toISOString() }).where(eq(invites.id, invite.id)).run()
-
-    const verificationToken = generateAppToken()
-    db.insert(emailVerificationTokens).values({
-      userId: user.id,
-      inviteId: invite.id,
-      token: verificationToken,
-      expiresAt: getFutureIso(24),
-    }).run()
-
-    await sendInviteEmail(user.email, verificationToken, db.select().from(organizations).where(eq(organizations.id, invite.organizationId)).get()?.name || 'your organization')
-    await sendVerificationEmail(user.email, verificationToken)
-    res.status(201).json({ message: 'Invite accepted. Please verify your email to activate your account.' })
+    res.status(201).json({ message: 'Invite accepted. Your account is active.' })
   } catch (err) { next(err) }
 }
 
