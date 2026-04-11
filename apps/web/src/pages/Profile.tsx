@@ -9,7 +9,7 @@ export function ProfilePage() {
     if (!profile && !profileLoading) {
       fetchProfile()
     }
-  }, [profile, profileLoading])
+  }, [])
 
   if (profileLoading) {
     return <div className="p-6 text-sm text-[#6B7280]">Loading profile...</div>
@@ -54,19 +54,6 @@ export function ProfilePage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#E5E7EB] bg-white p-6">
-        <h2 className="text-lg font-medium text-[#111827]">Permissions</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {Object.entries(profile.permissions || {}).map(([key, value]) => (
-            <div key={key} className="flex items-center justify-between rounded-lg bg-[#F9FAFB] px-4 py-3">
-              <span className="text-sm text-[#374151]">{key}</span>
-              <span className={`text-xs font-medium ${value ? 'text-green-600' : 'text-[#9CA3AF]'}`}>
-                {value ? 'Allowed' : 'Blocked'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }

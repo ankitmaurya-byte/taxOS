@@ -5,7 +5,8 @@ import crypto from 'crypto'
 const storage = multer.diskStorage({
   destination: path.join(__dirname, '../../uploads'),
   filename: (_req, file, cb) => {
-    const uniqueName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${path.extname(file.originalname)}`
+    const cleanName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_')
+    const uniqueName = `${Date.now()}-${cleanName}`
     cb(null, uniqueName)
   },
 })

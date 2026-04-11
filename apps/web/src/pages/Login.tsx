@@ -57,8 +57,8 @@ function MarketingPanel() {
 export function LoginPage() {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
-  const [email, setEmail] = useState('demo@taxos.ai')
-  const [password, setPassword] = useState('demo1234')
+  const [email, setEmail] = useState('admin@taxos.ai')
+  const [password, setPassword] = useState('admin1234')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 

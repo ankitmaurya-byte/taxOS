@@ -54,7 +54,7 @@ export const assignPermissionsSchema = z.object({
 
 export const createInviteSchema = z.object({
   email: z.string().email(),
-  role: z.enum(['team_member']),
+  role: z.enum(['team_member', 'cpa']),
   templateId: z.string().optional(),
   permissions: permissionsSchema.optional(),
   useCase: z.string().optional(),
@@ -62,8 +62,6 @@ export const createInviteSchema = z.object({
 
 export const createCpaSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
-  name: z.string().min(1),
 })
 
 export const assignCpaOrgSchema = z.object({

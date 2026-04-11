@@ -394,7 +394,7 @@ interface AuthState {
   escalateApproval: (id: string) => Promise<void>
   uploadDocument: (file: File, filingId?: string) => Promise<void>
   markDocumentReviewed: (id: string) => Promise<void>
-  createCpa: (data: { email: string; password: string; name: string }) => Promise<void>
+  createCpa: (data: { email: string }) => Promise<void>
   assignCpaOrganization: (id: string, organizationId: string) => Promise<void>
   createTemplate: (data: { name: string; scope: string; permissions: Record<string, boolean> }) => Promise<void>
   getTemplateRecommendation: (useCase: string) => Promise<{ recommendedName: string; template: Template | null }>
@@ -775,7 +775,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   createCpa: async (data) => {
     await api.admin.createCpa(data)
-    await get().fetchCpas()
+    // Invite has been sent — no immediate user record to refresh
   },
 
   assignCpaOrganization: async (id, organizationId) => {

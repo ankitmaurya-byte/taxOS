@@ -24,13 +24,12 @@ export function CreateAccountPage() {
   const isAdmin = user?.role === 'admin'
   const [mode, setMode] = useState<'team' | 'cpa'>(isAdmin ? 'cpa' : 'team')
   const [email, setEmail] = useState('')
-  const [name, setName] = useState('')
-  const [password, setPassword] = useState('')
   const [permissionMode, setPermissionMode] = useState<'template' | 'custom'>('template')
   const [templateId, setTemplateId] = useState('')
   const [useCase, setUseCase] = useState('')
   const [permissions, setPermissions] = useState(EMPTY_PERMISSIONS)
   const [submitting, setSubmitting] = useState(false)
+  const [sent, setSent] = useState(false)
 
   useEffect(() => {
     setMode(isAdmin ? 'cpa' : 'team')
@@ -64,9 +63,10 @@ export function CreateAccountPage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setSubmitting(true)
+    setSent(false)
     try {
       if (isAdmin && mode === 'cpa') {
-        await createCpa({ email, name, password })
+        await createCpa({ email })
       } else {
         await inviteMember({
           email,
@@ -76,9 +76,8 @@ export function CreateAccountPage() {
           useCase,
         })
       }
+      setSent(true)
       setEmail('')
-      setName('')
-      setPassword('')
       setTemplateId('')
       setPermissions(EMPTY_PERMISSIONS)
       setUseCase('')
@@ -90,17 +89,38 @@ export function CreateAccountPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#111827]">Create Account</h1>
-        <p className="mt-1 text-sm text-[#6B7280]">Admins can create CPAs. Founders can invite team members with templates or custom permissions.</p>
+        <h1 className="text-2xl font-semibold text-[#111827]">
+          {isAdmin ? 'Invite CPA' : 'Invite Team Member'}
+        </h1>
+        <p className="mt-1 text-sm text-[#6B7280]">
+          {isAdmin
+            ? 'An invite link will be sent to the CPA\'s email. They will set their own name and password — the link expires in 1 hour.'
+            : 'A secure invite link will be sent to the team member\'s email. They must accept within 1 hour.'}
+        </p>
       </div>
 
+      {sent && (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          ✓ Invite email sent to <strong>{email || 'the user'}</strong>. They have 1 hour to accept.
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-[#E5E7EB] bg-white p-6">
-        {isAdmin && <div className="rounded-lg bg-[#F9FAFB] px-4 py-3 text-sm text-[#374151]">TaxOS admins can only create CPA accounts from this screen.</div>}
+        {isAdmin && (
+          <div className="rounded-lg bg-[#F0EDFF] px-4 py-3 text-sm text-[#4C3D8F]">
+            The CPA will receive a secure link to create their account. You will be able to assign them to organizations after they accept.
+          </div>
+        )}
 
         <div className="grid gap-4 md:grid-cols-2">
-          <input value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="Email" className="h-11 rounded-lg border border-[#E5E7EB] px-3 text-sm" />
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="h-11 rounded-lg border border-[#E5E7EB] px-3 text-sm" />
-          {isAdmin && mode === 'cpa' && <input value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Temporary password" className="h-11 rounded-lg border border-[#E5E7EB] px-3 text-sm" />}
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            type="email"
+            placeholder="Email address"
+            className="h-11 rounded-lg border border-[#E5E7EB] px-3 text-sm col-span-2 md:col-span-1"
+          />
         </div>
 
         {mode === 'team' && (
@@ -133,8 +153,8 @@ export function CreateAccountPage() {
           </>
         )}
 
-        <button disabled={submitting} className="rounded-lg bg-[#6C5CE7] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-          {submitting ? 'Submitting...' : mode === 'cpa' ? 'Create CPA' : 'Send Invite'}
+        <button disabled={submitting} className="rounded-lg bg-[#6C5CE7] px-6 py-2 text-sm font-medium text-white disabled:opacity-50">
+          {submitting ? 'Sending...' : 'Send Invite'}
         </button>
       </form>
     </div>

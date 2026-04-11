@@ -12,6 +12,7 @@ import {
 import { db } from '../db'
 import {
   emailVerificationTokens,
+  entities,
   founderApplications,
   invites,
   organizations,
@@ -232,6 +233,17 @@ export async function completeFounderOnboarding(req: Request, res: Response, nex
     }).where(eq(founderApplications.id, application.id)).run()
 
     db.update(users).set({ status: 'pending_admin_review' }).where(eq(users.id, user.id)).run()
+    
+    // Automatically instantiate the primary mapped entity based on the onboarding inputs
+    const mappedType = (entityType === 'LLC' || entityType === 'S-Corp' || entityType === 'Pvt-Ltd') ? entityType : 'C-Corp'
+    db.insert(entities).values({
+      orgId: user.orgId,
+      legalName: legalCompanyName,
+      entityType: mappedType,
+      stateOfIncorporation: stateOrJurisdiction,
+      country: country,
+    }).run()
+
     res.json({ message: 'Onboarding completed. Your account is now pending admin verification.' })
   } catch (err) { next(withContext(err as Error, 'completeFounderOnboarding')) }
 }
@@ -272,16 +284,22 @@ export async function acceptInvite(req: Request, res: Response, next: NextFuncti
       invitedByUserId: invite.invitedByUserId,
     }).returning().get()
 
-    db.insert(permissions).values({
-      userId: user.id,
-      organizationId: invite.organizationId,
-      templateId: invite.templateId || null,
-      permissions: invite.permissions || EMPTY_PERMISSIONS,
-      createdByUserId: invite.invitedByUserId,
-    }).run()
+    // Only team members get granular permissions; CPAs use system-level access
+    if (invite.role === 'team_member') {
+      db.insert(permissions).values({
+        userId: user.id,
+        organizationId: invite.organizationId,
+        templateId: invite.templateId || null,
+        permissions: invite.permissions || EMPTY_PERMISSIONS,
+        createdByUserId: invite.invitedByUserId,
+      }).run()
+    }
 
     db.update(invites).set({ status: 'accepted', acceptedAt: new Date().toISOString() }).where(eq(invites.id, invite.id)).run()
-    res.status(201).json({ message: 'Invite accepted. Your account is active.' })
+
+    // Generate auth token so the user is logged in immediately after setup
+    const authToken = generateToken({ userId: user.id, orgId: user.orgId!, role: user.role as any, status: user.status })
+    res.status(201).json({ message: 'Invite accepted. Your account is active.', token: authToken, user: serializeUser(user) })
   } catch (err) { next(withContext(err as Error, 'acceptInvite')) }
 }
 

@@ -107,10 +107,10 @@ const getInvite = (token: string) =>
   request<{ email: string; role: string; organizationName: string }>(`/auth/invite/${token}`)
 
 const acceptInvite = (payload: { token: string; password: string; name: string }) =>
-  request<{ message: string }>('/auth/accept-invite', {
+  request<{ message: string; token?: string; user?: Record<string, unknown> }>('/auth/accept-invite', {
     method: 'POST',
     data: payload,
-  }, { successMessage: 'Invite accepted. Verify your email next.' })
+  }, { successMessage: 'Account set up. Welcome to TaxOS!' })
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
@@ -130,14 +130,33 @@ const reviewFounderApplication = (id: string, decision: 'approved' | 'rejected',
 const getCpas = () =>
   request<any[]>('/admin/cpas')
 
+// Extended Users
+const createUser = (payload: any) => request<any>('/admin/users', { method: 'POST', data: payload }, { successMessage: 'User created' })
+const getUser = (id: string) => request<any>(`/admin/users/${id}`)
+const updateUser = (id: string, payload: any) => request<any>(`/admin/users/${id}`, { method: 'PUT', data: payload }, { successMessage: 'User updated' })
+const deleteUser = (id: string) => request<any>(`/admin/users/${id}`, { method: 'DELETE' }, { successMessage: 'User suspended' })
+
+// Extended Organizations
+const createOrganization = (payload: any) => request<any>('/admin/organizations', { method: 'POST', data: payload }, { successMessage: 'Organization created' })
+const getOrganization = (id: string) => request<any>(`/admin/organizations/${id}`)
+const updateOrganization = (id: string, payload: any) => request<any>(`/admin/organizations/${id}`, { method: 'PUT', data: payload }, { successMessage: 'Organization updated' })
+const deleteOrganization = (id: string) => request<any>(`/admin/organizations/${id}`, { method: 'DELETE' }, { successMessage: 'Org toggled suspend' })
+
+// Global Views
+const getGlobalEntities = () => request<any[]>('/admin/global-entities')
+const getGlobalFilings = () => request<any[]>('/admin/global-filings')
+
+const getSystemUsers = () =>
+  request<any[]>('/admin/system-users')
+
 const getOrganizationOverview = () =>
   request<any[]>('/admin/organizations-overview')
 
-const createCpa = (payload: { email: string; password: string; name: string }) =>
-  request<any>('/admin/cpas', {
+const createCpa = (payload: { email: string }) =>
+  request<{ message: string; inviteId: string }>('/admin/cpas', {
     method: 'POST',
     data: payload,
-  }, { successMessage: 'CPA created.' })
+  }, { successMessage: 'CPA invite sent.' })
 
 const assignCpaOrganization = (id: string, organizationId: string) =>
   request<{ message: string }>(`/admin/cpas/${id}/assign-org`, {
@@ -522,6 +541,17 @@ export const api = {
   admin: {
     getFounderApplications,
     reviewFounderApplication,
+    getSystemUsers,
+    createUser,
+    getUser,
+    updateUser,
+    deleteUser,
+    createOrganization,
+    getOrganization,
+    updateOrganization,
+    deleteOrganization,
+    getGlobalEntities,
+    getGlobalFilings,
     getCpas,
     getOrganizationOverview,
     createCpa,

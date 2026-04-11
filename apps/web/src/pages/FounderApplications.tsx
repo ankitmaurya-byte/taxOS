@@ -4,6 +4,8 @@ import { useAuthStore } from '@/stores/auth'
 export function FounderApplicationsPage() {
   const { founderApplications, founderApplicationsLoading, fetchFounderApplications, reviewFounderApplication } = useAuthStore()
   const [reviewing, setReviewing] = useState<string | null>(null)
+  const [rejectPopupId, setRejectPopupId] = useState<string | null>(null)
+  const [rejectReason, setRejectReason] = useState('')
 
   useEffect(() => {
     if (founderApplications.length === 0 && !founderApplicationsLoading) {
@@ -63,8 +65,8 @@ export function FounderApplicationsPage() {
                 </button>
                 <button
                   onClick={() => {
-                    const reason = window.prompt('Reason for rejection') || ''
-                    if (reason) handleReview(application.id, 'rejected', reason)
+                    setRejectPopupId(application.id)
+                    setRejectReason('')
                   }}
                   disabled={reviewing === application.id}
                   className="rounded-lg bg-[#B91C1C] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
@@ -77,6 +79,42 @@ export function FounderApplicationsPage() {
         ))}
         {!founderApplications.length && <p className="text-sm text-[#6B7280]">No founder applications found.</p>}
       </div>
+
+      {rejectPopupId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-[#111827]">Reject Application</h3>
+            <p className="mt-1 text-sm text-[#6B7280]">Please provide a reason for rejecting this application.</p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="e.g. Invalid certificate uploaded..."
+              className="mt-4 w-full rounded-lg border border-[#E5E7EB] p-3 text-sm focus:border-[#6C5CE7] focus:outline-none focus:ring-1 focus:ring-[#6C5CE7]"
+              rows={4}
+            />
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={() => setRejectPopupId(null)}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#F3F4F6]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (rejectReason.trim()) {
+                    handleReview(rejectPopupId, 'rejected', rejectReason.trim())
+                    setRejectPopupId(null)
+                  }
+                }}
+                disabled={!rejectReason.trim()}
+                className="rounded-lg bg-[#B91C1C] px-4 py-2 text-sm font-medium text-white hover:bg-[#991B1B] disabled:opacity-50"
+              >
+                Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

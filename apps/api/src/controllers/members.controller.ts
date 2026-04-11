@@ -24,8 +24,14 @@ export function listMembers(req: Request, res: Response) {
 export async function inviteMember(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createInviteSchema.parse(req.body)
-    if (req.user!.role !== 'founder') {
-      throw new AppError('Only founders can invite team members', 403)
+    const isAdmin = req.user!.role === 'admin'
+    const isFounder = req.user!.role === 'founder'
+    if (!isAdmin && !isFounder) {
+      throw new AppError('Only founders or admins can invite members', 403)
+    }
+    // Founders can only invite team_members, not CPAs
+    if (isFounder && data.role !== 'team_member') {
+      throw new AppError('Founders can only invite team members', 403)
     }
 
     const existingUser = db.select().from(users).where(eq(users.email, data.email)).get()
@@ -61,13 +67,13 @@ export async function inviteMember(req: Request, res: Response, next: NextFuncti
     const inviteToken = generateAppToken()
     const invite = db.insert(invites).values({
       email: data.email,
-      role: 'team_member',
+      role: data.role,
       organizationId: req.user!.orgId!,
       invitedByUserId: req.user!.userId,
       templateId: templateId || null,
-      permissions: sanitizeAssignablePermissions(permissionSet || {}, 'team_member'),
+      permissions: sanitizeAssignablePermissions(permissionSet || {}, data.role),
       token: inviteToken,
-      expiresAt: getFutureIso(72),
+      expiresAt: getFutureIso(1), // 1-hour expiry
     }).returning().get()
 
     const org = db.select().from(organizations).where(eq(organizations.id, req.user!.orgId!)).get()
