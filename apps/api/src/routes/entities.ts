@@ -7,7 +7,7 @@
  */
 
 import { Router } from 'express'
-import { authMiddleware, requireActiveAccount, requireRole } from '../middleware/auth'
+import { authMiddleware, requireActiveAccount, requireRole, requirePermission } from '../middleware/auth'
 import {
   listEntities,
   createEntity,
@@ -20,13 +20,15 @@ import {
 const router: Router = Router()
 router.use(authMiddleware)
 router.use(requireActiveAccount)
-router.use(requireRole('founder'))
 
-router.get('/', listEntities)       // GET    /api/entities      → entities.controller.listEntities
-router.post('/', createEntity)      // POST   /api/entities      → entities.controller.createEntity
-router.get('/:id', getEntity)       // GET    /api/entities/:id  → entities.controller.getEntity
-router.get('/:id/estimated-tax', getEstimatedTaxProjection) // GET /api/entities/:id/estimated-tax → entities.controller.getEstimatedTaxProjection
-router.put('/:id', updateEntity)    // PUT    /api/entities/:id  → entities.controller.updateEntity
-router.delete('/:id', deleteEntity) // DELETE /api/entities/:id  → entities.controller.deleteEntity
+// Read routes — accessible to founder, team_member, and CPA with canViewFilings
+router.get('/', requirePermission('canViewFilings'), listEntities)
+router.get('/:id', requirePermission('canViewFilings'), getEntity)
+router.get('/:id/estimated-tax', requirePermission('canViewFilings'), getEstimatedTaxProjection)
+
+// Write routes — founder only
+router.post('/', requireRole('founder'), createEntity)
+router.put('/:id', requireRole('founder'), updateEntity)
+router.delete('/:id', requireRole('founder'), deleteEntity)
 
 export default router

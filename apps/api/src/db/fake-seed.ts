@@ -321,14 +321,16 @@ async function fakeSeed() {
     const templates = allTemplates.filter(t => t.orgId === null || t.orgId === orgId)
 
     for (const user of orgUsers) {
-      if (!founder || templates.length === 0) continue
-      const tpl = pick(templates)
+      if (!founder) continue
+      const tpl = templates.length > 0 ? pick(templates) : null
+      // Ensure every team member gets permissions (at minimum Filing Specialist level)
+      const perms = tpl ? pick(templateDefs).perms : templateDefs[1].perms
       db.insert(schema.permissions).values({
         id: uuid(),
         userId: user.id,
         organizationId: orgId,
-        templateId: tpl.id,
-        permissions: pick(templateDefs).perms,
+        templateId: tpl?.id,
+        permissions: perms,
         createdByUserId: founder.id,
       }).run()
       permCount++

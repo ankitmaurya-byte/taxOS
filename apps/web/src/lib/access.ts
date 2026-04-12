@@ -12,7 +12,7 @@ interface AccessRule {
 }
 
 const ROUTE_RULES: Array<{ paths: string[]; rule: AccessRule }> = [
-  { paths: ['/dashboard'], rule: { roles: ['admin', 'cpa'] } },
+  { paths: ['/dashboard'], rule: { roles: ['admin', 'cpa', 'team_member'] } },
   { paths: ['/home'], rule: { roles: ['founder', 'team_member'] } },
   { paths: ['/profile'], rule: { roles: ['admin', 'founder', 'team_member', 'cpa'] } },
   { paths: ['/profile/create-account'], rule: { roles: ['admin', 'founder'] } },
@@ -56,7 +56,7 @@ export function canAccessPath(user: AccessUser | null | undefined, pathname: str
 }
 
 export function getDefaultPathForRole(role?: string | null) {
-  return role === 'admin' || role === 'cpa' ? '/dashboard' : '/home'
+  return role === 'admin' || role === 'cpa' || role === 'team_member' ? '/dashboard' : '/home'
 }
 
 export function getPostLoginPath(user: AccessUser | null | undefined) {

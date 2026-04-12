@@ -17,14 +17,13 @@ import {
   Zap,
   FolderOpen,
   Users,
-  Settings,
   LogOut,
-  User,
   ClipboardList,
   ClipboardCheck,
   MoreHorizontal,
   ChevronDown,
   ChevronRight as ChevronRightIcon,
+  Settings,
 } from 'lucide-react'
 import { LogoIcon, LogoFull, ChevronUpDown } from './icons'
 import type { LucideIcon } from 'lucide-react'
@@ -88,6 +87,7 @@ const NAV_ENTRIES: NavEntry[] = [
 // Chat + Action Centre are pinned above the profile footer
 const BOTTOM_PINNED: NavItem[] = [
   // { icon: Users, label: 'Create Account', href: '/profile/create-account' },
+
   { icon: ClipboardList, label: 'Approvals', href: '/approvals' },
   { icon: Users, label: 'Founder Applications', href: '/admin/founder-applications' },
   { icon: MessageCircle, label: 'Chat', href: '/chat' },
@@ -298,30 +298,58 @@ export function Sidebar({ collapsed }: SidebarProps) {
               aria-label="Close profile menu"
               className="fixed inset-0 z-10 cursor-default"
               onClick={() => setShowProfileMenu(false)}
+              onKeyDown={(e) => e.key === 'Escape' && setShowProfileMenu(false)}
             />
-            <div className="absolute bottom-[calc(100%+8px)] right-4 z-20 w-44 rounded-xl border border-[#E5E7EB] bg-white p-1.5 shadow-lg">
+            <div
+              role="menu"
+              aria-label="Profile menu"
+              className="absolute bottom-[calc(100%+8px)] left-4 right-4 z-20 w-[280px] rounded-2xl border border-gray-200 bg-white py-2 shadow-lg"
+            >
+              {/* Profile header in dropdown */}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDE9FD] text-xs font-semibold text-[#6C5CE7] flex-shrink-0">
+                  {user?.name
+                    ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                    : 'U'}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[#111827]">{user?.name}</p>
+                  <p className="truncate text-xs text-[#6B7280]">{user?.email}</p>
+                </div>
+              </div>
+
+              <div className="mx-3 border-t border-gray-100 my-1" />
+
+              {/* Menu items */}
+              {[
+                { icon: Settings, label: 'Profile Settings', href: '/profile' },
+                { icon: Users, label: 'Team Settings', href: '/profile/create-account' },
+                { icon: Shield, label: 'Audit Logs', href: '/audit' },
+              ]
+                .filter(item => canAccessPath(user, item.href))
+                .map((item) => (
                 <button
-                type="button"
-                onClick={() => { setShowProfileMenu(false); navigate('/profile/create-account') }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-[#374151] hover:bg-[#F3F4F6] hover:text-[#111827]"
-              >
-                <User size={16} />
-                <span>Create Account</span>
-              </button>
+                  key={item.href}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => { setShowProfileMenu(false); navigate(item.href) }}
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-left text-sm font-medium text-[#374151] hover:bg-[#F3F4F6] hover:text-[#111827] transition-colors"
+                >
+                  <item.icon size={18} className="text-gray-500" />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+
+              <div className="mx-3 border-t border-gray-100 my-1" />
+
+              {/* Logout */}
               <button
                 type="button"
-                onClick={() => { setShowProfileMenu(false); navigate('/profile') }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-[#374151] hover:bg-[#F3F4F6] hover:text-[#111827]"
-              >
-                <User size={16} />
-                <span>Profile</span>
-              </button>
-              <button
-                type="button"
+                role="menuitem"
                 onClick={() => { setShowProfileMenu(false); logout() }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-[#374151] hover:bg-[#F3F4F6] hover:text-[#111827]"
+                className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
               >
-                <LogOut size={16} />
+                <LogOut size={18} />
                 <span>Logout</span>
               </button>
             </div>
@@ -331,35 +359,26 @@ export function Sidebar({ collapsed }: SidebarProps) {
         <div
           role="button"
           tabIndex={0}
-          onClick={() => { setShowProfileMenu(false); navigate('/profile') }}
+          onClick={() => setShowProfileMenu((p) => !p)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault()
-              setShowProfileMenu(false)
-              navigate('/profile')
+              setShowProfileMenu((p) => !p)
             }
+            if (e.key === 'Escape') setShowProfileMenu(false)
           }}
-          className="flex w-full items-center gap-3 rounded-lg text-left hover:bg-[#F9FAFB] px-2 py-1.5"
+          className="flex w-full items-center gap-3 rounded-lg text-left hover:bg-[#F9FAFB] px-2 py-1.5 cursor-pointer"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E5E7EB] text-[11px] font-medium text-[#374151] flex-shrink-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EDE9FD] text-[11px] font-semibold text-[#6C5CE7] flex-shrink-0">
             {user?.name
               ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
               : 'U'}
           </div>
           {!collapsed && (
-            <>
-              <div className="flex-1 min-w-0">
-                <p className="truncate text-sm font-medium text-[#111827]">{user?.name}</p>
-                <p className="truncate text-xs text-[#6B7280] capitalize">{user?.role?.replace('_', ' ')}</p>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setShowProfileMenu((p) => !p) }}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-[#9CA3AF] hover:bg-[#F3F4F6] hover:text-[#374151]"
-              >
-                <Settings size={15} />
-              </button>
-            </>
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-sm font-medium text-[#111827]">{user?.name}</p>
+              <p className="truncate text-xs text-[#6B7280] capitalize">{user?.role?.replace('_', ' ')}</p>
+            </div>
           )}
         </div>
       </div>

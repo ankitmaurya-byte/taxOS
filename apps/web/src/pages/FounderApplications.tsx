@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/auth'
+import { Search, X } from 'lucide-react'
 
 export function FounderApplicationsPage() {
   const { founderApplications, founderApplicationsLoading, fetchFounderApplications, reviewFounderApplication } = useAuthStore()
   const [reviewing, setReviewing] = useState<string | null>(null)
   const [rejectPopupId, setRejectPopupId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
+
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
 
   useEffect(() => {
     if (founderApplications.length === 0 && !founderApplicationsLoading) {
@@ -24,6 +28,28 @@ export function FounderApplicationsPage() {
 
   if (founderApplicationsLoading) return <div className="p-6 text-sm text-[#6B7280]">Loading founder applications...</div>
 
+  let filtered = founderApplications as any[]
+
+  if (statusFilter) {
+    filtered = filtered.filter((a: any) => a.status === statusFilter)
+  }
+
+  if (search.trim()) {
+    const q = search.toLowerCase()
+    filtered = filtered.filter((a: any) =>
+      a.organizationName?.toLowerCase().includes(q) ||
+      a.name?.toLowerCase().includes(q) ||
+      a.email?.toLowerCase().includes(q) ||
+      a.legalCompanyName?.toLowerCase().includes(q) ||
+      a.country?.toLowerCase().includes(q) ||
+      a.stateOrJurisdiction?.toLowerCase().includes(q)
+    )
+  }
+
+  const pendingCount = founderApplications.filter((a: any) => a.status === 'pending').length
+  const approvedCount = founderApplications.filter((a: any) => a.status === 'approved').length
+  const rejectedCount = founderApplications.filter((a: any) => a.status === 'rejected').length
+
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -31,8 +57,69 @@ export function FounderApplicationsPage() {
         <p className="mt-1 text-sm text-[#6B7280]">Review Certificate of Incorporation details before creating the organization.</p>
       </div>
 
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
+          <p className="text-xs text-[#6B7280]">Pending</p>
+          <p className="mt-1 text-2xl font-semibold text-[#92400E]">{pendingCount}</p>
+        </div>
+        <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
+          <p className="text-xs text-[#6B7280]">Approved</p>
+          <p className="mt-1 text-2xl font-semibold text-[#166534]">{approvedCount}</p>
+        </div>
+        <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
+          <p className="text-xs text-[#6B7280]">Rejected</p>
+          <p className="mt-1 text-2xl font-semibold text-[#991B1B]">{rejectedCount}</p>
+        </div>
+      </div>
+
+      {/* Search + Status filter */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by org, name, email, jurisdiction..."
+            className="h-9 w-full rounded-lg border border-[#E5E7EB] bg-white pl-9 pr-8 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#374151]">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setStatusFilter(null)}
+            className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
+              !statusFilter ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F9FAFB]'
+            }`}
+          >
+            All ({founderApplications.length})
+          </button>
+          {(['pending', 'approved', 'rejected'] as const).map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              className={`h-9 px-3 rounded-lg text-xs font-medium capitalize transition-colors ${
+                statusFilter === status
+                  ? 'bg-[#111827] text-white'
+                  : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F9FAFB]'
+              }`}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Results */}
+      <p className="text-xs text-[#6B7280]">{filtered.length} application{filtered.length !== 1 ? 's' : ''}</p>
+
       <div className="space-y-4">
-        {founderApplications.map((application) => (
+        {filtered.map((application: any) => (
           <div key={application.id} className="rounded-xl border border-[#E5E7EB] bg-white p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -77,7 +164,9 @@ export function FounderApplicationsPage() {
             )}
           </div>
         ))}
-        {!founderApplications.length && <p className="text-sm text-[#6B7280]">No founder applications found.</p>}
+        {filtered.length === 0 && (
+          <p className="text-sm text-[#6B7280]">{search || statusFilter ? 'No applications match your filters.' : 'No founder applications found.'}</p>
+        )}
       </div>
 
       {rejectPopupId && (
