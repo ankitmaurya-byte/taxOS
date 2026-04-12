@@ -3,6 +3,16 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
+
+// Strip [COLLECTED: key=value] markers from displayed message text
+function cleanMessageContent(content: string): string {
+  return content.replace(/\[COLLECTED:\s*\w+\s*=\s*.+?\s*\]/g, '').trim()
+}
+
+// Format camelCase keys to readable labels
+function formatKey(key: string): string {
+  return key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
+}
 import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDate } from '@/lib/utils'
 import {
@@ -71,6 +81,18 @@ export function FilingDetailPage() {
   const intakeConversation = filing?.conversations?.find((conversation: any) => conversation.agentType === 'intake')
   const intakeMessages = intakeConversation?.messages || []
   const canChat = intakeConversation?.status === 'active'
+
+  // Extract collected data from [COLLECTED: key=value] markers in assistant messages
+  const collectedData: Record<string, string> = {}
+  const allMessages = [...intakeMessages, ...chatMessages]
+  for (const msg of allMessages) {
+    if (msg.role === 'assistant') {
+      const matches = (msg.content || '').matchAll(/\[COLLECTED:\s*(\w+)\s*=\s*(.+?)\s*\]/g)
+      for (const match of matches) {
+        collectedData[match[1]] = match[2]
+      }
+    }
+  }
 
   // Resolve entity — prefer from filing detail response, fallback to entities list
   const entity = entities.find((e: any) => e.id === filing?.entityId)
@@ -530,7 +552,7 @@ export function FilingDetailPage() {
                       <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#6B7280]">
                         {message.role === 'assistant' ? 'TaxOS AI' : 'You'}
                       </p>
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      <p className="whitespace-pre-wrap">{cleanMessageContent(message.content)}</p>
                     </div>
                   ))
                 )}
@@ -578,7 +600,22 @@ export function FilingDetailPage() {
                     <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#6B7280]">
                       {message.role === 'assistant' ? 'TaxOS AI' : 'You'}
                     </p>
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <p className="whitespace-pre-wrap">{cleanMessageContent(message.content)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Collected data from intake conversation */}
+          {Object.keys(collectedData).length > 0 && (
+            <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-white p-4 text-left">
+              <h3 className="text-sm font-semibold text-[#111827] mb-3">Collected Data</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(collectedData).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between rounded-lg bg-[#F9FAFB] px-3 py-2.5">
+                    <span className="text-xs font-medium text-[#6B7280]">{formatKey(key)}</span>
+                    <span className="text-sm font-medium text-[#111827]">{value}</span>
                   </div>
                 ))}
               </div>

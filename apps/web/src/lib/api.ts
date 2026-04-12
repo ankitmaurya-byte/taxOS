@@ -346,7 +346,6 @@ const startIntake = (filingId: string) =>
 
 const streamIntakeMessage = async (filingId: string, message: string, onChunk: (text: string) => void) => {
   const token = localStorage.getItem('taxos_token')
-  notify({ title: 'Agent working', message: 'Intake agent is preparing a response.', tone: 'info' })
   const response = await fetch(`${API_URL}/agents/intake/message`, {
     method: 'POST',
     headers: {
@@ -356,7 +355,6 @@ const streamIntakeMessage = async (filingId: string, message: string, onChunk: (
     body: JSON.stringify({ filingId, message }),
   })
   if (!response.ok) {
-    notify({ title: 'Agent failed', message: 'Intake agent could not respond.', tone: 'error' })
     throw new Error('Agent request failed')
   }
   const reader = response.body?.getReader()
@@ -369,14 +367,11 @@ const streamIntakeMessage = async (filingId: string, message: string, onChunk: (
     const lines = text.split('\n').filter(l => l.startsWith('data: '))
     for (const line of lines) {
       const data = line.slice(6)
-      if (data === '[DONE]') {
-        notify({ title: 'Agent completed', message: 'Intake agent finished responding.', tone: 'success' })
-        return
-      }
+      if (data === '[DONE]') return
       try {
         const parsed = JSON.parse(data)
         if (parsed.error) {
-          notify({ title: 'Agent error', message: parsed.error, tone: 'error' })
+          onChunk(`\n\n_Error: ${parsed.error}_`)
           return
         }
         if (parsed.text) onChunk(parsed.text)
@@ -411,7 +406,6 @@ const runAuditRisk = (filingId: string) =>
 
 const streamTaxQa = async (question: string, onChunk: (text: string) => void) => {
   const token = localStorage.getItem('taxos_token')
-  notify({ title: 'Agent working', message: 'TaxOS AI is drafting an answer.', tone: 'info' })
   const response = await fetch(`${API_URL}/agents/tax-qa/ask`, {
     method: 'POST',
     headers: {
@@ -421,7 +415,6 @@ const streamTaxQa = async (question: string, onChunk: (text: string) => void) =>
     body: JSON.stringify({ question }),
   })
   if (!response.ok) {
-    notify({ title: 'Agent failed', message: 'Tax Q&A agent could not answer the question.', tone: 'error' })
     throw new Error('Agent request failed')
   }
   const reader = response.body?.getReader()
@@ -434,13 +427,10 @@ const streamTaxQa = async (question: string, onChunk: (text: string) => void) =>
     const lines = text.split('\n').filter(l => l.startsWith('data: '))
     for (const line of lines) {
       const data = line.slice(6)
-      if (data === '[DONE]') {
-        notify({ title: 'Agent completed', message: 'TaxOS AI finished the response.', tone: 'success' })
-        return
-      }
+      if (data === '[DONE]') return
       try {
         const parsed = JSON.parse(data)
-        onChunk(parsed.text)
+        if (parsed.text) onChunk(parsed.text)
       } catch { /* ignore */ }
     }
   }

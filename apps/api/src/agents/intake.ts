@@ -25,6 +25,22 @@ Rules:
 4. When you have all required data, output a JSON block starting with "INTAKE_COMPLETE:"
 5. Always explain WHY you need each piece of information
 6. If the founder asks a tax question, answer it briefly then return to the intake
+
+IMPORTANT — Handling off-topic or irrelevant answers:
+- If the user gives an answer that does NOT relate to the question you asked (e.g. random text, jokes, unrelated topics), do NOT accept it as a valid answer.
+- Politely acknowledge their message, then re-ask the same question.
+- Example: "I appreciate the thought! However, I still need [the specific information]. Could you please provide that so we can continue?"
+- Do NOT move to the next question until the current one is answered with relevant information.
+- If the user asks an off-topic question (not tax-related), briefly say you're focused on the intake and redirect.
+
+DATA EXTRACTION:
+After each valid answer from the user, include a line at the END of your response in this exact format:
+[COLLECTED: key=value]
+Use camelCase keys matching the required fields. For example:
+[COLLECTED: grossReceipts=2500000]
+[COLLECTED: employeeCount=15]
+You may include multiple [COLLECTED: ...] lines if the user provides multiple data points in one answer.
+Only include this for data you are confident about — do not guess.
 `
 
 export class IntakeAgent extends BaseAgent {
@@ -41,12 +57,14 @@ Entity context: ${JSON.stringify(entityContext)}
     const result = await model.generateContent('Please start the intake interview for this filing.')
     const content = result.response.text()
 
-    // Create conversation record
+    // Create conversation record — store the initial user prompt + assistant response
+    // so Gemini history always starts with 'user' role
     const convo = db.insert(agentConversations).values({
       filingId,
       orgId,
       agentType: 'intake',
       messages: [
+        { role: 'user', content: 'Start the intake interview.', timestamp: new Date().toISOString() },
         { role: 'assistant', content, timestamp: new Date().toISOString() },
       ] as any,
       status: 'active',
@@ -74,9 +92,10 @@ Entity context: ${JSON.stringify(entityContext)}
 
     if (!convo) throw new Error('No active intake conversation found')
 
-    const messages = (convo.messages as Array<{ role: string; content: string }>) || []
-    messages.push({ role: 'user', content: userMessage, timestamp: new Date().toISOString() } as any)
+    const messages = (convo.messages as Array<{ role: string; content: string; timestamp?: string }>) || []
+    messages.push({ role: 'user', content: userMessage, timestamp: new Date().toISOString() })
 
+    // Build Gemini history — must start with 'user' role
     const geminiHistory = messages.map(m => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
@@ -98,7 +117,7 @@ Entity context: ${JSON.stringify(entityContext)}
       }
     }
 
-    messages.push({ role: 'assistant', content: fullResponse, timestamp: new Date().toISOString() } as any)
+    messages.push({ role: 'assistant', content: fullResponse, timestamp: new Date().toISOString() })
 
     // Check if intake is complete
     if (fullResponse.includes('INTAKE_COMPLETE:')) {
