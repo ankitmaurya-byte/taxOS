@@ -7,6 +7,7 @@
     "start": "node dist/index.js",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.ts",
+    "db:fake-seed": "tsx src/db/fake-seed.ts",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

@@ -13,11 +13,12 @@ import {
   FolderOpen,
   MoreHorizontal,
   X,
-  Send,
-  Info,
   FileText,
   CheckCircle2,
   Circle,
+  Archive,
+  ShieldCheck,
+  AlertTriangle,
 } from 'lucide-react'
 
 export function FilingDetailPage() {
@@ -38,6 +39,7 @@ export function FilingDetailPage() {
   const [auditRiskLoading, setAuditRiskLoading] = useState(false)
   const [approveLoading, setApproveLoading] = useState(false)
   const [rejectLoading, setRejectLoading] = useState(false)
+  const [archiveLoading, setArchiveLoading] = useState(false)
 
   const filingDetails = useAuthStore(s => s.filingDetails)
   const entities = useAuthStore(s => s.entities)
@@ -69,6 +71,32 @@ export function FilingDetailPage() {
   const intakeConversation = filing?.conversations?.find((conversation: any) => conversation.agentType === 'intake')
   const intakeMessages = intakeConversation?.messages || []
   const canChat = intakeConversation?.status === 'active'
+
+  // Resolve entity — prefer from filing detail response, fallback to entities list
+  const entity = entities.find((e: any) => e.id === filing?.entityId)
+  const entityName = entity?.legalName
+
+  // Status-based visibility flags
+  const status = filing?.status as string | undefined
+  const isTerminal = status === 'submitted' || status === 'archived'
+  const isArchived = status === 'archived'
+  const isSubmitted = status === 'submitted'
+
+  // Agent action visibility per status
+  const canStartIntake = status === 'intake' && !intakeConversation
+  const canRunPrefill = status === 'intake' || status === 'ai_prep'
+  const canRunAuditRisk = status === 'ai_prep' || status === 'cpa_review'
+  const canPause = !isTerminal
+  const canEscalate = status === 'intake' || status === 'ai_prep' || status === 'cpa_review'
+  const canArchive = status === 'submitted'
+
+  // Status transition actions (only for active workflow stages)
+  const statusActions: Record<string, { label: string; nextStatus: string } | undefined> = {
+    intake: { label: 'Move to AI Prep', nextStatus: 'ai_prep' },
+    ai_prep: { label: 'Send to CPA Review', nextStatus: 'cpa_review' },
+    cpa_review: { label: 'Send to Founder Approval', nextStatus: 'founder_approval' },
+  }
+  const statusAction = filing ? statusActions[filing.status] : undefined
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -127,10 +155,10 @@ export function FilingDetailPage() {
     try { await startIntake(id) } finally { setStartIntakeLoading(false) }
   }
 
-  const handleUpdateStatus = async (status: string) => {
+  const handleUpdateStatus = async (nextStatus: string) => {
     if (!id) return
     setUpdateStatusLoading(true)
-    try { await updateFilingStatus(id, status) } finally { setUpdateStatusLoading(false) }
+    try { await updateFilingStatus(id, nextStatus) } finally { setUpdateStatusLoading(false) }
   }
 
   const handlePause = async () => {
@@ -169,13 +197,11 @@ export function FilingDetailPage() {
     try { await rejectFiling(id, reason) } finally { setRejectLoading(false) }
   }
 
-  const statusActions: Record<string, { label: string; nextStatus: string } | undefined> = {
-    intake: { label: 'Move to AI Prep', nextStatus: 'ai_prep' },
-    ai_prep: { label: 'Send to CPA Review', nextStatus: 'cpa_review' },
-    cpa_review: { label: 'Send to Founder Approval', nextStatus: 'founder_approval' },
-    submitted: { label: 'Archive Filing', nextStatus: 'archived' },
+  const handleArchive = async () => {
+    if (!id) return
+    setArchiveLoading(true)
+    try { await updateFilingStatus(id, 'archived') } finally { setArchiveLoading(false) }
   }
-  const statusAction = filing ? statusActions[filing.status] : undefined
 
   // Stage progress
   const stages = ['Intake', 'AI Prep', 'CPA Review', 'Approval', 'Submitted']
@@ -196,6 +222,36 @@ export function FilingDetailPage() {
       </div>
     )
   }
+
+  // Status-aware center content
+  const centerContent = (() => {
+    if (isArchived) {
+      return {
+        icon: <Archive size={40} className="text-[#6B7280] mb-4" />,
+        title: 'Filing archived',
+        description: 'This filing has been archived. No further actions are available.',
+      }
+    }
+    if (isSubmitted) {
+      return {
+        icon: <ShieldCheck size={40} className="text-[#15803D] mb-4" />,
+        title: 'Filing submitted',
+        description: 'This filing has been approved and submitted successfully. You can archive it when ready.',
+      }
+    }
+    if (status === 'founder_approval') {
+      return {
+        icon: <AlertTriangle size={40} className="text-[#F59E0B] mb-4" />,
+        title: 'Awaiting founder approval',
+        description: 'CPA review is complete. The founder must approve or reject this filing before it can be submitted.',
+      }
+    }
+    return {
+      icon: <Hourglass size={40} className="text-[#6C5CE7] mb-4" />,
+      title: 'Filing in progress',
+      description: 'Our team is processing your filing. You\'ll be notified once it\'s completed. Feel free to reach out with any questions.',
+    }
+  })()
 
   return (
     <div className="flex h-[calc(100vh-56px)] -m-8">
@@ -222,9 +278,11 @@ export function FilingDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={filing.status} />
-            <button className="p-1.5 text-[#EF4444] hover:bg-[#FEE2E2] rounded transition-colors">
-              <Circle size={8} fill="#EF4444" />
-            </button>
+            {!isTerminal && (
+              <button className="p-1.5 text-[#EF4444] hover:bg-[#FEE2E2] rounded transition-colors">
+                <Circle size={8} fill="#EF4444" />
+              </button>
+            )}
             <button className="p-1.5 text-[#9CA3AF] hover:bg-[#F3F4F6] rounded transition-colors">
               <FolderOpen size={16} />
             </button>
@@ -267,15 +325,14 @@ export function FilingDetailPage() {
             ))}
           </div>
 
-          {/* Center content */}
-          <Hourglass size={40} className="text-[#6C5CE7] mb-4" />
-          <h2 className="text-lg font-semibold text-[#111827] mb-2">Filing in progress</h2>
+          {/* Center content — adapts to status */}
+          {centerContent.icon}
+          <h2 className="text-lg font-semibold text-[#111827] mb-2">{centerContent.title}</h2>
           <p className="text-sm text-[#6B7280] text-center max-w-md mb-6">
-            Our team is processing your filing. You'll be notified once it's completed. Feel free to
-            reach out with any questions.
+            {centerContent.description}
           </p>
 
-          {/* Details grid — values derived from filing, entity, and deadline data */}
+          {/* Details grid */}
           <div className="grid grid-cols-2 gap-x-12 gap-y-3 text-[13px] mb-8">
             <span className="text-[#6B7280]">Agent:</span>
             <span className="text-[#111827]">
@@ -310,7 +367,13 @@ export function FilingDetailPage() {
             </span>
             <span className="text-[#6B7280]">Entity:</span>
             <span className="text-[#111827]">
-              {entities.find((e: any) => e.id === filing.entityId)?.legalName || '—'}
+              {entityName ? (
+                <Link to={`/entities/${filing.entityId}`} className="text-[#6C5CE7] hover:underline">
+                  {entityName}
+                </Link>
+              ) : (
+                '—'
+              )}
             </span>
             <span className="text-[#6B7280]">Tax Year:</span>
             <span className="text-[#111827]">{filing.taxYear || '—'}</span>
@@ -324,93 +387,174 @@ export function FilingDetailPage() {
             </span>
           </div>
 
-          <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
-            {!intakeConversation && (
-              <button
-                onClick={handleStartIntake}
-                disabled={startIntakeLoading}
-                className="h-10 rounded-lg bg-[#6C5CE7] px-4 text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50"
-              >
-                {startIntakeLoading ? 'Starting Intake...' : 'Start Intake Agent'}
-              </button>
-            )}
-            <button
-              onClick={handlePrefill}
-              disabled={prefillLoading}
-              className="h-10 rounded-lg border border-[#D8D3FF] px-4 text-sm font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] disabled:opacity-50"
-            >
-              {prefillLoading ? 'Running Prefill...' : 'Run Prefill Agent'}
-            </button>
-            <button
-              onClick={handleAuditRisk}
-              disabled={auditRiskLoading}
-              className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
-            >
-              {auditRiskLoading ? 'Scoring Risk...' : 'Run Audit Risk'}
-            </button>
-            {statusAction && (
-              <button
-                onClick={() => handleUpdateStatus(statusAction.nextStatus)}
-                disabled={updateStatusLoading}
-                className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
-              >
-                {updateStatusLoading ? 'Updating...' : statusAction.label}
-              </button>
-            )}
-            <button
-              onClick={handlePause}
-              disabled={pauseLoading}
-              className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
-            >
-              {pauseLoading ? 'Pausing...' : 'Pause Workflow'}
-            </button>
-            <button
-              onClick={handleEscalate}
-              disabled={escalateLoading}
-              className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
-            >
-              {escalateLoading ? 'Escalating...' : 'Escalate to CPA'}
-            </button>
-            {filing.status === 'founder_approval' && (
-              <>
+          {/* Action buttons — only shown when filing is not in a terminal state */}
+          {!isTerminal && (
+            <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
+              {/* Intake agent — only at intake stage when no conversation exists */}
+              {canStartIntake && (
                 <button
-                  onClick={handleApprove}
-                  disabled={approveLoading}
-                  className="h-10 rounded-lg bg-[#15803D] px-4 text-sm font-medium text-white hover:bg-[#166534] disabled:opacity-50"
+                  onClick={handleStartIntake}
+                  disabled={startIntakeLoading}
+                  className="h-10 rounded-lg bg-[#6C5CE7] px-4 text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50"
                 >
-                  {approveLoading ? 'Submitting...' : 'Approve & Submit'}
+                  {startIntakeLoading ? 'Starting Intake...' : 'Start Intake Agent'}
                 </button>
-                <button
-                  onClick={() => {
-                    const reason = window.prompt('Rejection reason:')
-                    if (reason) handleReject(reason)
-                  }}
-                  disabled={rejectLoading}
-                  className="h-10 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-                >
-                  Reject Filing
-                </button>
-              </>
-            )}
-          </div>
+              )}
 
-          <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4 text-left">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-[#111827]">Intake Conversation</h3>
-                <p className="mt-1 text-xs text-[#6B7280]">
-                  {intakeConversation
-                    ? `Status: ${intakeConversation.status}`
-                    : 'Start the intake agent to collect filing details conversationally.'}
-                </p>
+              {/* Prefill agent — only at intake or ai_prep */}
+              {canRunPrefill && (
+                <button
+                  onClick={handlePrefill}
+                  disabled={prefillLoading}
+                  className="h-10 rounded-lg border border-[#D8D3FF] px-4 text-sm font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] disabled:opacity-50"
+                >
+                  {prefillLoading ? 'Running Prefill...' : 'Run Prefill Agent'}
+                </button>
+              )}
+
+              {/* Audit risk — only at ai_prep or cpa_review */}
+              {canRunAuditRisk && (
+                <button
+                  onClick={handleAuditRisk}
+                  disabled={auditRiskLoading}
+                  className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
+                >
+                  {auditRiskLoading ? 'Scoring Risk...' : 'Run Audit Risk'}
+                </button>
+              )}
+
+              {/* Status transition — advance to next stage */}
+              {statusAction && (
+                <button
+                  onClick={() => handleUpdateStatus(statusAction.nextStatus)}
+                  disabled={updateStatusLoading}
+                  className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
+                >
+                  {updateStatusLoading ? 'Updating...' : statusAction.label}
+                </button>
+              )}
+
+              {/* Pause — available during active workflow */}
+              {canPause && (
+                <button
+                  onClick={handlePause}
+                  disabled={pauseLoading}
+                  className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
+                >
+                  {pauseLoading ? 'Pausing...' : 'Pause Workflow'}
+                </button>
+              )}
+
+              {/* Escalate — only during intake/ai_prep/cpa_review */}
+              {canEscalate && (
+                <button
+                  onClick={handleEscalate}
+                  disabled={escalateLoading}
+                  className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
+                >
+                  {escalateLoading ? 'Escalating...' : 'Escalate to CPA'}
+                </button>
+              )}
+
+              {/* Founder approval actions — only at founder_approval stage */}
+              {status === 'founder_approval' && (
+                <>
+                  <button
+                    onClick={handleApprove}
+                    disabled={approveLoading}
+                    className="h-10 rounded-lg bg-[#15803D] px-4 text-sm font-medium text-white hover:bg-[#166534] disabled:opacity-50"
+                  >
+                    {approveLoading ? 'Submitting...' : 'Approve & Submit'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const reason = window.prompt('Rejection reason:')
+                      if (reason) handleReject(reason)
+                    }}
+                    disabled={rejectLoading}
+                    className="h-10 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    Reject Filing
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Archive button — only when filing is submitted */}
+          {canArchive && (
+            <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
+              <button
+                onClick={handleArchive}
+                disabled={archiveLoading}
+                className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50 flex items-center gap-2"
+              >
+                <Archive size={16} />
+                {archiveLoading ? 'Archiving...' : 'Archive Filing'}
+              </button>
+            </div>
+          )}
+
+          {/* Intake conversation — only show when not terminal */}
+          {!isTerminal && (
+            <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4 text-left">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-[#111827]">Intake Conversation</h3>
+                  <p className="mt-1 text-xs text-[#6B7280]">
+                    {intakeConversation
+                      ? `Status: ${intakeConversation.status}`
+                      : 'Start the intake agent to collect filing details conversationally.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="max-h-72 space-y-3 overflow-y-auto rounded-lg bg-white p-3">
+                {intakeMessages.length === 0 && chatMessages.length === 0 ? (
+                  <p className="text-sm text-[#6B7280]">No intake messages yet.</p>
+                ) : (
+                  [...intakeMessages, ...chatMessages].map((message: any, index: number) => (
+                    <div
+                      key={`${message.timestamp || 'msg'}-${index}`}
+                      className={`rounded-lg px-3 py-2 text-sm ${message.role === 'assistant' ? 'bg-[#F3F0FF] text-[#211B4E]' : 'ml-10 bg-[#F3F4F6] text-[#111827]'}`}
+                    >
+                      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#6B7280]">
+                        {message.role === 'assistant' ? 'TaxOS AI' : 'You'}
+                      </p>
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  disabled={!canChat || isStreaming}
+                  placeholder={canChat ? 'Continue the intake conversation...' : 'Start intake to chat with the filing agent'}
+                  className="h-10 flex-1 rounded-lg border border-[#E5E7EB] px-3 text-sm text-[#111827] outline-none focus:border-[#6C5CE7]"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!canChat || isStreaming || !chatInput.trim()}
+                  className="h-10 rounded-lg bg-[#6C5CE7] px-4 text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50"
+                >
+                  {isStreaming ? 'Sending...' : 'Send'}
+                </button>
               </div>
             </div>
+          )}
 
-            <div className="max-h-72 space-y-3 overflow-y-auto rounded-lg bg-white p-3">
-              {intakeMessages.length === 0 && chatMessages.length === 0 ? (
-                <p className="text-sm text-[#6B7280]">No intake messages yet.</p>
-              ) : (
-                [...intakeMessages, ...chatMessages].map((message: any, index: number) => (
+          {/* Intake conversation read-only view for terminal states */}
+          {isTerminal && intakeMessages.length > 0 && (
+            <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4 text-left">
+              <h3 className="text-sm font-semibold text-[#111827] mb-3">Intake Conversation (read-only)</h3>
+              <div className="max-h-72 space-y-3 overflow-y-auto rounded-lg bg-white p-3">
+                {intakeMessages.map((message: any, index: number) => (
                   <div
                     key={`${message.timestamp || 'msg'}-${index}`}
                     className={`rounded-lg px-3 py-2 text-sm ${message.role === 'assistant' ? 'bg-[#F3F0FF] text-[#211B4E]' : 'ml-10 bg-[#F3F4F6] text-[#111827]'}`}
@@ -420,30 +564,10 @@ export function FilingDetailPage() {
                     </p>
                     <p className="whitespace-pre-wrap">{message.content}</p>
                   </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
+                ))}
+              </div>
             </div>
-
-            <div className="mt-3 flex gap-2">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                disabled={!canChat || isStreaming}
-                placeholder={canChat ? 'Continue the intake conversation...' : 'Start intake to chat with the filing agent'}
-                className="h-10 flex-1 rounded-lg border border-[#E5E7EB] px-3 text-sm text-[#111827] outline-none focus:border-[#6C5CE7]"
-              />
-              <button
-                onClick={handleSend}
-                disabled={!canChat || isStreaming || !chatInput.trim()}
-                className="h-10 rounded-lg bg-[#6C5CE7] px-4 text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50"
-              >
-                {isStreaming ? 'Sending...' : 'Send'}
-              </button>
-            </div>
-          </div>
+          )}
 
           <button
             onClick={() => setShowPreview(true)}
@@ -459,7 +583,7 @@ export function FilingDetailPage() {
       {showPreview && (
         <FormPreviewModal
           filing={filing}
-          entityName={entities.find((e: any) => e.id === filing.entityId)?.legalName}
+          entityName={entityName}
           onClose={() => setShowPreview(false)}
         />
       )}

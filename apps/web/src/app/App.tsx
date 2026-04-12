@@ -1,14 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
-
-import { Layout } from '@/Layout'
+import { Layout } from './Layout'
 import { useAuthStore } from '@/stores/auth'
-import {
-  canAccessPath,
-  getDeniedPathForUser,
-  getPostLoginPath,
-} from '@/lib/access'
+import { canAccessPath, getDefaultPathForRole, getDeniedPathForUser, getPostLoginPath } from '@/lib/access'
 
 // Pages
 import { LoginPage } from '@/pages/Login'
@@ -41,119 +36,36 @@ import { AdminUserTracking } from '@/pages/AdminUserTracking'
 import { VerifyEmailPage } from '@/pages/VerifyEmail'
 import { AcceptInvitePage } from '@/pages/AcceptInvite'
 import { OnboardingPage } from '@/pages/Onboarding'
-import { FounderSignupPage } from '@/pages/FounderSignup'
-import { CpaReviewQueue } from '@/pages/CpaReviewQueue'
 
-// Admin Pages
+// Newly Added Admin Pages
 import { AdminOrganizations } from '@/pages/admin/AdminOrganizations'
 import { AdminOrganizationDetails } from '@/pages/admin/AdminOrganizationDetails'
 import { AdminUserDetails } from '@/pages/admin/AdminUserDetails'
 import { AdminEntities } from '@/pages/admin/AdminEntities'
 import { AdminFilings } from '@/pages/admin/AdminFilings'
+import { FounderSignupPage } from '@/pages/FounderSignup'
+import { CpaReviewQueue } from '@/pages/CpaReviewQueue'
 
-// ----------------------
-// React Query Client
-// ----------------------
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000 } },
 })
 
-// ----------------------
-// Route Types
-// ----------------------
-type AppRoute = {
-  path: string
-  element: React.ReactNode
-}
-
-// ----------------------
-// Route Config
-// ----------------------
-const appRoutes: AppRoute[] = [
-  { path: 'dashboard', element: <DashboardPage /> },
-  { path: 'home', element: <HomePage /> },
-  { path: 'command-center', element: <CommandCenter /> },
-  { path: 'filings', element: <FilingsPage /> },
-  { path: 'filings/:id', element: <FilingDetailPage /> },
-  { path: 'estimated-tax', element: <EstimatedTaxPage /> },
-  { path: 'registrations', element: <RegistrationsPage /> },
-  { path: 'rd-tax-credits', element: <RDTaxCreditsPage /> },
-
-  { path: 'entities/overview', element: <EntitiesOverviewPage /> },
-  { path: 'entities/address-book', element: <AddressBookPage /> },
-  { path: 'entities/:entityId', element: <EntityDetailPage /> },
-
-  { path: 'chat', element: <ChatPage /> },
-  { path: 'advisor', element: <AIAdvisor /> },
-  { path: 'action-centre', element: <ActionCentrePage /> },
-  { path: 'documents', element: <DocumentsPage /> },
-  { path: 'documents/vault', element: <DocumentVault /> },
-  { path: 'approvals', element: <ApprovalQueue /> },
-  { path: 'audit', element: <AuditTrail /> },
-  { path: 'deadlines', element: <DeadlinesPage /> },
-
-  { path: 'filings/room', element: <FilingRoom /> },
-  { path: 'filings/room/:id', element: <FilingRoom /> },
-
-  { path: 'incorporation', element: <IncorporationPage /> },
-  { path: 'dissolution', element: <DissolutionPage /> },
-
-  { path: 'profile', element: <ProfilePage /> },
-  { path: 'profile/create-account', element: <CreateAccountPage /> },
-
-  // Admin
-  { path: 'admin/founder-applications', element: <FounderApplicationsPage /> },
-  { path: 'admin/tracking', element: <AdminUserTracking /> },
-  { path: 'admin/users/:id', element: <AdminUserDetails /> },
-  { path: 'admin/organizations', element: <AdminOrganizations /> },
-  { path: 'admin/organizations/:id', element: <AdminOrganizationDetails /> },
-  { path: 'admin/entities', element: <AdminEntities /> },
-  { path: 'admin/filings', element: <AdminFilings /> },
-
-  // CPA
-  { path: 'cpa/review', element: <CpaReviewQueue /> },
-]
-
-// ----------------------
-// Wrappers
-// ----------------------
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, isLoading, user } = useAuthStore()
-
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="flex h-screen items-center justify-center text-[#6B7280]">
-        Loading...
-      </div>
+      <div className="flex h-screen items-center justify-center text-[#6B7280]">Loading...</div>
     )
-  }
-
   if (!token) return <Navigate to="/login" replace />
-
-  if (user?.role === 'founder' && user.status !== 'active') {
-    return <Navigate to="/onboarding" replace />
-  }
-
+  if (user?.role === 'founder' && user.status !== 'active') return <Navigate to="/onboarding" replace />
   return <>{children}</>
 }
 
 function OnboardingProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, isLoading, user } = useAuthStore()
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center text-[#6B7280]">
-        Loading...
-      </div>
-    )
-  }
-
+  if (isLoading) return <div className="flex h-screen items-center justify-center text-[#6B7280]">Loading...</div>
   if (!token || !user) return <Navigate to="/login" replace />
-
-  if (user.role !== 'founder' || user.status === 'active') {
-    return <Navigate to={getPostLoginPath(user)} replace />
-  }
-
+  if (user.role !== 'founder' || user.status === 'active') return <Navigate to={getPostLoginPath(user)} replace />
   return <>{children}</>
 }
 
@@ -165,13 +77,8 @@ function AccessRoute({
   path: string
 }) {
   const user = useAuthStore((state) => state.user)
-
   if (!user) return <Navigate to="/login" replace />
-
-  if (!canAccessPath(user, path)) {
-    return <Navigate to={getDeniedPathForUser(user)} replace />
-  }
-
+  if (!canAccessPath(user, path)) return <Navigate to={getDeniedPathForUser(user)} replace />
   return <>{children}</>
 }
 
@@ -180,19 +87,53 @@ function DefaultRoute() {
   return <Navigate to={getPostLoginPath(user)} replace />
 }
 
-// ----------------------
-// Helper
-// ----------------------
-const withAccess = (path: string, element: React.ReactNode) => (
-  <AccessRoute path={`/${path}`}>{element}</AccessRoute>
-)
+const publicRoutes = [
+  { path: '/login', element: <LoginPage /> },
+  { path: '/onboarding/start', element: <FounderSignupPage /> },
+  { path: '/verify-email', element: <VerifyEmailPage /> },
+  { path: '/accept-invite', element: <AcceptInvitePage /> },
+  { path: '/onboarding', element: <OnboardingProtectedRoute><OnboardingPage /></OnboardingProtectedRoute> },
+]
 
-// ----------------------
-// App Router
-// ----------------------
-export function AppRouter() {
+const protectedRoutes = [
+  { path: 'dashboard', element: <DashboardPage /> },
+  { path: 'home', element: <HomePage /> },
+  { path: 'command-center', element: <CommandCenter /> },
+  { path: 'filings', element: <FilingsPage /> },
+  { path: 'filings/:id', element: <FilingDetailPage /> },
+  { path: 'estimated-tax', element: <EstimatedTaxPage /> },
+  { path: 'registrations', element: <RegistrationsPage /> },
+  { path: 'rd-tax-credits', element: <RDTaxCreditsPage /> },
+  { path: 'entities/overview', element: <EntitiesOverviewPage /> },
+  { path: 'entities/address-book', element: <AddressBookPage /> },
+  { path: 'entities/:entityId', element: <EntityDetailPage /> },
+  { path: 'entities', element: <Navigate to="/entities/overview" replace /> },
+  { path: 'chat', element: <ChatPage /> },
+  { path: 'advisor', element: <AIAdvisor /> },
+  { path: 'action-centre', element: <ActionCentrePage /> },
+  { path: 'documents', element: <DocumentsPage /> },
+  { path: 'documents/vault', element: <DocumentVault /> },
+  { path: 'approvals', element: <ApprovalQueue /> },
+  { path: 'audit', element: <AuditTrail /> },
+  { path: 'deadlines', element: <DeadlinesPage /> },
+  { path: 'filings/room', element: <FilingRoom /> },
+  { path: 'filings/room/:id', element: <FilingRoom /> },
+  { path: 'incorporation', element: <IncorporationPage /> },
+  { path: 'dissolution', element: <DissolutionPage /> },
+  { path: 'profile', element: <ProfilePage /> },
+  { path: 'profile/create-account', element: <CreateAccountPage /> },
+  { path: 'admin/founder-applications', element: <FounderApplicationsPage /> },
+  { path: 'admin/tracking', element: <AdminUserTracking /> },
+  { path: 'admin/users/:id', element: <AdminUserDetails /> },
+  { path: 'admin/organizations', element: <AdminOrganizations /> },
+  { path: 'admin/organizations/:id', element: <AdminOrganizationDetails /> },
+  { path: 'admin/entities', element: <AdminEntities /> },
+  { path: 'admin/filings', element: <AdminFilings /> },
+  { path: 'cpa/review', element: <CpaReviewQueue /> },
+]
+
+export function App() {
   const { checkAuth } = useAuthStore()
-
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
@@ -201,22 +142,9 @@ export function AppRouter() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/onboarding/start" element={<FounderSignupPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/accept-invite" element={<AcceptInvitePage />} />
-
-          <Route
-            path="/onboarding"
-            element={
-              <OnboardingProtectedRoute>
-                <OnboardingPage />
-              </OnboardingProtectedRoute>
-            }
-          />
-
-          {/* Protected Layout */}
+          {publicRoutes.map((route) => (
+            <Route key={route.path} path={route.path} element={route.element} />
+          ))}
           <Route
             path="/"
             element={
@@ -226,20 +154,13 @@ export function AppRouter() {
             }
           >
             <Route index element={<DefaultRoute />} />
-
-            {appRoutes.map((route) => (
+            {protectedRoutes.map((route) => (
               <Route
                 key={route.path}
                 path={route.path}
-                element={withAccess(route.path, route.element)}
+                element={<AccessRoute path={`/${route.path}`}>{route.element}</AccessRoute>}
               />
             ))}
-
-            {/* Special Redirect */}
-            <Route
-              path="entities"
-              element={<Navigate to="/entities/overview" replace />}
-            />
           </Route>
         </Routes>
       </BrowserRouter>

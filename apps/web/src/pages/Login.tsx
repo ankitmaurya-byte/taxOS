@@ -57,7 +57,7 @@ function MarketingPanel() {
 export function LoginPage() {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
-  const [email, setEmail] = useState('admin@taxos.ai')
+  const [email, setEmail] = useState('superadmin@taxos.ai')
   const [password, setPassword] = useState('admin1234')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -102,7 +102,7 @@ export function LoginPage() {
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>
 
-              <p className="mt-6 text-sm text-[#8B84A8]">Demo founder: `demo@taxos.ai / demo1234` and admin: `admin@taxos.ai / admin1234`.</p>
+              <p className="mt-6 text-sm text-[#8B84A8]">Demo founder: `demo@taxos.ai / demo1234` and admin: `admin@taxos.ai / admin1234`.superadmin@taxos.ai / admin1234, all other users use password123. </p>
             </form>
           </div>
         </div>

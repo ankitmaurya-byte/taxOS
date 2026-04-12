@@ -6,6 +6,7 @@
     "build": "pnpm --filter api build && pnpm --filter web build",
     "db:migrate": "pnpm --filter api db:migrate",
     "db:seed": "pnpm --filter api db:seed",
+    "db:fake-seed": "pnpm --filter api db:fake-seed",
     "db:generate": "pnpm --filter api db:generate"
   },
   "pnpm": {

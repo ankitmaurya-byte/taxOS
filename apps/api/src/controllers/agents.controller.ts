@@ -57,6 +57,18 @@ import { AuditRiskAgent } from '../agents/auditRisk'
 import { TaxQaAgent } from '../agents/taxQa'
 import { AppError, withContext } from '../lib/errors'
 
+// ─── Helpers ─────────────────────────────────────────
+// Validates that a filing is in an appropriate status for agent operations.
+// Agents should not run on submitted or archived filings.
+function assertAgentAllowed(filing: { status: string }, agentName: string, allowedStatuses: string[]) {
+  if (!allowedStatuses.includes(filing.status)) {
+    throw new AppError(
+      `Cannot run ${agentName} on a filing in '${filing.status}' status. Allowed: ${allowedStatuses.join(', ')}`,
+      400,
+    )
+  }
+}
+
 // ─── Agent Singletons ────────────────────────────────
 // Instantiated once at module load. Each extends BaseAgent (agents/base.ts)
 // which holds the GoogleGenerativeAI client and model version (gemini-2.0-flash).
@@ -83,6 +95,7 @@ export async function startIntake(req: Request, res: Response, next: NextFunctio
     const { filingId } = req.body
     const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
     if (!filing) throw new AppError('Filing not found', 404)
+    assertAgentAllowed(filing, 'intake agent', ['intake', 'ai_prep'])
 
     const entity = db.select().from(entities).where(eq(entities.id, filing.entityId)).get()
 
@@ -171,6 +184,10 @@ export async function extractDocument(req: Request, res: Response, next: NextFun
 export async function runPrefill(req: Request, res: Response, next: NextFunction) {
   try {
     const { filingId } = req.body
+    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    if (!filing) throw new AppError('Filing not found', 404)
+    assertAgentAllowed(filing, 'prefill agent', ['intake', 'ai_prep'])
+
     const result = await prefillAgent.prefillForm(filingId, req.user!.orgId)
     res.json(result)
   } catch (err) { next(withContext(err as Error, 'runPrefill')) }
@@ -186,6 +203,10 @@ export async function runPrefill(req: Request, res: Response, next: NextFunction
 export async function runAuditRisk(req: Request, res: Response, next: NextFunction) {
   try {
     const { filingId } = req.body
+    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    if (!filing) throw new AppError('Filing not found', 404)
+    assertAgentAllowed(filing, 'audit risk agent', ['ai_prep', 'cpa_review'])
+
     const result = await auditRiskAgent.scoreRisk(filingId, req.user!.orgId)
     res.json(result)
   } catch (err) { next(withContext(err as Error, 'runAuditRisk')) }
