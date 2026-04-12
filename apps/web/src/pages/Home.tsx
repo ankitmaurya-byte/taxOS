@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { ArrowRight, CheckCircle2, Copy, Gift, Mail, Sparkles, Wind } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Wind } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { HomeBottomSection } from '@/components/HomeBottomSection'
 import { formatDate } from '@/lib/utils'
 import type { ApiFiling } from 'shared'
 
@@ -10,8 +11,6 @@ function FounderHome() {
   const { user, filings, approvals, fetchFilings, fetchApprovals, filingsLoading, approvalsLoading } = useAuthStore()
   const navigate = useNavigate()
   const [filingTab, setFilingTab] = useState<'not_purchased' | 'all'>('all')
-  const [copiedReferral, setCopiedReferral] = useState(false)
-
   useEffect(() => {
     fetchFilings()
     fetchApprovals()
@@ -24,17 +23,6 @@ function FounderHome() {
   const inProgress = filings.filter((f) => ['ai_prep', 'cpa_review'].includes(f.status))
   const actionPending = filings.filter((f) => f.status === 'founder_approval')
   const visibleFilings = filingTab === 'not_purchased' ? notPurchased : filings
-  const referralLink = `https://app.inkle.io/signup/?ref=${user?.email || 'taxos-user'}`
-
-  const copyReferralLink = async () => {
-    try {
-      await navigator.clipboard.writeText(referralLink)
-      setCopiedReferral(true)
-      window.setTimeout(() => setCopiedReferral(false), 2000)
-    } catch {
-      setCopiedReferral(false)
-    }
-  }
 
   return (
     <div>
@@ -134,28 +122,7 @@ function FounderHome() {
         </div>
       </div>
 
-      <div className="mb-6 overflow-hidden rounded-2xl border border-[#E3DAFF] bg-[linear-gradient(135deg,#FBF9FF_0%,#F3EEFF_100%)]">
-        <div className="flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-xl">
-            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#6C5CE7] shadow-sm"><Gift size={20} /></div>
-            <h2 className="text-[32px] font-semibold tracking-tight text-[#211B4E]">Invite a founder, earn $100 each</h2>
-            <p className="mt-2 text-lg leading-8 text-[#6C668F]">Refer another founder to Inkle. When they join, both of you receive $100 in Inkle credits.</p>
-            <div className="mt-6 flex max-w-md items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_8px_30px_rgba(108,92,231,0.08)]">
-              <div className="min-w-0 flex-1 truncate text-lg text-[#3D3960]">{referralLink}</div>
-              <button onClick={copyReferralLink} className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F3EEFF] text-[#6C5CE7] transition-colors hover:bg-[#E7DEFF]" aria-label="Copy referral link"><Copy size={18} /></button>
-            </div>
-            <div className="mt-4 flex items-center gap-4 text-sm text-[#6C668F]">
-              <span>Share via:</span>
-              <a href={`mailto:?subject=Join Inkle&body=${encodeURIComponent(referralLink)}`} className="transition-colors hover:text-[#6C5CE7]" aria-label="Share by email"><Mail size={18} /></a>
-              {copiedReferral && <span className="rounded-full bg-[#EDE9FD] px-2.5 py-1 text-xs font-medium text-[#6C5CE7]">Copied</span>}
-            </div>
-          </div>
-          <div className="relative hidden min-h-[220px] flex-1 overflow-hidden rounded-[28px] border border-[#E8E1FF] bg-[radial-gradient(circle_at_top,#FFFFFF_0%,#F6F2FF_58%,#EEE8FF_100%)] lg:block">
-            <Sparkles size={20} className="absolute left-6 top-6 text-[#D6C9FF]" />
-            <div className="absolute right-10 top-14 h-28 w-28 rounded-[24px] bg-[#BCA8FF] opacity-25 blur-xl" />
-          </div>
-        </div>
-      </div>
+      <HomeBottomSection />
     </div>
   )
 }
@@ -204,6 +171,8 @@ function TeamMemberHome() {
           ))}
         </div>
       </div>
+
+      <HomeBottomSection />
     </div>
   )
 }

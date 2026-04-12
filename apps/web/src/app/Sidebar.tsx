@@ -59,8 +59,8 @@ const NAV_ENTRIES: NavEntry[] = [
   { icon: LayoutDashboard, label: 'Command Center', href: '/command-center' },
   { icon: Building2, label: 'My Entities', href: '/entities/overview' },
   { icon: FolderOpen, label: 'Documents', href: '/documents' },
-  
-  
+  { icon: Users, label: 'Team', href: '/team' },
+
   // ── Admin Block ─────────────────────────────────────────────────────────────
   { icon: Users, label: 'Admin: Users', href: '/admin/tracking' },
   { icon: Users, label: 'Admin: Orgs', href: '/admin/organizations' },

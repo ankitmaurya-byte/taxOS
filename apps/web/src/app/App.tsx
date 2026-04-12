@@ -45,6 +45,7 @@ import { AdminEntities } from '@/pages/admin/AdminEntities'
 import { AdminFilings } from '@/pages/admin/AdminFilings'
 import { FounderSignupPage } from '@/pages/FounderSignup'
 import { CpaReviewQueue } from '@/pages/CpaReviewQueue'
+import { TeamManagementPage } from '@/pages/TeamManagement'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000 } },
@@ -122,6 +123,7 @@ const protectedRoutes = [
   { path: 'dissolution', element: <DissolutionPage /> },
   { path: 'profile', element: <ProfilePage /> },
   { path: 'profile/create-account', element: <CreateAccountPage /> },
+  { path: 'team', element: <TeamManagementPage /> },
   { path: 'admin/founder-applications', element: <FounderApplicationsPage /> },
   { path: 'admin/tracking', element: <AdminUserTracking /> },
   { path: 'admin/users/:id', element: <AdminUserDetails /> },
