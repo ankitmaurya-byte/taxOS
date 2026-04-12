@@ -12,7 +12,6 @@ import {
   Image,
   CheckCircle2,
   Download,
-  Trash2,
   MoreHorizontal,
   Grid3X3,
   List,
@@ -38,13 +37,6 @@ function resolveDocumentUrl(storageUrl: string) {
   if (!storageUrl) return '#'
   if (storageUrl.startsWith('http://') || storageUrl.startsWith('https://')) return storageUrl
   return `${API_BASE}${storageUrl}`
-}
-
-function formatFileSize(bytes?: number): string {
-  if (!bytes) return '—'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export function DocumentsPage() {

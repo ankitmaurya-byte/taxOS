@@ -290,83 +290,68 @@ export function Sidebar({ collapsed }: SidebarProps) {
       )}
 
       {/* User Profile Footer */}
-      <div className="relative border-t border-[#E5E7EB] px-4 py-3">
+      <div
+        className="relative border-t border-[#E5E7EB] px-4 py-3"
+        onMouseEnter={() => !collapsed && setShowProfileMenu(true)}
+        onMouseLeave={() => setShowProfileMenu(false)}
+      >
         {showProfileMenu && !collapsed && (
-          <>
-            <button
-              type="button"
-              aria-label="Close profile menu"
-              className="fixed inset-0 z-10 cursor-default"
-              onClick={() => setShowProfileMenu(false)}
-              onKeyDown={(e) => e.key === 'Escape' && setShowProfileMenu(false)}
-            />
-            <div
-              role="menu"
-              aria-label="Profile menu"
-              className="absolute bottom-[calc(100%+8px)] left-4 right-4 z-20 w-[280px] rounded-2xl border border-gray-200 bg-white py-2 shadow-lg"
-            >
-              {/* Profile header in dropdown */}
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDE9FD] text-xs font-semibold text-[#6C5CE7] flex-shrink-0">
-                  {user?.name
-                    ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-                    : 'U'}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[#111827]">{user?.name}</p>
-                  <p className="truncate text-xs text-[#6B7280]">{user?.email}</p>
-                </div>
+          <div
+            role="menu"
+            aria-label="Profile menu"
+            className="absolute bottom-[calc(100%+4px)] left-4 z-20 w-[280px] rounded-2xl border border-gray-200 bg-white py-2 shadow-lg"
+          >
+            {/* Profile header in dropdown */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDE9FD] text-xs font-semibold text-[#6C5CE7] flex-shrink-0">
+                {user?.name
+                  ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                  : 'U'}
               </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[#111827]">{user?.name}</p>
+                <p className="truncate text-xs text-[#6B7280]">{user?.email}</p>
+              </div>
+            </div>
 
-              <div className="mx-3 border-t border-gray-100 my-1" />
+            <div className="mx-3 border-t border-gray-100 my-1" />
 
-              {/* Menu items */}
-              {[
-                { icon: Settings, label: 'Profile Settings', href: '/profile' },
-                { icon: Users, label: 'Team Settings', href: '/profile/create-account' },
-                { icon: Shield, label: 'Audit Logs', href: '/audit' },
-              ]
-                .filter(item => canAccessPath(user, item.href))
-                .map((item) => (
-                <button
-                  key={item.href}
-                  type="button"
-                  role="menuitem"
-                  onClick={() => { setShowProfileMenu(false); navigate(item.href) }}
-                  className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-left text-sm font-medium text-[#374151] hover:bg-[#F3F4F6] hover:text-[#111827] transition-colors"
-                >
-                  <item.icon size={18} className="text-gray-500" />
-                  <span>{item.label}</span>
-                </button>
-              ))}
-
-              <div className="mx-3 border-t border-gray-100 my-1" />
-
-              {/* Logout */}
+            {/* Menu items */}
+            {[
+              { icon: Settings, label: 'Profile Settings', href: '/profile' },
+              { icon: Users, label: 'Team Settings', href: '/profile/create-account' },
+              { icon: Shield, label: 'Audit Logs', href: '/audit' },
+            ]
+              .filter(item => canAccessPath(user, item.href))
+              .map((item) => (
               <button
+                key={item.href}
                 type="button"
                 role="menuitem"
-                onClick={() => { setShowProfileMenu(false); logout() }}
-                className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                onClick={() => { setShowProfileMenu(false); navigate(item.href) }}
+                className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-left text-sm font-medium text-[#374151] hover:bg-[#F3F4F6] hover:text-[#111827] transition-colors"
               >
-                <LogOut size={18} />
-                <span>Logout</span>
+                <item.icon size={18} className="text-gray-500" />
+                <span>{item.label}</span>
               </button>
-            </div>
-          </>
+            ))}
+
+            <div className="mx-3 border-t border-gray-100 my-1" />
+
+            {/* Logout */}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setShowProfileMenu(false); logout() }}
+              className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <LogOut size={18} />
+              <span>Logout</span>
+            </button>
+          </div>
         )}
 
         <div
-          role="button"
-          tabIndex={0}
-          onClick={() => setShowProfileMenu((p) => !p)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              setShowProfileMenu((p) => !p)
-            }
-            if (e.key === 'Escape') setShowProfileMenu(false)
-          }}
           className="flex w-full items-center gap-3 rounded-lg text-left hover:bg-[#F9FAFB] px-2 py-1.5 cursor-pointer"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EDE9FD] text-[11px] font-semibold text-[#6C5CE7] flex-shrink-0">
