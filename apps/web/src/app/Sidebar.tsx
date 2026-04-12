@@ -55,43 +55,41 @@ const NAV_ENTRIES: NavEntry[] = [
   { icon: Shield, label: 'Dashboard', href: '/dashboard' },
   { icon: ClipboardCheck, label: 'My Review Queue', href: '/cpa/review' },
   { icon: FileText, label: 'Filings', href: '/filings' },
-  { icon: FileText, label: 'Filing Room', href: '/filings/room' },
   { icon: Calculator, label: 'Estimated Tax', href: '/estimated-tax' },
   { icon: Calculator, label: 'Deadlines', href: '/deadlines' },
-  { icon: MapPin, label: 'Registrations', href: '/registrations' },
-  { icon: FlaskConical, label: 'R&D Tax Credits', href: '/rd-tax-credits' },
   { icon: LayoutDashboard, label: 'Command Center', href: '/command-center' },
   { icon: Building2, label: 'My Entities', href: '/entities/overview' },
-  { icon: BookOpen, label: 'Address Book', href: '/entities/address-book' },
   { icon: FolderOpen, label: 'Documents', href: '/documents' },
-  { icon: FolderOpen, label: 'Document Vault', href: '/documents/vault' },
-  { icon: ClipboardList, label: 'Approvals', href: '/approvals' },
-  { icon: Shield, label: 'Audit Trail', href: '/audit' },
-  { icon: User, label: 'Profile', href: '/profile' },
-  { icon: Users, label: 'Create Account', href: '/profile/create-account' },
-
+  
+  
+  // ── Admin Block ─────────────────────────────────────────────────────────────
+  { icon: Users, label: 'Admin: Users', href: '/admin/tracking' },
+  { icon: Users, label: 'Admin: Orgs', href: '/admin/organizations' },
+  { icon: FolderOpen, label: 'Admin: Entities', href: '/admin/entities' },
+  { icon: FileText, label: 'Admin: Filings', href: '/admin/filings' },
+  
   // ── Collapsible "Other Services" group ──────────────────────────────────────
   {
     group: {
       icon: MoreHorizontal,
       label: 'Other',
       children: [
+        { icon: Shield, label: 'Audit Trail', href: '/audit' },
+        { icon: MapPin, label: 'Registrations', href: '/registrations' },
+        { icon: FlaskConical, label: 'R&D Tax Credits', href: '/rd-tax-credits' },
+        { icon: BookOpen, label: 'Address Book', href: '/entities/address-book' },
         { icon: FileText, label: 'Incorporation', href: '/incorporation' },
         { icon: Trash2, label: 'Dissolution', href: '/dissolution' },
       ],
     },
   },
-
-  // ── Admin Block ─────────────────────────────────────────────────────────────
-  { icon: Users, label: 'Admin: Users', href: '/admin/tracking' },
-  { icon: Users, label: 'Admin: Orgs', href: '/admin/organizations' },
-  { icon: FolderOpen, label: 'Admin: Entities', href: '/admin/entities' },
-  { icon: FileText, label: 'Admin: Filings', href: '/admin/filings' },
-  { icon: Users, label: 'Founder Applications', href: '/admin/founder-applications' },
 ]
 
 // Chat + Action Centre are pinned above the profile footer
 const BOTTOM_PINNED: NavItem[] = [
+  // { icon: Users, label: 'Create Account', href: '/profile/create-account' },
+  { icon: ClipboardList, label: 'Approvals', href: '/approvals' },
+  { icon: Users, label: 'Founder Applications', href: '/admin/founder-applications' },
   { icon: MessageCircle, label: 'Chat', href: '/chat' },
   { icon: Zap, label: 'Action Centre', href: '/action-centre' },
 ]
@@ -114,6 +112,9 @@ export function Sidebar({ collapsed }: SidebarProps) {
 
   const isActive = (href: string) => {
     if (href === '/home') return location.pathname === '/home' || location.pathname === '/'
+    // Exact match for routes that have sub-routes (e.g. /filings vs /filings/room)
+    if (href === '/filings') return location.pathname === '/filings' || /^\/filings\/[^/]+$/.test(location.pathname)
+    if (href === '/documents') return location.pathname === '/documents'
     return location.pathname.startsWith(href)
   }
 
@@ -299,6 +300,14 @@ export function Sidebar({ collapsed }: SidebarProps) {
               onClick={() => setShowProfileMenu(false)}
             />
             <div className="absolute bottom-[calc(100%+8px)] right-4 z-20 w-44 rounded-xl border border-[#E5E7EB] bg-white p-1.5 shadow-lg">
+                <button
+                type="button"
+                onClick={() => { setShowProfileMenu(false); navigate('/profile/create-account') }}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-[#374151] hover:bg-[#F3F4F6] hover:text-[#111827]"
+              >
+                <User size={16} />
+                <span>Create Account</span>
+              </button>
               <button
                 type="button"
                 onClick={() => { setShowProfileMenu(false); navigate('/profile') }}

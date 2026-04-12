@@ -375,7 +375,11 @@ const streamIntakeMessage = async (filingId: string, message: string, onChunk: (
       }
       try {
         const parsed = JSON.parse(data)
-        onChunk(parsed.text)
+        if (parsed.error) {
+          notify({ title: 'Agent error', message: parsed.error, tone: 'error' })
+          return
+        }
+        if (parsed.text) onChunk(parsed.text)
       } catch { /* ignore */ }
     }
   }

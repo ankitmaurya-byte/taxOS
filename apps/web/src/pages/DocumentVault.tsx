@@ -1,12 +1,14 @@
-// UNUSED — not routed or imported anywhere
+// Used in: App.tsx — route /documents/vault (full document vault view)
 import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ConfidenceBadge } from '@/components/agents/ConfidenceBadge'
 import { formatDate } from '@/lib/utils'
+import { ChevronRight } from 'lucide-react'
 
 export function DocumentVault() {
   const queryClient = useQueryClient()
@@ -37,6 +39,11 @@ export function DocumentVault() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-1 text-[13px] mb-1">
+        <Link to="/documents" className="text-[#6B7280] hover:text-[#374151]">Documents</Link>
+        <ChevronRight size={12} className="text-[#9CA3AF]" />
+        <span className="text-[#111827]">Vault</span>
+      </div>
       <h1 className="text-2xl font-bold text-gray-900">Document Vault</h1>
 
       {/* Upload Zone */}

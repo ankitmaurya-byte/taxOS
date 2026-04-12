@@ -122,15 +122,29 @@ export async function startIntake(req: Request, res: Response, next: NextFunctio
 export async function streamIntakeMsg(req: Request, res: Response, next: NextFunction) {
   try {
     const { filingId, message } = req.body
+    if (!filingId || !message) {
+      return res.status(400).json({ error: 'filingId and message are required' })
+    }
+
+    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    if (!filing) {
+      return res.status(404).json({ error: 'Filing not found' })
+    }
 
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
     res.setHeader('Connection', 'keep-alive')
 
-    for await (const chunk of intakeAgent.streamMessage(filingId, message, req.user!.orgId)) {
-      res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`)
+    try {
+      for await (const chunk of intakeAgent.streamMessage(filingId, message, req.user!.orgId)) {
+        res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`)
+      }
+      res.write('data: [DONE]\n\n')
+    } catch (streamErr) {
+      const errMsg = streamErr instanceof Error ? streamErr.message : 'Unknown streaming error'
+      res.write(`data: ${JSON.stringify({ error: errMsg })}\n\n`)
+      res.write('data: [DONE]\n\n')
     }
-    res.write('data: [DONE]\n\n')
     res.end()
   } catch (err) { next(withContext(err as Error, 'streamIntakeMsg')) }
 }

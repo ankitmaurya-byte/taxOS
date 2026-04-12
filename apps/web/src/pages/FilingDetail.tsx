@@ -76,19 +76,36 @@ export function FilingDetailPage() {
   const entity = entities.find((e: any) => e.id === filing?.entityId)
   const entityName = entity?.legalName
 
+  // Current user role
+  const user = useAuthStore(s => s.user)
+  const userRole = user?.role
+  const isFounder = userRole === 'founder'
+  const isCpa = userRole === 'cpa'
+
   // Status-based visibility flags
   const status = filing?.status as string | undefined
   const isTerminal = status === 'submitted' || status === 'archived'
   const isArchived = status === 'archived'
   const isSubmitted = status === 'submitted'
 
-  // Agent action visibility per status
-  const canStartIntake = status === 'intake' && !intakeConversation
-  const canRunPrefill = status === 'intake' || status === 'ai_prep'
-  const canRunAuditRisk = status === 'ai_prep' || status === 'cpa_review'
-  const canPause = !isTerminal
-  const canEscalate = status === 'intake' || status === 'ai_prep' || status === 'cpa_review'
-  const canArchive = status === 'submitted'
+  // Agent action visibility — per status AND per role
+  // Intake/Prefill: founder or CPA can trigger agents
+  const canStartIntake = (status === 'intake') && !intakeConversation && (isFounder || isCpa)
+  const canRunPrefill = (status === 'intake' || status === 'ai_prep') && (isFounder || isCpa)
+  const canRunAuditRisk = (status === 'ai_prep' || status === 'cpa_review') && (isFounder || isCpa)
+  // Pause & escalate: founder-only actions (backend enforces requireRole('founder'))
+  // Not available at founder_approval (founder should approve/reject, not pause or escalate)
+  const canPause = (status === 'intake' || status === 'ai_prep' || status === 'cpa_review') && isFounder
+  const canEscalate = (status === 'intake' || status === 'ai_prep' || status === 'cpa_review') && isFounder
+  // Archive: founder can archive submitted filings
+  const canArchive = status === 'submitted' && isFounder
+  // CPA can advance cpa_review → founder_approval
+  // Founder cannot self-advance to founder_approval (HITL gate)
+  const canAdvanceStatus = (status: string | undefined) => {
+    if (status === 'cpa_review') return isCpa // only CPA can advance to founder_approval
+    if (status === 'intake' || status === 'ai_prep') return isFounder || isCpa
+    return false
+  }
 
   // Status transition actions (only for active workflow stages)
   const statusActions: Record<string, { label: string; nextStatus: string } | undefined> = {
@@ -96,7 +113,7 @@ export function FilingDetailPage() {
     ai_prep: { label: 'Send to CPA Review', nextStatus: 'cpa_review' },
     cpa_review: { label: 'Send to Founder Approval', nextStatus: 'founder_approval' },
   }
-  const statusAction = filing ? statusActions[filing.status] : undefined
+  const statusAction = filing && canAdvanceStatus(filing.status) ? statusActions[filing.status] : undefined
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -387,10 +404,32 @@ export function FilingDetailPage() {
             </span>
           </div>
 
-          {/* Action buttons — only shown when filing is not in a terminal state */}
-          {!isTerminal && (
+          {/* Founder approval actions — prominent, separate from workflow buttons */}
+          {status === 'founder_approval' && isFounder && (
+            <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-3">
+              <button
+                onClick={handleApprove}
+                disabled={approveLoading}
+                className="h-10 rounded-lg bg-[#15803D] px-5 text-sm font-medium text-white hover:bg-[#166534] disabled:opacity-50"
+              >
+                {approveLoading ? 'Submitting...' : 'Approve & Submit'}
+              </button>
+              <button
+                onClick={() => {
+                  const reason = window.prompt('Rejection reason:')
+                  if (reason) handleReject(reason)
+                }}
+                disabled={rejectLoading}
+                className="h-10 rounded-lg border border-red-200 px-5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+              >
+                Reject Filing
+              </button>
+            </div>
+          )}
+
+          {/* Workflow action buttons — hidden at founder_approval and terminal states */}
+          {!isTerminal && status !== 'founder_approval' && (
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
-              {/* Intake agent — only at intake stage when no conversation exists */}
               {canStartIntake && (
                 <button
                   onClick={handleStartIntake}
@@ -401,7 +440,6 @@ export function FilingDetailPage() {
                 </button>
               )}
 
-              {/* Prefill agent — only at intake or ai_prep */}
               {canRunPrefill && (
                 <button
                   onClick={handlePrefill}
@@ -412,7 +450,6 @@ export function FilingDetailPage() {
                 </button>
               )}
 
-              {/* Audit risk — only at ai_prep or cpa_review */}
               {canRunAuditRisk && (
                 <button
                   onClick={handleAuditRisk}
@@ -423,7 +460,6 @@ export function FilingDetailPage() {
                 </button>
               )}
 
-              {/* Status transition — advance to next stage */}
               {statusAction && (
                 <button
                   onClick={() => handleUpdateStatus(statusAction.nextStatus)}
@@ -434,7 +470,6 @@ export function FilingDetailPage() {
                 </button>
               )}
 
-              {/* Pause — available during active workflow */}
               {canPause && (
                 <button
                   onClick={handlePause}
@@ -445,7 +480,6 @@ export function FilingDetailPage() {
                 </button>
               )}
 
-              {/* Escalate — only during intake/ai_prep/cpa_review */}
               {canEscalate && (
                 <button
                   onClick={handleEscalate}
@@ -454,29 +488,6 @@ export function FilingDetailPage() {
                 >
                   {escalateLoading ? 'Escalating...' : 'Escalate to CPA'}
                 </button>
-              )}
-
-              {/* Founder approval actions — only at founder_approval stage */}
-              {status === 'founder_approval' && (
-                <>
-                  <button
-                    onClick={handleApprove}
-                    disabled={approveLoading}
-                    className="h-10 rounded-lg bg-[#15803D] px-4 text-sm font-medium text-white hover:bg-[#166534] disabled:opacity-50"
-                  >
-                    {approveLoading ? 'Submitting...' : 'Approve & Submit'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      const reason = window.prompt('Rejection reason:')
-                      if (reason) handleReject(reason)
-                    }}
-                    disabled={rejectLoading}
-                    className="h-10 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-                  >
-                    Reject Filing
-                  </button>
-                </>
               )}
             </div>
           )}
@@ -495,16 +506,14 @@ export function FilingDetailPage() {
             </div>
           )}
 
-          {/* Intake conversation — only show when not terminal */}
-          {!isTerminal && (
+          {/* Intake conversation — only show when an intake conversation exists or filing is at intake/ai_prep */}
+          {canChat && (
             <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4 text-left">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-semibold text-[#111827]">Intake Conversation</h3>
                   <p className="mt-1 text-xs text-[#6B7280]">
-                    {intakeConversation
-                      ? `Status: ${intakeConversation.status}`
-                      : 'Start the intake agent to collect filing details conversationally.'}
+                    Status: {intakeConversation?.status}
                   </p>
                 </div>
               </div>
@@ -534,13 +543,13 @@ export function FilingDetailPage() {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  disabled={!canChat || isStreaming}
-                  placeholder={canChat ? 'Continue the intake conversation...' : 'Start intake to chat with the filing agent'}
+                  disabled={isStreaming}
+                  placeholder="Continue the intake conversation..."
                   className="h-10 flex-1 rounded-lg border border-[#E5E7EB] px-3 text-sm text-[#111827] outline-none focus:border-[#6C5CE7]"
                 />
                 <button
                   onClick={handleSend}
-                  disabled={!canChat || isStreaming || !chatInput.trim()}
+                  disabled={isStreaming || !chatInput.trim()}
                   className="h-10 rounded-lg bg-[#6C5CE7] px-4 text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50"
                 >
                   {isStreaming ? 'Sending...' : 'Send'}
@@ -549,10 +558,17 @@ export function FilingDetailPage() {
             </div>
           )}
 
-          {/* Intake conversation read-only view for terminal states */}
-          {isTerminal && intakeMessages.length > 0 && (
+          {/* Intake conversation read-only — show past messages when conversation is completed or filing moved past intake */}
+          {!canChat && intakeMessages.length > 0 && (
             <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4 text-left">
-              <h3 className="text-sm font-semibold text-[#111827] mb-3">Intake Conversation (read-only)</h3>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-[#111827]">Intake Conversation</h3>
+                  <p className="mt-1 text-xs text-[#6B7280]">
+                    Completed — {intakeMessages.length} messages
+                  </p>
+                </div>
+              </div>
               <div className="max-h-72 space-y-3 overflow-y-auto rounded-lg bg-white p-3">
                 {intakeMessages.map((message: any, index: number) => (
                   <div

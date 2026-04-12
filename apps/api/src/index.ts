@@ -16,6 +16,7 @@ import memberRoutes from './routes/members'
 import profileRoutes from './routes/profile'
 import { errorHandler } from './middleware/errorHandler'
 import { requestLogger } from './middleware/requestLogger'
+import { logger } from './lib/logger'
 require('dotenv').config()
 
 const app: express.Express = express()
@@ -47,7 +48,7 @@ app.get('/api/health', (_req, res) => {
 app.use(errorHandler)
 
 app.listen(PORT, () => {
-  console.log(`🚀 TaxOS API running on http://localhost:${PORT}`)
+  logger.info(`TaxOS API running on http://localhost:${PORT}`)
 })
 
 export default app

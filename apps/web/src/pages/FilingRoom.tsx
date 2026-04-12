@@ -1,7 +1,7 @@
-// UNUSED — not routed or imported anywhere
+// Used in: App.tsx — route /filings/room (workflow board view)
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ConfidenceBadge } from '@/components/agents/ConfidenceBadge'
 import { formatDate } from '@/lib/utils'
+import { ChevronRight } from 'lucide-react'
 import type { FilingStatus } from 'shared'
 
 const STAGES: { status: FilingStatus; label: string }[] = [
@@ -74,6 +75,11 @@ export function FilingRoom() {
   if (!id) {
     return (
       <div className="space-y-6">
+        <div className="flex items-center gap-1 text-[13px] mb-1">
+          <Link to="/filings" className="text-[#6B7280] hover:text-[#374151]">Filings</Link>
+          <ChevronRight size={12} className="text-[#9CA3AF]" />
+          <span className="text-[#111827]">Workflow View</span>
+        </div>
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Filing Room</h1>
         </div>
@@ -103,8 +109,14 @@ export function FilingRoom() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-1 text-[13px] mb-1">
+        <Link to="/filings" className="text-[#6B7280] hover:text-[#374151]">Filings</Link>
+        <ChevronRight size={12} className="text-[#9CA3AF]" />
+        <Link to="/filings/room" className="text-[#6B7280] hover:text-[#374151]">Workflow View</Link>
+        <ChevronRight size={12} className="text-[#9CA3AF]" />
+        <span className="text-[#111827]">{filing.formType}</span>
+      </div>
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/filings')}>Back</Button>
         <h1 className="text-2xl font-bold text-gray-900">{filing.formType} — {filing.formName}</h1>
         <StatusBadge status={filing.status} />
       </div>
