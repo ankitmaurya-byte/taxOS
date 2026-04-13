@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { ArrowRight, CheckCircle2, Wind } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Wind, AlertTriangle, Clock, FilePlus } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { HomeBottomSection } from '@/components/HomeBottomSection'
@@ -63,10 +63,63 @@ function FounderHome() {
           </div>
           <div className="mx-6 w-px bg-[#E5E7EB]" />
           <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
-            <Wind size={40} className="mb-3 text-[#D1D5DB]" />
-            <p className="mb-1 text-[15px] font-medium text-[#111827]">Your filing pipeline is under control</p>
-            <p className="mb-3 text-[13px] text-[#6B7280]">Review filings, approvals, and team activity from one place.</p>
-            <Link to="/filings" className="flex items-center gap-1 text-[13px] font-medium text-[#6C5CE7] hover:text-[#5B4BD5]">View all filings <ArrowRight size={13} /></Link>
+            {filingsLoading ? (
+              <p className="text-sm text-[#9CA3AF]">Loading pipeline…</p>
+            ) : filings.length === 0 ? (
+              <>
+                <FilePlus size={36} className="mb-3 text-[#D1D5DB]" />
+                <p className="mb-1 text-[15px] font-medium text-[#111827]">No filings yet</p>
+                <p className="mb-3 text-[13px] text-[#6B7280]">Create your first filing to start tracking compliance.</p>
+                <Link to="/filings" className="flex items-center gap-1 text-[13px] font-medium text-[#6C5CE7] hover:text-[#5B4BD5]">Create a filing <ArrowRight size={13} /></Link>
+              </>
+            ) : actionPending.length > 0 ? (
+              <>
+                <AlertTriangle size={36} className="mb-3 text-[#F59E0B]" />
+                <p className="mb-1 text-[15px] font-medium text-[#111827]">
+                  {actionPending.length} filing{actionPending.length > 1 ? 's' : ''} need{actionPending.length === 1 ? 's' : ''} your approval
+                </p>
+                <p className="mb-3 text-[13px] text-[#6B7280]">Review and approve to move to submission.</p>
+                <div className="mb-3 w-full space-y-1.5">
+                  {actionPending.slice(0, 3).map((f) => (
+                    <button key={f.id} onClick={() => navigate(`/filings/${f.id}`)} className="w-full rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-left text-[12px] font-medium text-[#92400E] hover:bg-[#FEF3C7] transition-colors">
+                      {f.formType} — {f.formName}
+                    </button>
+                  ))}
+                </div>
+                <Link to="/approvals" className="flex items-center gap-1 text-[13px] font-medium text-[#6C5CE7] hover:text-[#5B4BD5]">Go to approvals <ArrowRight size={13} /></Link>
+              </>
+            ) : inProgress.length > 0 ? (
+              <>
+                <Clock size={36} className="mb-3 text-[#3B82F6]" />
+                <p className="mb-1 text-[15px] font-medium text-[#111827]">
+                  {inProgress.length} filing{inProgress.length > 1 ? 's' : ''} in review
+                </p>
+                <p className="mb-3 text-[13px] text-[#6B7280]">
+                  {inProgress.filter((f) => f.status === 'cpa_review').length > 0
+                    ? 'Your CPA is actively reviewing your filings.'
+                    : 'AI is preparing your filings for CPA review.'}
+                </p>
+                <div className="mb-3 w-full space-y-1.5">
+                  {inProgress.slice(0, 3).map((f) => (
+                    <button key={f.id} onClick={() => navigate(`/filings/${f.id}`)} className="w-full rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-left text-[12px] font-medium text-[#1E40AF] hover:bg-[#DBEAFE] transition-colors">
+                      {f.formType} — {f.formName}
+                    </button>
+                  ))}
+                </div>
+                <Link to="/filings" className="flex items-center gap-1 text-[13px] font-medium text-[#6C5CE7] hover:text-[#5B4BD5]">View all filings <ArrowRight size={13} /></Link>
+              </>
+            ) : (
+              <>
+                <Wind size={40} className="mb-3 text-[#D1D5DB]" />
+                <p className="mb-1 text-[15px] font-medium text-[#111827]">Your filing pipeline is under control</p>
+                <p className="mb-3 text-[13px] text-[#6B7280]">
+                  {completed.length > 0
+                    ? `${completed.length} filing${completed.length > 1 ? 's' : ''} completed. Review filings and team activity from one place.`
+                    : 'Review filings, approvals, and team activity from one place.'}
+                </p>
+                <Link to="/filings" className="flex items-center gap-1 text-[13px] font-medium text-[#6C5CE7] hover:text-[#5B4BD5]">View all filings <ArrowRight size={13} /></Link>
+              </>
+            )}
           </div>
         </div>
       </div>

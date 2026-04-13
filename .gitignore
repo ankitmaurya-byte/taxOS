@@ -15,3 +15,6 @@ apps/api/taxos.db-shm
 apps/api/taxos.db-wal
 *.tsbuildinfo
 prompt.md
+response.md
+.pnpm-store/
+**/.pnpm-store/

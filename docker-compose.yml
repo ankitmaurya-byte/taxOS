@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  api:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "corepack enable pnpm && pnpm install --frozen-lockfile --prod && pnpm build && node dist/index.js"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=/app/taxos.db
+      - JWT_SECRET=your-super-secret-jwt-key-min-32-chars
+      - GEMINI_API_KEY=AIzaSyAEAQKXU96mFxO6xj5bAxk-xH9AEAdQRto
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=ankitmaurya2989@gmail.com
+      - SMTP_PASS=mjsy xbtd nlbg wdhp
+    volumes:
+      - ./apps/api:/app
+      - taxos-db:/app
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "corepack enable pnpm && pnpm install && pnpm build && npx serve dist -l 80"
+    volumes:
+      - ./apps/web:/app
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+volumes:
+  taxos-db:
