@@ -10,7 +10,7 @@ import type { ApiFiling } from 'shared'
 function FounderHome() {
   const { user, filings, approvals, fetchFilings, fetchApprovals, filingsLoading, approvalsLoading } = useAuthStore()
   const navigate = useNavigate()
-  const [filingTab, setFilingTab] = useState<'not_purchased' | 'all'>('all')
+  const [filingTab, setFilingTab] = useState<'not_started' | 'all' | 'archived'>('all')
   useEffect(() => {
     fetchFilings()
     fetchApprovals()
@@ -18,11 +18,16 @@ function FounderHome() {
 
   const firstName = user?.name?.split(' ')[0] || 'there'
   const actionItems = approvals.filter((a) => a.status === 'pending')
-  const notPurchased = filings.filter((f) => f.status === 'intake')
+  const notStarted = filings.filter((f) => f.status === 'intake')
+  const archivedFilings = filings.filter((f) => f.status === 'archived')
   const completed = filings.filter((f) => ['submitted', 'archived'].includes(f.status))
   const inProgress = filings.filter((f) => ['ai_prep', 'cpa_review'].includes(f.status))
   const actionPending = filings.filter((f) => f.status === 'founder_approval')
-  const visibleFilings = filingTab === 'not_purchased' ? notPurchased : filings
+  const activeFilings = filings.filter((f) => f.status !== 'archived')
+  const visibleFilings =
+    filingTab === 'not_started' ? notStarted :
+    filingTab === 'archived'   ? archivedFilings :
+    activeFilings
 
   return (
     <div>
@@ -138,7 +143,7 @@ function FounderHome() {
                 { label: 'Completed', value: completed.length, color: 'text-[#4C9A67]' },
                 { label: 'In progress', value: inProgress.length, color: 'text-[#3490DC]' },
                 { label: 'Action pending', value: actionPending.length, color: 'text-[#F59E0B]' },
-                { label: 'Not purchased', value: notPurchased.length, color: 'text-[#C94B60]' },
+                { label: 'Not started', value: notStarted.length, color: 'text-[#C94B60]' },
               ].map((item) => (
                 <div key={item.label} className="text-center md:border-r last:md:border-r-0 md:border-[#EDEAF8]">
                   <div className={`text-[40px] font-semibold leading-none ${item.color}`}>{item.value}</div>
@@ -149,8 +154,9 @@ function FounderHome() {
           </div>
           <div className="p-6">
             <div className="mb-5 inline-flex rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-1">
-              <button onClick={() => setFilingTab('not_purchased')} className={`min-w-[150px] rounded-xl px-5 py-2 text-sm font-medium transition-colors ${filingTab === 'not_purchased' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>Not purchased {notPurchased.length}</button>
-              <button onClick={() => setFilingTab('all')} className={`min-w-[120px] rounded-xl px-5 py-2 text-sm font-medium transition-colors ${filingTab === 'all' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>All {filings.length}</button>
+              <button onClick={() => setFilingTab('not_started')} className={`min-w-[130px] rounded-xl px-4 py-2 text-sm font-medium transition-colors ${filingTab === 'not_started' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>Not started {notStarted.length}</button>
+              <button onClick={() => setFilingTab('all')} className={`min-w-[100px] rounded-xl px-4 py-2 text-sm font-medium transition-colors ${filingTab === 'all' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>All {activeFilings.length}</button>
+              <button onClick={() => setFilingTab('archived')} className={`min-w-[110px] rounded-xl px-4 py-2 text-sm font-medium transition-colors ${filingTab === 'archived' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>Archived {archivedFilings.length}</button>
             </div>
             {visibleFilings.length === 0 ? (
               <div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#E5E7EB] bg-[#FCFCFD] px-6 text-center">
@@ -169,6 +175,14 @@ function FounderHome() {
                     <StatusBadge status={filing.status} />
                   </button>
                 ))}
+                {visibleFilings.length > 5 && (
+                  <button
+                    onClick={() => navigate('/filings/room')}
+                    className="flex w-full items-center justify-center gap-1 rounded-2xl border border-dashed border-[#D8D1F7] py-2.5 text-[13px] font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] transition-colors"
+                  >
+                    View {visibleFilings.length - 5} more <ArrowRight size={13} />
+                  </button>
+                )}
               </div>
             )}
           </div>

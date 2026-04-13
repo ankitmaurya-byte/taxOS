@@ -351,7 +351,36 @@ export function FilingsPage() {
                     <span className="text-sm font-medium text-[#6C5CE7]">
                       {filing.formType} — {filing.formName}
                     </span>
-                    <Info size={14} className="text-[#9CA3AF]" />
+                    <div
+                      className="relative group/info"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Info
+                        size={14}
+                        className="cursor-pointer text-[#9CA3AF] transition-colors group-hover/info:text-[#6C5CE7]"
+                      />
+                      {/* Tooltip */}
+                      <div className="pointer-events-none absolute left-0 bottom-full mb-3 z-50 w-72 rounded-xl border border-[#2D3748] bg-[#1A202C] shadow-2xl opacity-0 invisible -translate-y-1 group-hover/info:opacity-100 group-hover/info:visible group-hover/info:translate-y-0 transition-all duration-200 ease-out">
+                        {/* Header */}
+                        <div className="flex items-center gap-2 border-b border-[#2D3748] px-3.5 py-2.5">
+                          <span className="inline-flex items-center rounded-md bg-[#6C5CE7]/20 px-2 py-0.5 text-[10px] font-bold tracking-widest text-[#A78BFA] uppercase">
+                            {filing.formType}
+                          </span>
+                          {(filing as any).taxYear && (
+                            <span className="text-[11px] text-[#4A5568]">Tax Year {(filing as any).taxYear}</span>
+                          )}
+                        </div>
+                        {/* Body */}
+                        <div className="px-3.5 py-3">
+                          <p className="text-[12.5px] leading-relaxed text-[#E2E8F0]">
+                            {(filing as any).aiSummary || filing.formName}
+                          </p>
+                        </div>
+                        {/* Arrow */}
+                        <div className="absolute left-5 top-full size-0 border-x-[5px] border-t-[5px] border-x-transparent border-t-[#2D3748]" />
+                        <div className="absolute left-[21px] top-full size-0 border-x-[4px] border-t-[4px] border-x-transparent border-t-[#1A202C]" />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Deadline */}

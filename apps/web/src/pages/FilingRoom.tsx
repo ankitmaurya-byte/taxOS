@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ConfidenceBadge } from '@/components/agents/ConfidenceBadge'
 import { formatDate } from '@/lib/utils'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Search, Filter, ChevronDown, X } from 'lucide-react'
 import type { FilingStatus } from 'shared'
 
 const STAGES: { status: FilingStatus; label: string }[] = [
@@ -21,6 +21,15 @@ const STAGES: { status: FilingStatus; label: string }[] = [
   { status: 'submitted', label: 'Submitted' },
 ]
 
+const STATUS_OPTIONS: { key: FilingStatus; label: string }[] = [
+  { key: 'intake', label: 'Intake' },
+  { key: 'ai_prep', label: 'AI Prep' },
+  { key: 'cpa_review', label: 'CPA Review' },
+  { key: 'founder_approval', label: 'Needs Approval' },
+  { key: 'submitted', label: 'Submitted' },
+  { key: 'archived', label: 'Archived' },
+]
+
 export function FilingRoom() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -28,6 +37,13 @@ export function FilingRoom() {
   const [chatMessage, setChatMessage] = useState('')
   const [chatHistory, setChatHistory] = useState<Array<{ role: string; content: string }>>([])
   const [streaming, setStreaming] = useState(false)
+
+  // List view filters
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<FilingStatus | null>(null)
+  const [yearFilter, setYearFilter] = useState<number | null>(null)
+  const [showStatusDrop, setShowStatusDrop] = useState(false)
+  const [showYearDrop, setShowYearDrop] = useState(false)
 
   const { data: filings = [] } = useQuery({ queryKey: ['filings'], queryFn: () => api.getFilings() })
   const { data: filing } = useQuery({
@@ -73,32 +89,128 @@ export function FilingRoom() {
 
   // Filing list view when no ID selected
   if (!id) {
+    const availableYears = Array.from(new Set(filings.map((f: any) => f.taxYear || 2025))).sort((a: number, b: number) => b - a)
+
+    const filtered = filings.filter((f: any) => {
+      const q = search.trim().toLowerCase()
+      const matchSearch = !q || f.formType?.toLowerCase().includes(q) || f.formName?.toLowerCase().includes(q)
+      const matchStatus = !statusFilter || f.status === statusFilter
+      const matchYear = !yearFilter || (f.taxYear || 2025) === yearFilter
+      return matchSearch && matchStatus && matchYear
+    })
+
+    const hasFilters = search || statusFilter || yearFilter
+
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-1 text-[13px] mb-1">
+      <div className="space-y-5">
+        <div className="flex items-center gap-1 text-[13px]">
           <Link to="/filings" className="text-[#6B7280] hover:text-[#374151]">Filings</Link>
           <ChevronRight size={12} className="text-[#9CA3AF]" />
           <span className="text-[#111827]">Workflow View</span>
         </div>
+
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Filing Room</h1>
+          <h1 className="text-2xl font-semibold text-[#111827]">Filing Room</h1>
+          <span className="text-sm text-[#6B7280]">{filtered.length} filing{filtered.length !== 1 ? 's' : ''}</span>
         </div>
-          <div className="grid gap-4">
-            {filings.map(f => (
-            <Card key={f.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/filings/room/${f.id}`)}>
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="font-medium">{f.formType} — {f.formName}</p>
-                  <p className="text-sm text-gray-500">Tax Year {f.taxYear}</p>
+
+        {/* Toolbar */}
+        <div className="flex items-center gap-2">
+          {/* Search */}
+          <div className="relative flex-1 max-w-xs">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by form type or name…"
+              className="h-9 w-full rounded-lg border border-[#E5E7EB] pl-8 pr-3 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:border-[#6C5CE7] transition-colors"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#374151]">
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Status filter */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowStatusDrop(!showStatusDrop); setShowYearDrop(false) }}
+              className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm transition-colors ${statusFilter ? 'border-[#6C5CE7] text-[#6C5CE7] bg-[#EDE9FD]' : 'border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6]'}`}
+            >
+              <Filter size={14} />
+              {statusFilter ? STATUS_OPTIONS.find(o => o.key === statusFilter)?.label : 'Status'}
+              <ChevronDown size={12} />
+            </button>
+            {showStatusDrop && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowStatusDrop(false)} />
+                <div className="absolute left-0 top-full mt-1 z-20 min-w-[160px] rounded-lg border border-[#E5E7EB] bg-white shadow-lg">
+                  <button onClick={() => { setStatusFilter(null); setShowStatusDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${!statusFilter ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'}`}>All statuses</button>
+                  {STATUS_OPTIONS.map(opt => (
+                    <button key={opt.key} onClick={() => { setStatusFilter(opt.key); setShowStatusDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${statusFilter === opt.key ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'}`}>{opt.label}</button>
+                  ))}
                 </div>
-                <div className="flex items-center gap-3">
-                  {f.aiConfidenceScore != null && <ConfidenceBadge score={f.aiConfidenceScore} />}
-                  <StatusBadge status={f.status} />
+              </>
+            )}
+          </div>
+
+          {/* Year filter */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowYearDrop(!showYearDrop); setShowStatusDrop(false) }}
+              className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm transition-colors ${yearFilter ? 'border-[#6C5CE7] text-[#6C5CE7] bg-[#EDE9FD]' : 'border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6]'}`}
+            >
+              {yearFilter ?? 'All years'}
+              <ChevronDown size={12} />
+            </button>
+            {showYearDrop && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowYearDrop(false)} />
+                <div className="absolute left-0 top-full mt-1 z-20 min-w-[120px] rounded-lg border border-[#E5E7EB] bg-white shadow-lg">
+                  <button onClick={() => { setYearFilter(null); setShowYearDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${!yearFilter ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'}`}>All years</button>
+                  {availableYears.map((y: number) => (
+                    <button key={y} onClick={() => { setYearFilter(y); setShowYearDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${yearFilter === y ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'}`}>{y}</button>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </>
+            )}
+          </div>
+
+          {/* Clear all */}
+          {hasFilters && (
+            <button onClick={() => { setSearch(''); setStatusFilter(null); setYearFilter(null) }} className="flex items-center gap-1 h-9 px-3 text-sm text-[#6B7280] hover:text-[#374151] transition-colors">
+              <X size={13} /> Clear
+            </button>
+          )}
         </div>
+
+        {/* Filing cards */}
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#E5E7EB] py-16 text-center">
+            <Filter size={28} className="mb-3 text-[#D1D5DB]" />
+            <p className="text-sm font-medium text-[#374151]">No filings match your filters</p>
+            <p className="mt-1 text-sm text-[#6B7280]">Try adjusting the search or filter criteria.</p>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {filtered.map((f: any) => (
+              <Card key={f.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/filings/room/${f.id}`)}>
+                <CardContent className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="font-medium text-[#111827]">{f.formType} — {f.formName}</p>
+                    <p className="text-sm text-[#6B7280] mt-0.5">Tax Year {f.taxYear || 2025} • {formatDate(f.updatedAt || f.createdAt)}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {f.aiConfidenceScore != null && <ConfidenceBadge score={f.aiConfidenceScore} />}
+                    <StatusBadge status={f.status} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     )
   }
