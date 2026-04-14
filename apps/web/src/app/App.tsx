@@ -221,7 +221,9 @@ export function App() {
                 element={<AccessRoute path={`/${route.path}`}>{route.element}</AccessRoute>}
               />
             ))}
+            <Route path="*" element={<DefaultRoute />} />
           </Route>
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
