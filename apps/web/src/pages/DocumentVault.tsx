@@ -1,4 +1,4 @@
-// Used in: App.tsx — route /documents/vault (full document vault view)
+// Used in: App.tsx — route vault/documents/ (full document vault view)
 import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'

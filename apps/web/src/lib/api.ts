@@ -251,6 +251,12 @@ const updateFilingStatus = (id: string, status: string) =>
     data: { status },
   }, { successMessage: 'Filing status updated.' })
 
+const updateFilingData = (id: string, fields: Record<string, unknown>) =>
+  request<{ message: string; filingData: Record<string, unknown> }>(`/filings/${id}/data`, {
+    method: 'PUT',
+    data: { fields },
+  }, { successMessage: 'Filing data saved.' })
+
 const claimFilingReview = (id: string) =>
   request<any>(`/filings/${id}/claim-review`, { method: 'POST' }, { successMessage: 'Filing review claimed.' })
 
@@ -270,7 +276,16 @@ const pauseFiling = (id: string) =>
   request<{ message: string }>(`/filings/${id}/pause`, { method: 'POST' }, { successMessage: 'AI workflow paused.' })
 
 const escalateToCpa = (id: string) =>
-  request<{ message: string }>(`/filings/${id}/escalate-cpa`, { method: 'POST' }, { successMessage: 'Filing escalated to CPA.' })
+  request<{ message: string; notifiedCpaCount: number }>(`/filings/${id}/escalate-cpa`, { method: 'POST' }, { successMessage: 'Filing escalated to CPA.' })
+
+const cpaApproveFiling = (id: string) =>
+  request<{ message: string }>(`/filings/${id}/cpa-approve`, { method: 'POST' }, { successMessage: 'Filing approved.' })
+
+const cpaRejectFiling = (id: string, reason: string) =>
+  request<{ message: string; notifiedCpaCount: number }>(`/filings/${id}/cpa-reject`, {
+    method: 'POST',
+    data: { reason },
+  }, { successMessage: 'Filing rejection recorded.' })
 
 // ─── Deadlines ────────────────────────────────────────────────────────────────
 
@@ -334,6 +349,33 @@ const exportAuditCsv = async (filingId?: string) => {
     responseType: 'text',
   })
   return response.data as string
+}
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+
+const getOrgMessages = (orgId: string) =>
+  request<any[]>(`/chat/org/${orgId}`)
+
+const postOrgMessage = (orgId: string, message: string) =>
+  request<any>(`/chat/org/${orgId}`, { method: 'POST', data: { message } })
+
+const getFounderMessages = () =>
+  request<any[]>('/chat/founders')
+
+const postFounderMessage = (message: string) =>
+  request<any>('/chat/founders', { method: 'POST', data: { message } })
+
+const getCpaMessages = () =>
+  request<any[]>('/chat/cpas')
+
+const postCpaMessage = (message: string) =>
+  request<any>('/chat/cpas', { method: 'POST', data: { message } })
+
+// SSE notification stream — returns an EventSource. Caller must close it.
+const subscribeNotifications = (): EventSource => {
+  const token = localStorage.getItem('taxos_token')
+  const url = `${API_URL}/sse/notifications${token ? `?token=${encodeURIComponent(token)}` : ''}`
+  return new EventSource(url)
 }
 
 // ─── Agents ──────────────────────────────────────────────────────────────────
@@ -482,6 +524,7 @@ export const api = {
   getFiling,
   createFiling,
   updateFilingStatus,
+  updateFilingData,
   claimFilingReview,
   releaseFilingReview,
   approveFiling,
@@ -516,6 +559,21 @@ export const api = {
   runPrefill,
   runAuditRisk,
   streamTaxQa,
+
+  // CPA filing actions
+  cpaApproveFiling,
+  cpaRejectFiling,
+
+  // Chat
+  getOrgMessages,
+  postOrgMessage,
+  getFounderMessages,
+  postFounderMessage,
+  getCpaMessages,
+  postCpaMessage,
+
+  // SSE notifications
+  subscribeNotifications,
 
   // Nested namespaces (for store actions)
   auth: {
@@ -572,10 +630,13 @@ export const api = {
     get: getFiling,
     create: createFiling,
     updateStatus: updateFilingStatus,
+    updateData: updateFilingData,
     claimReview: claimFilingReview,
     releaseReview: releaseFilingReview,
     approve: approveFiling,
     reject: rejectFiling,
+    cpaApprove: cpaApproveFiling,
+    cpaReject: cpaRejectFiling,
     pause: pauseFiling,
     escalateToCpa,
   },
@@ -606,6 +667,19 @@ export const api = {
     runPrefill,
     runAuditRisk,
     streamTaxQa,
+  },
+
+  chat: {
+    getOrgMessages,
+    postOrgMessage,
+    getFounderMessages,
+    postFounderMessage,
+    getCpaMessages,
+    postCpaMessage,
+  },
+
+  notifications: {
+    subscribe: subscribeNotifications,
   },
 }
 

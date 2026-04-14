@@ -34,7 +34,52 @@ function ensureEntityColumns() {
   }
 }
 
+function ensureNewTables() {
+  const newTables: string[] = [
+    `CREATE TABLE IF NOT EXISTS cpa_notifications (
+      id TEXT PRIMARY KEY NOT NULL,
+      filing_id TEXT NOT NULL REFERENCES filings(id),
+      cpa_user_id TEXT NOT NULL REFERENCES users(id),
+      status TEXT NOT NULL DEFAULT 'pending',
+      notified_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      responded_at TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS cpa_rejections (
+      id TEXT PRIMARY KEY NOT NULL,
+      filing_id TEXT NOT NULL REFERENCES filings(id),
+      cpa_user_id TEXT NOT NULL REFERENCES users(id),
+      reason TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS org_chat_messages (
+      id TEXT PRIMARY KEY NOT NULL,
+      org_id TEXT NOT NULL REFERENCES organizations(id),
+      sender_id TEXT NOT NULL REFERENCES users(id),
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS founder_chat_messages (
+      id TEXT PRIMARY KEY NOT NULL,
+      sender_id TEXT NOT NULL REFERENCES users(id),
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS cpa_chat_messages (
+      id TEXT PRIMARY KEY NOT NULL,
+      sender_id TEXT NOT NULL REFERENCES users(id),
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
+  ]
+
+  for (const ddl of newTables) {
+    sqlite.prepare(ddl).run()
+  }
+}
+
 ensureEntityColumns()
+ensureNewTables()
 
 export const db = drizzle(sqlite, { schema })
 export { schema }

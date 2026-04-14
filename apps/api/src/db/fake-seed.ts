@@ -139,6 +139,7 @@ const genEmail = (name: string, domain: string) =>
 
 // ─── CONFIG ──────────────────────────────────────────
 const NUM_ORGS = 15
+const NUM_CPAS = 10            // All CPAs live under the TaxOS admin org
 const USERS_PER_ORG = { min: 3, max: 8 }
 const ENTITIES_PER_ORG = { min: 1, max: 4 }
 const DEADLINES_PER_ENTITY = { min: 2, max: 6 }
@@ -150,9 +151,53 @@ const CONVERSATIONS_PER_ORG = { min: 2, max: 8 }
 async function fakeSeed() {
   console.log('🌱 Starting fake data seed...\n')
 
+  // ─── Ensure new tables exist (seed runs its own SQLite connection, bypassing db/index.ts) ───
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS cpa_notifications (
+      id TEXT PRIMARY KEY NOT NULL,
+      filing_id TEXT NOT NULL,
+      cpa_user_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      notified_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      responded_at TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS cpa_rejections (
+      id TEXT PRIMARY KEY NOT NULL,
+      filing_id TEXT NOT NULL,
+      cpa_user_id TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS org_chat_messages (
+      id TEXT PRIMARY KEY NOT NULL,
+      org_id TEXT NOT NULL,
+      sender_id TEXT NOT NULL,
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS founder_chat_messages (
+      id TEXT PRIMARY KEY NOT NULL,
+      sender_id TEXT NOT NULL,
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS cpa_chat_messages (
+      id TEXT PRIMARY KEY NOT NULL,
+      sender_id TEXT NOT NULL,
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `)
+
   // ─── Clean existing data ───────────────────────────
   console.log('Cleaning existing tables...')
   sqlite.exec(`
+    DELETE FROM cpa_notifications;
+    DELETE FROM cpa_rejections;
+    DELETE FROM org_chat_messages;
+    DELETE FROM founder_chat_messages;
+    DELETE FROM cpa_chat_messages;
     DELETE FROM filing_review_locks;
     DELETE FROM cpa_assignments;
     DELETE FROM email_verification_tokens;
@@ -176,10 +221,14 @@ async function fakeSeed() {
   // Track all created IDs for FK references
   const allOrgs: string[] = []
   const allUsers: { id: string; orgId: string; role: string; email: string }[] = []
+  const allCpas: { id: string; orgId: string; role: string; email: string; status: string }[] = []
   const allEntities: { id: string; orgId: string; entityType: string }[] = []
   const allDeadlines: { id: string; entityId: string; formType: string; formName: string }[] = []
   const allFilings: { id: string; orgId: string; entityId: string; status: string }[] = []
   const allTemplates: { id: string; orgId: string | null }[] = []
+
+  // Map: orgId → cpaId[] (populated during CPA assignments step)
+  const orgCpaMap = new Map<string, string[]>()
 
   // ─── 1. Organizations ──────────────────────────────
   console.log(`Creating ${NUM_ORGS} organizations...`)
@@ -203,7 +252,7 @@ async function fakeSeed() {
     allOrgs.push(orgId)
   }
 
-  // ─── 2. Admin org + admin user (if not exists) ─────
+  // ─── 2. Admin org + admin user ─────────────────────
   const adminOrgId = uuid()
   db.insert(schema.organizations).values({
     id: adminOrgId,
@@ -226,24 +275,70 @@ async function fakeSeed() {
   }).run()
   allUsers.push({ id: adminId, orgId: adminOrgId, role: 'admin', email: 'superadmin@taxos.ai' })
 
-  // ─── 3. Users per org ──────────────────────────────
-  console.log('Creating users...')
+  // ─── 3. CPAs — all belong to the TaxOS admin org ──
+  // CPAs are platform-level professionals. They do NOT belong to any client org.
+  // Client org access is tracked via cpaAssignments only.
+  console.log(`Creating ${NUM_CPAS} CPAs under TaxOS admin org...`)
   const usedEmails = new Set<string>(['superadmin@taxos.ai'])
+
+  // First 5 CPAs are always active; remaining can be mixed
+  for (let i = 0; i < NUM_CPAS; i++) {
+    const name = genName()
+    const domain = 'taxos-cpas.com'
+    let email = genEmail(name, domain)
+    while (usedEmails.has(email)) email = genEmail(name + rand(1, 999), domain)
+    usedEmails.add(email)
+
+    const cpaId = uuid()
+    // First 5 always active (needed for round-robin escalation logic), rest varied
+    const status = i < 5
+      ? 'active' as const
+      : pick(['active', 'active', 'pending_admin_review'] as const)
+
+    db.insert(schema.users).values({
+      id: cpaId,
+      orgId: adminOrgId,        // ← all CPAs belong to the admin org
+      email,
+      passwordHash,
+      name: `${name}, CPA`,
+      role: 'cpa',
+      status,
+      isVerified: status === 'active',
+      approvedByUserId: status === 'active' ? adminId : undefined,
+      approvalReviewedAt: status === 'active' ? pastDate(90) : undefined,
+      lastLoginAt: status === 'active' ? pastDate(7) : undefined,
+    }).run()
+
+    allCpas.push({ id: cpaId, orgId: adminOrgId, role: 'cpa', email, status })
+    allUsers.push({ id: cpaId, orgId: adminOrgId, role: 'cpa', email })
+  }
+
+  // Convenience: deterministic CPA login
+  const cpa1 = allCpas[0]
+  sqlite
+    .prepare("UPDATE users SET email = 'cpa1@taxos.ai', name = 'Alice Chen, CPA' WHERE id = ?")
+    .run(cpa1.id)
+  cpa1.email = 'cpa1@taxos.ai'
+  usedEmails.add('cpa1@taxos.ai')
+
+  console.log(`  → ${allCpas.length} CPAs created (all under TaxOS admin org)`)
+
+  // ─── 4. Users per client org (founders + team members only) ───────────────
+  // CPAs are NOT created per-org any more. Only founders and team_members.
+  console.log('Creating client org users (founders + team members)...')
 
   for (const orgId of allOrgs) {
     const numUsers = rand(USERS_PER_ORG.min, USERS_PER_ORG.max)
-    const roles: Array<'founder' | 'cpa' | 'team_member'> = ['founder', 'cpa']
-    for (let j = 2; j < numUsers; j++) roles.push(pick(['team_member', 'cpa', 'team_member']))
+    // First slot always founder; rest team_member
+    const roles: Array<'founder' | 'team_member'> = ['founder']
+    for (let j = 1; j < numUsers; j++) roles.push('team_member')
 
     for (let j = 0; j < numUsers; j++) {
       const name = genName()
       const domain = `${pick(companyPrefixes).toLowerCase()}.com`
       let email = genEmail(name, domain)
-      // Ensure unique email
       let attempt = 0
-      while (usedEmails.has(email)) {
-        email = genEmail(name + (++attempt), domain)
-      }
+      while (usedEmails.has(email)) email = genEmail(name + (++attempt), domain)
       usedEmails.add(email)
 
       const userId = uuid()
@@ -256,8 +351,8 @@ async function fakeSeed() {
         id: userId,
         orgId,
         email,
-        passwordHash: passwordHash,
-        name: role === 'cpa' ? `${name}, CPA` : name,
+        passwordHash,
+        name,
         role,
         status,
         isVerified: status === 'active',
@@ -269,9 +364,9 @@ async function fakeSeed() {
       allUsers.push({ id: userId, orgId, role, email })
     }
   }
-  console.log(`  → ${allUsers.length} users created`)
+  console.log(`  → ${allUsers.length} total users`)
 
-  // ─── 4. Role Templates ─────────────────────────────
+  // ─── 5. Role Templates ─────────────────────────────
   console.log('Creating role templates...')
   const templateDefs = [
     { name: 'Full Access Manager', perms: { canViewDashboard: true, canViewFilings: true, canEditFilings: true, canApproveFilings: true, canViewDocuments: true, canEditDocuments: true, canManageTeam: true, canCreateAccounts: true, canManageTemplates: true, canManageOrganization: true } },
@@ -312,7 +407,7 @@ async function fakeSeed() {
     allTemplates.push({ id: tplId, orgId })
   }
 
-  // ─── 5. Permissions ────────────────────────────────
+  // ─── 6. Permissions ────────────────────────────────
   console.log('Creating permissions...')
   let permCount = 0
   for (const orgId of allOrgs) {
@@ -323,7 +418,6 @@ async function fakeSeed() {
     for (const user of orgUsers) {
       if (!founder) continue
       const tpl = templates.length > 0 ? pick(templates) : null
-      // Ensure every team member gets permissions (at minimum Filing Specialist level)
       const perms = tpl ? pick(templateDefs).perms : templateDefs[1].perms
       db.insert(schema.permissions).values({
         id: uuid(),
@@ -338,24 +432,42 @@ async function fakeSeed() {
   }
   console.log(`  → ${permCount} permissions created`)
 
-  // ─── 6. CPA Assignments ────────────────────────────
+  // ─── 7. CPA Assignments ────────────────────────────
+  // Assign CPAs from the global admin-org CPA pool to client orgs.
+  // Each client org gets 1–2 CPAs. CPAs may serve multiple orgs.
+  // users.orgId is NOT updated — CPAs stay in the admin org.
   console.log('Creating CPA assignments...')
   let cpaAssignCount = 0
+
   for (const orgId of allOrgs) {
-    const cpas = allUsers.filter(u => u.orgId === orgId && u.role === 'cpa')
-    for (const cpa of cpas) {
+    const numCpas = rand(1, 2)
+    const selectedCpas = pickN(allCpas, numCpas)
+
+    for (const cpa of selectedCpas) {
+      // Avoid duplicate assignments
+      const exists = sqlite
+        .prepare('SELECT 1 FROM cpa_assignments WHERE user_id = ? AND organization_id = ?')
+        .get(cpa.id, orgId)
+      if (exists) continue
+
       db.insert(schema.cpaAssignments).values({
         id: uuid(),
         userId: cpa.id,
         organizationId: orgId,
         createdByUserId: adminId,
       }).run()
+
+      // Track for filing / review lock seeding
+      const list = orgCpaMap.get(orgId) ?? []
+      list.push(cpa.id)
+      orgCpaMap.set(orgId, list)
+
       cpaAssignCount++
     }
   }
   console.log(`  → ${cpaAssignCount} CPA assignments created`)
 
-  // ─── 7. Invites ────────────────────────────────────
+  // ─── 8. Invites ────────────────────────────────────
   console.log('Creating invites...')
   let inviteCount = 0
   for (const orgId of allOrgs.slice(0, 8)) {
@@ -372,7 +484,7 @@ async function fakeSeed() {
       db.insert(schema.invites).values({
         id: uuid(),
         email,
-        role: pick(['team_member', 'cpa']),
+        role: 'team_member',  // only team_member invites from orgs; CPA invites come from admin
         organizationId: orgId,
         invitedByUserId: founder.id,
         permissions: pick(templateDefs).perms,
@@ -386,7 +498,7 @@ async function fakeSeed() {
   }
   console.log(`  → ${inviteCount} invites created`)
 
-  // ─── 8. Founder Applications ───────────────────────
+  // ─── 9. Founder Applications ───────────────────────
   console.log('Creating founder applications...')
   let appCount = 0
   for (const orgId of allOrgs) {
@@ -398,7 +510,7 @@ async function fakeSeed() {
       userId: founder.id,
       organizationId: orgId,
       email: founder.email,
-      passwordHash: passwordHash,
+      passwordHash,
       name: founder.email.split('@')[0].replace(/\./g, ' '),
       organizationName: genCompanyName(),
       brandName: pick(companyPrefixes),
@@ -422,7 +534,7 @@ async function fakeSeed() {
   }
   console.log(`  → ${appCount} founder applications created`)
 
-  // ─── 9. Entities ───────────────────────────────────
+  // ─── 10. Entities ───────────────────────────────────
   console.log('Creating entities...')
   for (const orgId of allOrgs) {
     const numEntities = rand(ENTITIES_PER_ORG.min, ENTITIES_PER_ORG.max)
@@ -473,7 +585,7 @@ async function fakeSeed() {
   }
   console.log(`  → ${allEntities.length} entities created`)
 
-  // ─── 10. Deadlines ─────────────────────────────────
+  // ─── 11. Deadlines ─────────────────────────────────
   console.log('Creating deadlines...')
   for (const entity of allEntities) {
     const applicableForms = formTypes.filter(f => f.entityTypes.includes(entity.entityType))
@@ -502,11 +614,12 @@ async function fakeSeed() {
   }
   console.log(`  → ${allDeadlines.length} deadlines created`)
 
-  // ─── 11. Filings ───────────────────────────────────
+  // ─── 12. Filings ───────────────────────────────────
   console.log('Creating filings...')
   for (const orgId of allOrgs) {
     const orgEntities = allEntities.filter(e => e.orgId === orgId)
-    const orgCpas = allUsers.filter(u => u.orgId === orgId && u.role === 'cpa')
+    // CPAs assigned to this org (via cpaAssignments), not from the org itself
+    const assignedCpaIds = orgCpaMap.get(orgId) ?? []
     const numFilings = rand(FILINGS_PER_ORG.min, FILINGS_PER_ORG.max)
 
     for (let j = 0; j < numFilings; j++) {
@@ -517,8 +630,12 @@ async function fakeSeed() {
       const deadline = entityDeadlines.length > 0 ? pick(entityDeadlines) : null
       const status = pick([...filingStatuses])
       const filingId = uuid()
-      const cpa = orgCpas.length > 0 ? pick(orgCpas) : null
       const taxYear = pick([2024, 2025, 2025, 2025])
+
+      // Assign a CPA from the org's assigned CPA list (not an org-member CPA)
+      const cpaId = assignedCpaIds.length > 0
+        ? (['cpa_review', 'founder_approval', 'submitted'].includes(status) ? pick(assignedCpaIds) : null)
+        : null
 
       const filingData: Record<string, unknown> = {
         revenue: rand(50000, 10000000),
@@ -543,7 +660,7 @@ async function fakeSeed() {
         aiConfidenceScore: ['ai_prep', 'cpa_review', 'founder_approval', 'submitted'].includes(status)
           ? randFloat(0.6, 0.99)
           : null,
-        cpaAssignedId: ['cpa_review', 'founder_approval', 'submitted'].includes(status) && cpa ? cpa.id : null,
+        cpaAssignedId: cpaId,
         filingData: filingData as any,
         aiSummary: ['ai_prep', 'cpa_review', 'founder_approval', 'submitted'].includes(status)
           ? `AI-prepared ${deadline?.formType || 'tax'} filing for tax year ${taxYear}. Revenue: $${(filingData.revenue as number).toLocaleString()}, Net Income: $${(filingData.netIncome as number).toLocaleString()}.`
@@ -561,7 +678,7 @@ async function fakeSeed() {
   }
   console.log(`  → ${allFilings.length} filings created`)
 
-  // ─── 12. Documents ─────────────────────────────────
+  // ─── 13. Documents ─────────────────────────────────
   console.log('Creating documents...')
   let docCount = 0
   for (const orgId of allOrgs) {
@@ -601,7 +718,7 @@ async function fakeSeed() {
   }
   console.log(`  → ${docCount} documents created`)
 
-  // ─── 13. Approval Queue ────────────────────────────
+  // ─── 14. Approval Queue ────────────────────────────
   console.log('Creating approval queue entries...')
   let approvalCount = 0
   const approvalFilings = allFilings.filter(f =>
@@ -611,7 +728,6 @@ async function fakeSeed() {
     const orgUsers = allUsers.filter(u => u.orgId === filing.orgId)
     const resolver = pick(orgUsers)
 
-    // CPA approval
     const cpaStatus = ['founder_approval', 'submitted', 'archived'].includes(filing.status)
       ? 'approved' as const
       : pick(['pending', 'pending', 'approved', 'rejected'] as const)
@@ -639,7 +755,6 @@ async function fakeSeed() {
     }).run()
     approvalCount++
 
-    // Founder approval for submitted/archived
     if (['submitted', 'archived'].includes(filing.status)) {
       db.insert(schema.approvalQueue).values({
         id: uuid(),
@@ -655,7 +770,6 @@ async function fakeSeed() {
       approvalCount++
     }
 
-    // Pending founder approval
     if (filing.status === 'founder_approval') {
       db.insert(schema.approvalQueue).values({
         id: uuid(),
@@ -671,18 +785,20 @@ async function fakeSeed() {
   }
   console.log(`  → ${approvalCount} approval queue entries created`)
 
-  // ─── 14. Filing Review Locks ───────────────────────
+  // ─── 15. Filing Review Locks ───────────────────────
+  // Use CPAs assigned to the filing's org (from orgCpaMap), not org-member CPAs
   console.log('Creating filing review locks...')
   let lockCount = 0
   const reviewFilings = allFilings.filter(f => f.status === 'cpa_review')
   for (const filing of reviewFilings) {
-    const cpa = allUsers.find(u => u.orgId === filing.orgId && u.role === 'cpa')
-    if (!cpa) continue
+    const assignedCpaIds = orgCpaMap.get(filing.orgId) ?? []
+    if (assignedCpaIds.length === 0) continue
 
+    const cpaId = pick(assignedCpaIds)
     db.insert(schema.filingReviewLocks).values({
       id: uuid(),
       filingId: filing.id,
-      cpaUserId: cpa.id,
+      cpaUserId: cpaId,
       status: pick(['active', 'active', 'completed']),
       releasedAt: rand(0, 1) ? pastDate(5) : null,
     }).run()
@@ -690,7 +806,25 @@ async function fakeSeed() {
   }
   console.log(`  → ${lockCount} filing review locks created`)
 
-  // ─── 15. Audit Log ─────────────────────────────────
+  // ─── 16. CPA Notifications (seed some escalation examples) ─────────────────
+  console.log('Creating CPA notification examples...')
+  let notifCount = 0
+  const escalatedFilings = allFilings.filter(f => f.status === 'cpa_review').slice(0, 5)
+  for (const filing of escalatedFilings) {
+    const cpasToNotify = pickN(allCpas, Math.min(3, allCpas.length))
+    for (const cpa of cpasToNotify) {
+      db.insert(schema.cpaNotifications).values({
+        id: uuid(),
+        filingId: filing.id,
+        cpaUserId: cpa.id,
+        status: pick(['pending', 'pending', 'approved', 'dismissed'] as const),
+      }).run()
+      notifCount++
+    }
+  }
+  console.log(`  → ${notifCount} CPA notifications created`)
+
+  // ─── 17. Audit Log ─────────────────────────────────
   console.log('Creating audit logs...')
   let auditCount = 0
   for (const orgId of allOrgs) {
@@ -736,7 +870,7 @@ async function fakeSeed() {
   }
   console.log(`  → ${auditCount} audit log entries created`)
 
-  // ─── 16. Agent Conversations ───────────────────────
+  // ─── 18. Agent Conversations ───────────────────────
   console.log('Creating agent conversations...')
   let convCount = 0
   for (const orgId of allOrgs) {
@@ -746,8 +880,6 @@ async function fakeSeed() {
     for (let j = 0; j < numConvs; j++) {
       const filing = orgFilings.length > 0 ? pick(orgFilings) : null
       const agentType = pick(agentTypes)
-
-      // Generate realistic messages
       const numMessages = rand(2, 8)
       const messages = intakeMessages.slice(0, numMessages).map(m => ({
         ...m,
@@ -769,7 +901,7 @@ async function fakeSeed() {
   }
   console.log(`  → ${convCount} agent conversations created`)
 
-  // ─── 17. Email Verification Tokens ─────────────────
+  // ─── 19. Email Verification Tokens ─────────────────
   console.log('Creating email verification tokens...')
   let tokenCount = 0
   const recentUsers = allUsers.slice(-20)
@@ -788,14 +920,17 @@ async function fakeSeed() {
   // ─── Summary ───────────────────────────────────────
   console.log('\n✅ Fake data seed complete!\n')
   console.log('Summary:')
-  console.log(`  Organizations:        ${allOrgs.length + 1}`)
-  console.log(`  Users:                ${allUsers.length}`)
+  console.log(`  Organizations:        ${allOrgs.length + 1} (${allOrgs.length} client + 1 TaxOS admin)`)
+  console.log(`  CPAs:                 ${allCpas.length} (all under TaxOS admin org)`)
+  console.log(`  Client org users:     ${allUsers.filter(u => u.role !== 'cpa' && u.role !== 'admin').length}`)
+  console.log(`  Total users:          ${allUsers.length}`)
   console.log(`  Entities:             ${allEntities.length}`)
   console.log(`  Deadlines:            ${allDeadlines.length}`)
   console.log(`  Filings:              ${allFilings.length}`)
   console.log(`  Documents:            ${docCount}`)
   console.log(`  Approval Queue:       ${approvalCount}`)
   console.log(`  Filing Review Locks:  ${lockCount}`)
+  console.log(`  CPA Notifications:    ${notifCount}`)
   console.log(`  Audit Log Entries:    ${auditCount}`)
   console.log(`  Agent Conversations:  ${convCount}`)
   console.log(`  Role Templates:       ${allTemplates.length}`)
@@ -805,6 +940,7 @@ async function fakeSeed() {
   console.log(`  Founder Applications: ${appCount}`)
   console.log(`  Email Tokens:         ${tokenCount}`)
   console.log(`\n  Login: superadmin@taxos.ai / admin1234`)
+  console.log(`  CPA login: cpa1@taxos.ai / password123`)
   console.log(`  All other users: password123`)
 }
 

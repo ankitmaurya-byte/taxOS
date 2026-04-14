@@ -1,7 +1,9 @@
 import 'dotenv/config'
+import http from 'http'
 import express from 'express'
 import cors from 'cors'
 import path from 'path'
+import { createWsServer } from './services/ws.service'
 
 import authRoutes from './routes/auth'
 import entityRoutes from './routes/entities'
@@ -14,6 +16,8 @@ import agentRoutes from './routes/agents'
 import adminRoutes from './routes/admin'
 import memberRoutes from './routes/members'
 import profileRoutes from './routes/profile'
+import sseRoutes from './routes/sse'
+import chatRoutes from './routes/chat'
 import { errorHandler } from './middleware/errorHandler'
 import { requestLogger } from './middleware/requestLogger'
 import { logger } from './lib/logger'
@@ -38,6 +42,8 @@ app.use('/api/agents', agentRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/members', memberRoutes)
 app.use('/api/profile', profileRoutes)
+app.use('/api/sse', sseRoutes)
+app.use('/api/chat', chatRoutes)
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -47,7 +53,10 @@ app.get('/api/health', (_req, res) => {
 // Error handler
 app.use(errorHandler)
 
-app.listen(PORT, () => {
+const httpServer = http.createServer(app)
+createWsServer(httpServer)
+
+httpServer.listen(PORT, () => {
   logger.info(`TaxOS API running on http://localhost:${PORT}`)
 })
 

@@ -29,6 +29,10 @@ import {
   Archive,
   ShieldCheck,
   AlertTriangle,
+  Download,
+  Pencil,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 
 export function FilingDetailPage() {
@@ -41,6 +45,7 @@ export function FilingDetailPage() {
   const [isStreaming, setIsStreaming] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  const [showEditData, setShowEditData] = useState(false)
   const [startIntakeLoading, setStartIntakeLoading] = useState(false)
   const [updateStatusLoading, setUpdateStatusLoading] = useState(false)
   const [pauseLoading, setPauseLoading] = useState(false)
@@ -240,6 +245,31 @@ export function FilingDetailPage() {
     if (!id) return
     setArchiveLoading(true)
     try { await updateFilingStatus(id, 'archived') } finally { setArchiveLoading(false) }
+  }
+
+  const handleExport = () => {
+    if (!filing) return
+    const payload = {
+      id: filing.id,
+      formType: filing.formType,
+      formName: filing.formName,
+      taxYear: filing.taxYear,
+      status: filing.status,
+      filingData: filing.filingData ?? {},
+      aiSummary: filing.aiSummary,
+      documents: (filing.documents ?? []).map((d: any) => ({
+        fileName: d.fileName,
+        mimeType: d.mimeType,
+      })),
+      exportedAt: new Date().toISOString(),
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `filing-${filing.formType}-${filing.id.slice(0, 8)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   // Stage progress
@@ -525,6 +555,26 @@ export function FilingDetailPage() {
                 <Archive size={16} />
                 {archiveLoading ? 'Archiving...' : 'Archive Filing'}
               </button>
+              <button
+                onClick={handleExport}
+                className="h-10 rounded-lg border border-[#D8D3FF] px-4 text-sm font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] flex items-center gap-2"
+              >
+                <Download size={16} />
+                Export Filing
+              </button>
+            </div>
+          )}
+
+          {/* Export button for archived filings */}
+          {isArchived && (
+            <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
+              <button
+                onClick={handleExport}
+                className="h-10 rounded-lg border border-[#D8D3FF] px-4 text-sm font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] flex items-center gap-2"
+              >
+                <Download size={16} />
+                Export Filing
+              </button>
             </div>
           )}
 
@@ -622,6 +672,46 @@ export function FilingDetailPage() {
             </div>
           )}
 
+          {/* Filing data — editable section */}
+          <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-white p-4 text-left">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-[#111827]">
+                Filing Data {Object.keys(filing.filingData ?? {}).length > 0 && `(${Object.keys(filing.filingData).length} fields)`}
+              </h3>
+              <button
+                onClick={() => setShowEditData(true)}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#E5E7EB] text-xs font-medium text-[#374151] hover:bg-[#F9FAFB] transition-colors"
+              >
+                <Pencil size={13} />
+                Edit / Add Fields
+              </button>
+            </div>
+            {Object.keys(filing.filingData ?? {}).length === 0 ? (
+              <p className="text-sm text-[#6B7280] italic">No data fields yet. Use "Edit / Add Fields" to add them manually.</p>
+            ) : (
+              <div className="bg-white border border-[#E5E7EB] rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-[#F9FAFB]">
+                      <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-2 w-1/3">Field</th>
+                      <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-2">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(filing.filingData ?? {}).map(([key, value]) => (
+                      <tr key={key} className="border-t border-[#F3F4F6]">
+                        <td className="px-4 py-2 text-sm text-[#6B7280] font-medium">{formatKey(key)}</td>
+                        <td className="px-4 py-2 text-sm text-[#111827]">
+                          {typeof value === 'object' ? JSON.stringify(value) : String(value ?? '—')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => setShowPreview(true)}
             className="w-full max-w-sm h-10 border border-[#6C5CE7] text-[#6C5CE7] rounded-lg text-sm font-medium hover:bg-[#EDE9FD] transition-colors flex items-center justify-center gap-2"
@@ -638,6 +728,16 @@ export function FilingDetailPage() {
           filing={filing}
           entityName={entityName}
           onClose={() => setShowPreview(false)}
+        />
+      )}
+
+      {/* Edit filing data modal */}
+      {showEditData && id && (
+        <FilingDataEditor
+          filingId={id}
+          initialData={filing.filingData ?? {}}
+          onClose={() => setShowEditData(false)}
+          onSaved={() => { fetchFiling(id); setShowEditData(false) }}
         />
       )}
     </div>
@@ -814,6 +914,143 @@ function FormPreviewModal({
             className="h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] transition-colors"
           >
             Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Filing Data Editor ─── */
+function FilingDataEditor({
+  filingId,
+  initialData,
+  onClose,
+  onSaved,
+}: {
+  filingId: string
+  initialData: Record<string, unknown>
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const [rows, setRows] = useState<{ key: string; value: string }[]>(
+    Object.entries(initialData).map(([k, v]) => ({ key: k, value: String(v ?? '') }))
+  )
+  const [newKey, setNewKey] = useState('')
+  const [newValue, setNewValue] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  function addRow() {
+    const k = newKey.trim()
+    if (!k) return
+    if (rows.some(r => r.key === k)) {
+      setError(`Field "${k}" already exists — edit it below.`)
+      return
+    }
+    setRows(prev => [...prev, { key: k, value: newValue }])
+    setNewKey('')
+    setNewValue('')
+    setError('')
+  }
+
+  function removeRow(key: string) {
+    setRows(prev => prev.filter(r => r.key !== key))
+  }
+
+  function updateValue(key: string, value: string) {
+    setRows(prev => prev.map(r => r.key === key ? { ...r, value } : r))
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setError('')
+    try {
+      const fields: Record<string, string> = {}
+      for (const r of rows) fields[r.key] = r.value
+      await api.updateFilingData(filingId, fields)
+      onSaved()
+    } catch (e: any) {
+      setError(e?.message ?? 'Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB]">
+          <h2 className="text-base font-semibold text-[#111827]">Edit Filing Data</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-[#9CA3AF] hover:bg-[#F3F4F6]">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Existing fields */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+          {rows.length === 0 && (
+            <p className="text-sm text-[#9CA3AF] italic">No fields yet. Add one below.</p>
+          )}
+          {rows.map(row => (
+            <div key={row.key} className="flex items-center gap-2">
+              <span className="w-36 shrink-0 text-xs font-medium text-[#6B7280] truncate" title={row.key}>
+                {formatKey(row.key)}
+              </span>
+              <input
+                value={row.value}
+                onChange={e => updateValue(row.key, e.target.value)}
+                className="flex-1 h-8 text-sm border border-[#E5E7EB] rounded-lg px-2 outline-none focus:border-[#6C5CE7]"
+              />
+              <button onClick={() => removeRow(row.key)} className="p-1 text-[#9CA3AF] hover:text-[#EF4444]">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+
+          {/* Add new field */}
+          <div className="pt-3 border-t border-[#F3F4F6] mt-3">
+            <p className="text-xs font-medium text-[#6B7280] mb-2">Add new field</p>
+            <div className="flex items-center gap-2">
+              <input
+                value={newKey}
+                onChange={e => setNewKey(e.target.value)}
+                placeholder="fieldName"
+                className="w-36 h-8 text-sm border border-[#E5E7EB] rounded-lg px-2 outline-none focus:border-[#6C5CE7]"
+              />
+              <input
+                value={newValue}
+                onChange={e => setNewValue(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addRow()}
+                placeholder="value"
+                className="flex-1 h-8 text-sm border border-[#E5E7EB] rounded-lg px-2 outline-none focus:border-[#6C5CE7]"
+              />
+              <button
+                onClick={addRow}
+                disabled={!newKey.trim()}
+                className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#6C5CE7] text-white hover:bg-[#5B4BD5] disabled:opacity-40"
+              >
+                <Plus size={14} />
+              </button>
+            </div>
+          </div>
+
+          {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-[#E5E7EB] flex justify-end gap-2">
+          <button onClick={onClose} className="h-9 px-4 border border-[#E5E7EB] rounded-lg text-sm font-medium text-[#374151] hover:bg-[#F9FAFB]">
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
       </div>

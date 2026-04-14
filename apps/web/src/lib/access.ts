@@ -25,7 +25,7 @@ const ROUTE_RULES: Array<{ paths: string[]; rule: AccessRule }> = [
   { paths: ['/audit'], rule: { roles: ['admin', 'founder', 'cpa'] } },
   { paths: ['/team'], rule: { roles: ['founder'], permission: 'canManageTeam' } },
   { paths: ['/entities', '/entities/overview', '/entities/address-book', '/entities/:entityId', '/registrations', '/rd-tax-credits', '/command-center', '/incorporation', '/dissolution'], rule: { roles: ['founder'] } },
-  { paths: ['/advisor', '/chat'], rule: { roles: ['admin', 'founder', 'cpa'] } },
+  { paths: ['/advisor', '/chat', '/chat-hub'], rule: { roles: ['admin', 'founder', 'cpa'] } },
 ]
 
 function normalizePattern(pattern: string) {

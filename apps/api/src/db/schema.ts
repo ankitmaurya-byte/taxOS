@@ -254,3 +254,48 @@ export const agentConversations = sqliteTable('agent_conversations', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 })
+
+// ─── CPA Notifications (escalation round-robin) ───────
+export const cpaNotifications = sqliteTable('cpa_notifications', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  filingId: text('filing_id').references(() => filings.id).notNull(),
+  cpaUserId: text('cpa_user_id').references(() => users.id).notNull(),
+  status: text('status', { enum: ['pending', 'approved', 'dismissed'] }).default('pending').notNull(),
+  notifiedAt: text('notified_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  respondedAt: text('responded_at'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+})
+
+// ─── CPA Rejections (for top-match logic) ─────────────
+export const cpaRejections = sqliteTable('cpa_rejections', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  filingId: text('filing_id').references(() => filings.id).notNull(),
+  cpaUserId: text('cpa_user_id').references(() => users.id).notNull(),
+  reason: text('reason').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+})
+
+// ─── Organization Chat ────────────────────────────────
+export const orgChatMessages = sqliteTable('org_chat_messages', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  orgId: text('org_id').references(() => organizations.id).notNull(),
+  senderId: text('sender_id').references(() => users.id).notNull(),
+  message: text('message').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+})
+
+// ─── All-Founder Cross-Org Chat ───────────────────────
+export const founderChatMessages = sqliteTable('founder_chat_messages', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  senderId: text('sender_id').references(() => users.id).notNull(),
+  message: text('message').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+})
+
+// ─── CPA-Only Chat ────────────────────────────────────
+export const cpaChatMessages = sqliteTable('cpa_chat_messages', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  senderId: text('sender_id').references(() => users.id).notNull(),
+  message: text('message').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+})

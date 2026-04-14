@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import bcrypt from 'bcrypt'
 import { and, eq, sql } from 'drizzle-orm'
 import { assignCpaOrgSchema, createCpaSchema, founderApplicationReviewSchema } from 'shared'
 import { db } from '../db'
@@ -106,7 +107,8 @@ export async function assignCpaOrganization(req: Request, res: Response, next: N
       createdByUserId: req.user!.userId,
     }).run()
 
-    db.update(users).set({ orgId: organizationId }).where(eq(users.id, user.id)).run()
+    // CPAs keep their home orgId (admin org). Access to client orgs is tracked
+    // exclusively in cpaAssignments — we never reassign users.orgId for CPAs.
 
     res.json({ message: 'CPA assigned to organization' })
   } catch (err) { next(withContext(err as Error, 'assignCpaOrganization')) }
@@ -240,8 +242,8 @@ export function getUserDetails(req: Request, res: Response, next: NextFunction) 
     const user = db.select().from(users).where(eq(users.id, req.params.id as string)).get()
     if (!user) throw new AppError('User not found', 404)
     let org = null
-    let cpaOrgs = []
-    let assignedFilings = []
+    let cpaOrgs: typeof organizations.$inferSelect[] = []
+    let assignedFilings: typeof filings.$inferSelect[] = []
     if (user.orgId) {
       org = db.select().from(organizations).where(eq(organizations.id, user.orgId)).get()
     }

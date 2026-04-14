@@ -58,9 +58,8 @@ const NAV_ENTRIES: NavEntry[] = [
   { icon: Calculator, label: 'Deadlines', href: '/deadlines' },
   { icon: LayoutDashboard, label: 'Command Center', href: '/command-center' },
   { icon: Building2, label: 'My Entities', href: '/entities/overview' },
-  { icon: FolderOpen, label: 'Documents', href: '/documents' },
   { icon: Users, label: 'Team', href: '/team' },
-
+  
   // ── Admin Block ─────────────────────────────────────────────────────────────
   { icon: Users, label: 'Admin: Users', href: '/admin/tracking' },
   { icon: Users, label: 'Admin: Orgs', href: '/admin/organizations' },
@@ -87,11 +86,13 @@ const NAV_ENTRIES: NavEntry[] = [
 // Chat + Action Centre are pinned above the profile footer
 const BOTTOM_PINNED: NavItem[] = [
   // { icon: Users, label: 'Create Account', href: '/profile/create-account' },
-
+  
   { icon: ClipboardList, label: 'Approvals', href: '/approvals' },
   { icon: Users, label: 'Founder Applications', href: '/admin/founder-applications' },
   { icon: MessageCircle, label: 'Chat', href: '/chat' },
+  { icon: MessageCircle, label: 'ChatHub', href: '/chat-hub' },
   { icon: Zap, label: 'Action Centre', href: '/action-centre' },
+  { icon: FolderOpen, label: 'Documents', href: '/documents' },
 ]
 
 // ─── Components ───────────────────────────────────────────────────────────────

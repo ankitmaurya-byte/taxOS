@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Layout } from './Layout'
 import { useAuthStore } from '@/stores/auth'
 import { canAccessPath, getDefaultPathForRole, getDeniedPathForUser, getPostLoginPath } from '@/lib/access'
+import { useNotifications } from '@/hooks/useNotifications'
 
 // Pages
 import { LoginPage } from '@/pages/Login'
@@ -46,6 +47,7 @@ import { AdminFilings } from '@/pages/admin/AdminFilings'
 import { FounderSignupPage } from '@/pages/FounderSignup'
 import { CpaReviewQueue } from '@/pages/CpaReviewQueue'
 import { TeamManagementPage } from '@/pages/TeamManagement'
+import { ChatHubPage } from '@/pages/ChatHub'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000 } },
@@ -96,46 +98,101 @@ const publicRoutes = [
   { path: '/onboarding', element: <OnboardingProtectedRoute><OnboardingPage /></OnboardingProtectedRoute> },
 ]
 
-const protectedRoutes = [
-  { path: 'dashboard', element: <DashboardPage /> },
-  { path: 'home', element: <HomePage /> },
-  { path: 'command-center', element: <CommandCenter /> },
-  { path: 'filings', element: <FilingsPage /> },
-  { path: 'filings/:id', element: <FilingDetailPage /> },
-  { path: 'estimated-tax', element: <EstimatedTaxPage /> },
-  { path: 'registrations', element: <RegistrationsPage /> },
-  { path: 'rd-tax-credits', element: <RDTaxCreditsPage /> },
-  { path: 'entities/overview', element: <EntitiesOverviewPage /> },
-  { path: 'entities/address-book', element: <AddressBookPage /> },
-  { path: 'entities/:entityId', element: <EntityDetailPage /> },
-  { path: 'entities', element: <Navigate to="/entities/overview" replace /> },
-  { path: 'chat', element: <ChatPage /> },
-  { path: 'advisor', element: <AIAdvisor /> },
-  { path: 'action-centre', element: <ActionCentrePage /> },
-  { path: 'documents', element: <DocumentsPage /> },
-  { path: 'documents/vault', element: <DocumentVault /> },
-  { path: 'approvals', element: <ApprovalQueue /> },
-  { path: 'audit', element: <AuditTrail /> },
-  { path: 'deadlines', element: <DeadlinesPage /> },
-  { path: 'filings/room', element: <FilingRoom /> },
-  { path: 'filings/room/:id', element: <FilingRoom /> },
-  { path: 'incorporation', element: <IncorporationPage /> },
-  { path: 'dissolution', element: <DissolutionPage /> },
-  { path: 'profile', element: <ProfilePage /> },
-  { path: 'profile/create-account', element: <CreateAccountPage /> },
-  { path: 'team', element: <TeamManagementPage /> },
-  { path: 'admin/founder-applications', element: <FounderApplicationsPage /> },
-  { path: 'admin/tracking', element: <AdminUserTracking /> },
-  { path: 'admin/users/:id', element: <AdminUserDetails /> },
-  { path: 'admin/organizations', element: <AdminOrganizations /> },
-  { path: 'admin/organizations/:id', element: <AdminOrganizationDetails /> },
-  { path: 'admin/entities', element: <AdminEntities /> },
-  { path: 'admin/filings', element: <AdminFilings /> },
-  { path: 'cpa/review', element: <CpaReviewQueue /> },
-]
+type RouteGroup = {
+  all?: { path: string; element: JSX.Element }[]
+  admin?: { path: string; element: JSX.Element }[]
+  founder?: { path: string; element: JSX.Element }[]
+  cpa?: { path: string; element: JSX.Element }[]
+  team_member?: { path: string; element: JSX.Element }[]
+}
+
+const routeGroups: RouteGroup = {
+  all: [
+    { path: 'profile', element: <ProfilePage /> },
+    { path: 'chat', element: <ChatPage /> },
+    { path: 'chat-hub', element: <ChatHubPage /> },
+    { path: 'advisor', element: <AIAdvisor /> },
+    { path: 'audit', element: <AuditTrail /> },
+    { path: 'documents', element: <DocumentsPage /> },
+    { path: 'documents/vault', element: <DocumentVault /> },
+  ],
+  admin: [
+    { path: 'dashboard', element: <DashboardPage /> },
+    { path: 'admin/founder-applications', element: <FounderApplicationsPage /> },
+    { path: 'admin/tracking', element: <AdminUserTracking /> },
+    { path: 'admin/users/:id', element: <AdminUserDetails /> },
+    { path: 'admin/organizations', element: <AdminOrganizations /> },
+    { path: 'admin/organizations/:id', element: <AdminOrganizationDetails /> },
+    { path: 'admin/entities', element: <AdminEntities /> },
+    { path: 'admin/filings', element: <AdminFilings /> },
+  ],
+  founder: [
+    { path: 'home', element: <HomePage /> },
+    { path: 'profile/create-account', element: <CreateAccountPage /> },
+    { path: 'team', element: <TeamManagementPage /> },
+    { path: 'command-center', element: <CommandCenter /> },
+    { path: 'filings', element: <FilingsPage /> },
+    { path: 'filings/:id', element: <FilingDetailPage /> },
+    { path: 'estimated-tax', element: <EstimatedTaxPage /> },
+    { path: 'registrations', element: <RegistrationsPage /> },
+    { path: 'rd-tax-credits', element: <RDTaxCreditsPage /> },
+    { path: 'entities/overview', element: <EntitiesOverviewPage /> },
+    { path: 'entities/address-book', element: <AddressBookPage /> },
+    { path: 'entities/:entityId', element: <EntityDetailPage /> },
+    { path: 'entities', element: <Navigate to="/entities/overview" replace /> },
+    { path: 'deadlines', element: <DeadlinesPage /> },
+    { path: 'action-centre', element: <ActionCentrePage /> },
+    { path: 'filings/room', element: <FilingRoom /> },
+    { path: 'filings/room/:id', element: <FilingRoom /> },
+    { path: 'incorporation', element: <IncorporationPage /> },
+    { path: 'dissolution', element: <DissolutionPage /> },
+  ],
+  cpa: [
+    { path: 'dashboard', element: <DashboardPage /> },
+    { path: 'cpa/review', element: <CpaReviewQueue /> },
+  ],
+  team_member: [
+    { path: 'dashboard', element: <DashboardPage /> },
+    { path: 'home', element: <HomePage /> },
+  ],
+}
+
+function NotificationsProvider() {
+  useNotifications()
+  return null
+}
+
+function useUserRole() {
+  return useAuthStore((state) => state.user?.role)
+}
 
 export function App() {
   const { checkAuth } = useAuthStore()
+  const userRole = useUserRole()
+  
+  const protectedRoutes = useMemo(() => {
+    const routes: { path: string; element: JSX.Element }[] = []
+    
+    if (routeGroups.all) routes.push(...routeGroups.all)
+    
+    switch (userRole) {
+      case 'admin':
+        if (routeGroups.admin) routes.push(...routeGroups.admin)
+        break
+      case 'founder':
+        if (routeGroups.founder) routes.push(...routeGroups.founder)
+        break
+      case 'cpa':
+        if (routeGroups.cpa) routes.push(...routeGroups.cpa)
+        break
+      case 'team_member':
+        if (routeGroups.team_member) routes.push(...routeGroups.team_member)
+        break
+    }
+    
+    return routes
+  }, [userRole])
+
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
@@ -143,6 +200,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <NotificationsProvider />
         <Routes>
           {publicRoutes.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
