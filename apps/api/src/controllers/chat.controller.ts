@@ -148,7 +148,7 @@ export function postFounderMessage(req: Request, res: Response, next: NextFuncti
 
 export function getCpaMessages(req: Request, res: Response, next: NextFunction) {
   try {
-    if (req.user!.role !== 'cpa') throw new AppError('Only CPAs can access this chat', 403)
+    if (req.user!.role !== 'cpa' && req.user!.role !== 'admin') throw new AppError('Only CPAs and admins can access this chat', 403)
 
     const messages = db.select().from(cpaChatMessages)
       .orderBy(desc(cpaChatMessages.createdAt))
@@ -162,7 +162,7 @@ export function getCpaMessages(req: Request, res: Response, next: NextFunction) 
 
 export function postCpaMessage(req: Request, res: Response, next: NextFunction) {
   try {
-    if (req.user!.role !== 'cpa') throw new AppError('Only CPAs can post here', 403)
+    if (req.user!.role !== 'cpa' && req.user!.role !== 'admin') throw new AppError('Only CPAs and admins can post here', 403)
 
     const { message } = req.body as { message?: string }
     if (!message?.trim()) throw new AppError('Message is required', 400)
@@ -181,6 +181,7 @@ export function postCpaMessage(req: Request, res: Response, next: NextFunction) 
     }
 
     broadcastToRole('cpa', event)
+    broadcastToRole('admin', event)
 
     res.status(201).json({ ...saved, sender: senderInfo(saved.senderId) })
   } catch (err) { next(withContext(err as Error, 'postCpaMessage')) }

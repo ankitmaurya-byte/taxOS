@@ -17,9 +17,14 @@ import {
   AlertTriangle,
   DollarSign,
   BookOpen,
+  MessageSquare,
+  Users,
+  Briefcase,
+  ChevronDown,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
 import type { LucideIcon } from 'lucide-react'
+import { ChatRoom } from '@/components/ChatRoom'
 
 // ─── Markdown + Metadata rendering ───────────────────
 
@@ -333,11 +338,43 @@ function getActionsForRole(role: string): ActionCategory[] {
   }
 }
 
+// ─── Chat mode selector ───────────────────────────────
+type ChatMode = 'ai' | 'team' | 'cpas' | 'founders'
+
+interface ModeOption {
+  id: ChatMode
+  label: string
+  icon: LucideIcon
+}
+
+function getModeOptions(role: string): ModeOption[] {
+  const base: ModeOption[] = [{ id: 'ai', label: 'AI Advisor', icon: Bot }]
+  switch (role) {
+    case 'founder':
+      return [...base,
+        { id: 'team', label: 'Team Chat', icon: MessageSquare },
+        { id: 'founders', label: 'Founders Network', icon: Users },
+      ]
+    case 'team_member':
+      return [...base, { id: 'team', label: 'Team Chat', icon: MessageSquare }]
+    case 'cpa':
+      return [...base, { id: 'cpas', label: 'CPA Network', icon: Briefcase }]
+    case 'admin':
+      return [...base, { id: 'cpas', label: 'CPA Network', icon: Briefcase }]
+    default:
+      return base
+  }
+}
+
 export function ChatPage() {
   const user = useAuthStore((state) => state.user)
   const role = user?.role || 'team_member'
   const config = CHAT_CONFIG[role as keyof typeof CHAT_CONFIG] || CHAT_CONFIG.team_member
   const actionLibrary = getActionsForRole(role)
+  const modeOptions = getModeOptions(role)
+
+  const [chatMode, setChatMode] = useState<ChatMode>('ai')
+  const [showModeDropdown, setShowModeDropdown] = useState(false)
 
   const [conversations, setConversations] = useState<Conversation[]>([
     {
@@ -449,12 +486,93 @@ export function ChatPage() {
     setActiveId(id)
   }
 
+  const activeMode = modeOptions.find(m => m.id === chatMode) ?? modeOptions[0]
+
+  // Non-AI modes: full-screen ChatRoom with mode selector at top
+  if (chatMode !== 'ai') {
+    return (
+      <div className="flex h-[calc(100vh-56px)] -m-8 flex-col bg-white">
+        {/* Mode bar */}
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-[#E5E7EB]">
+          <div className="relative">
+            <button
+              onClick={() => setShowModeDropdown(v => !v)}
+              className="flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm font-medium text-[#111827] hover:border-[#D8D3FF] transition-colors"
+            >
+              <activeMode.icon size={15} className="text-[#6C5CE7]" />
+              {activeMode.label}
+              <ChevronDown size={14} className="text-[#9CA3AF]" />
+            </button>
+            {showModeDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-48 rounded-xl border border-[#E5E7EB] bg-white shadow-lg z-20 py-1">
+                {modeOptions.map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => { setChatMode(opt.id); setShowModeDropdown(false) }}
+                    className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm transition-colors ${
+                      opt.id === chatMode
+                        ? 'text-[#6C5CE7] bg-[#F3F0FF]'
+                        : 'text-[#374151] hover:bg-[#F9FAFB]'
+                    }`}
+                  >
+                    <opt.icon size={14} />
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        {/* Chat room */}
+        <div className="flex-1 min-h-0 p-4">
+          {chatMode === 'team' && (
+            <ChatRoom channel="org" orgId={user?.orgId ?? undefined} title="Team Chat" />
+          )}
+          {chatMode === 'founders' && (
+            <ChatRoom channel="founders" title="Founders Network" />
+          )}
+          {chatMode === 'cpas' && (
+            <ChatRoom channel="cpas" title="CPA Network" />
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-[calc(100vh-56px)] -m-8 bg-white">
       {/* Conversation list */}
       <div className="w-60 border-r border-[#E5E7EB] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB]">
-          <h2 className="text-sm font-semibold text-[#111827]">Conversations</h2>
+          {/* Mode dropdown */}
+          <div className="relative flex-1 mr-2">
+            <button
+              onClick={() => setShowModeDropdown(v => !v)}
+              className="flex items-center gap-1.5 text-sm font-semibold text-[#111827] hover:text-[#6C5CE7] transition-colors"
+            >
+              <activeMode.icon size={14} className="text-[#6C5CE7]" />
+              {activeMode.label}
+              <ChevronDown size={13} className="text-[#9CA3AF]" />
+            </button>
+            {showModeDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-48 rounded-xl border border-[#E5E7EB] bg-white shadow-lg z-20 py-1">
+                {modeOptions.map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => { setChatMode(opt.id); setShowModeDropdown(false) }}
+                    className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm transition-colors ${
+                      opt.id === chatMode
+                        ? 'text-[#6C5CE7] bg-[#F3F0FF]'
+                        : 'text-[#374151] hover:bg-[#F9FAFB]'
+                    }`}
+                  >
+                    <opt.icon size={14} />
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={newConversation}
             className="p-1.5 text-[#9CA3AF] hover:text-[#6C5CE7] hover:bg-[#EDE9FD] rounded transition-colors"

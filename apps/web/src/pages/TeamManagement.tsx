@@ -71,8 +71,9 @@ export function TeamManagementPage() {
   }
 
   const teamMembers = members.filter((m: any) => m.role === 'team_member')
-  const cpas = members.filter((m: any) => m.role === 'cpa')
   const activeCount = members.filter((m: any) => m.status === 'active' && m.id !== user?.id).length
+  const pendingCount = members.filter((m: any) => ['pending_admin_review', 'pending_email_verification'].includes(m.status)).length
+  const canEdit = user?.role === 'founder' || (user?.role === 'team_member' && Boolean(user?.permissions?.canManageTeam))
 
   return (
     <div className="space-y-6 p-6">
@@ -116,8 +117,8 @@ export function TeamManagementPage() {
           <p className="mt-1 text-2xl font-semibold text-[#111827]">{teamMembers.length}</p>
         </div>
         <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
-          <p className="text-xs text-[#6B7280]">CPAs assigned</p>
-          <p className="mt-1 text-2xl font-semibold text-[#111827]">{cpas.length}</p>
+          <p className="text-xs text-[#6B7280]">Pending invites</p>
+          <p className="mt-1 text-2xl font-semibold text-[#F59E0B]">{pendingCount}</p>
         </div>
       </div>
 
@@ -139,7 +140,7 @@ export function TeamManagementPage() {
           )}
         </div>
         <div className="flex gap-1.5">
-          {['all', 'team_member', 'cpa', 'founder'].map((role) => (
+          {['all', 'team_member', 'founder'].map((role) => (
             <button
               key={role}
               onClick={() => setRoleFilter(role)}
@@ -170,6 +171,7 @@ export function TeamManagementPage() {
               key={member.id}
               member={member}
               templates={templates}
+              canEdit={canEdit}
               isExpanded={editingMemberId === member.id}
               onToggle={() => setEditingMemberId(editingMemberId === member.id ? null : member.id)}
               onUpdatePermissions={updateMemberPermissions}
@@ -203,12 +205,14 @@ export function TeamManagementPage() {
 function MemberCard({
   member,
   templates,
+  canEdit,
   isExpanded,
   onToggle,
   onUpdatePermissions,
 }: {
   member: any
   templates: any[]
+  canEdit: boolean
   isExpanded: boolean
   onToggle: () => void
   onUpdatePermissions: (id: string, data: { templateId?: string; permissions?: Record<string, boolean> }) => Promise<void>
@@ -274,7 +278,7 @@ function MemberCard({
       </button>
 
       {/* Expanded permissions editor */}
-      {isExpanded && member.role === 'team_member' && (
+      {isExpanded && canEdit && member.role === 'team_member' && (
         <div className="border-t border-[#E5E7EB] px-5 py-4 bg-[#FAFAFA]">
           {/* Template selector */}
           <div className="mb-4">
@@ -344,8 +348,8 @@ function MemberCard({
         </div>
       )}
 
-      {/* Read-only permissions for non team_member roles */}
-      {isExpanded && member.role !== 'team_member' && (
+      {/* Read-only permissions for non-editable cases */}
+      {isExpanded && (!canEdit || member.role !== 'team_member') && (
         <div className="border-t border-[#E5E7EB] px-5 py-4 bg-[#FAFAFA]">
           <p className="mb-3 text-xs font-medium text-[#6B7280] uppercase tracking-wide">Permissions (role-based, read-only)</p>
           <div className="grid grid-cols-2 gap-2">

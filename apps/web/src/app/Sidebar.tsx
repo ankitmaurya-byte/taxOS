@@ -24,6 +24,10 @@ import {
   ChevronDown,
   ChevronRight as ChevronRightIcon,
   Settings,
+  Receipt,
+  Percent,
+  Mail,
+  Check,
 } from 'lucide-react'
 import { LogoIcon, LogoFull, ChevronUpDown } from './icons'
 import type { LucideIcon } from 'lucide-react'
@@ -90,7 +94,6 @@ const BOTTOM_PINNED: NavItem[] = [
   { icon: ClipboardList, label: 'Approvals', href: '/approvals' },
   { icon: Users, label: 'Founder Applications', href: '/admin/founder-applications' },
   { icon: MessageCircle, label: 'Chat', href: '/chat' },
-  { icon: MessageCircle, label: 'ChatHub', href: '/chat-hub' },
   { icon: Zap, label: 'Action Centre', href: '/action-centre' },
   { icon: FolderOpen, label: 'Documents', href: '/documents' },
 ]
@@ -106,6 +109,8 @@ export function Sidebar({ collapsed }: SidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false)
+  const [activeWorkspace, setActiveWorkspace] = useState('Tax')
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
   const toggleGroup = (label: string) =>
@@ -137,15 +142,66 @@ export function Sidebar({ collapsed }: SidebarProps) {
       className="flex h-screen flex-col bg-white border-r border-[#E5E7EB] transition-all duration-200"
       style={{ width: collapsed ? 64 : 240, minWidth: collapsed ? 64 : 240 }}
     >
-      {/* Logo */}
-      <div className="flex justify-between items-center mr-2 group w-full cursor-pointer truncate !border-none px-3 py-2 hover:bg-surface-grey focus-visible:outline-none gap-1.5 rounded">
-        {collapsed ? <LogoIcon /> : <LogoFull />}
-        <ChevronUpDown />
+      {/* Logo + Workspace Switcher */}
+      <div className="relative px-2 pt-2 pb-1">
+        <button
+          onMouseEnter={() => !collapsed && setShowWorkspaceMenu(true)}
+          onMouseLeave={() => setShowWorkspaceMenu(false)}
+          onClick={() => !collapsed && setShowWorkspaceMenu(v => !v)}
+          className="flex w-full items-center justify-between gap-1.5 rounded-lg px-2 py-2 hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+        >
+          {collapsed ? <LogoIcon /> : <LogoFull />}
+          {!collapsed && <ChevronUpDown />}
+        </button>
+
+        {/* Workspace dropdown */}
+        {showWorkspaceMenu && !collapsed && (
+          <div
+            onMouseEnter={() => setShowWorkspaceMenu(true)}
+            onMouseLeave={() => setShowWorkspaceMenu(false)}
+            className="absolute left-2 right-2 top-[calc(100%-4px)] z-50 rounded-2xl bg-[#F7F7F8] shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-[#EBEBED] py-1.5 overflow-hidden"
+          >
+            {[
+              { label: 'Books -    Please hire me ',      icon: BookOpen  },
+              { label: 'Tax -           😭😭',        icon: Receipt   },
+              { label: 'Sales Tax -     🙏🙏',  icon: Percent   },
+              { label: 'Mailroom -      🛐🛐',   icon: Mail      },
+              { label: 'Community',  icon: Users     },
+            ].map(({ label, icon: Icon }) => {
+              const active = activeWorkspace === label
+              return (
+                <button
+                  key={label}
+                  onClick={() => { setActiveWorkspace(label); setShowWorkspaceMenu(false) }}
+                  className={`
+                    group flex w-full items-center gap-2.5 px-3 py-2 text-sm font-medium
+                    transition-colors duration-150 rounded-lg mx-auto
+                    ${active
+                      ? 'text-[#6C5CE7] bg-[#EDEAFD]'
+                      : 'text-[#374151] hover:bg-[#EDEDEF] hover:text-[#111827]'
+                    }
+                  `}
+                  style={{ width: 'calc(100% - 8px)', marginLeft: 4 }}
+                >
+                  <Icon
+                    size={16}
+                    className={active ? 'text-[#6C5CE7]' : 'text-[#9CA3AF] group-hover:text-[#6B7280]'}
+                    strokeWidth={active ? 2.2 : 1.8}
+                  />
+                  <span className="flex-1 text-left tracking-[-0.01em]">{label}</span>
+                  {active && (
+                    <Check size={14} className="text-[#6C5CE7] flex-shrink-0" strokeWidth={2.5} />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Main Nav */}
       <nav className="flex-1 py-2 space-y-0.5 overflow-y-auto">
-        {NAV_ENTRIES.map((entry, idx) => {
+        {NAV_ENTRIES.map((entry) => {
           if (isGroup(entry)) {
             const { group } = entry
             if (!canRenderGroup(group)) return null

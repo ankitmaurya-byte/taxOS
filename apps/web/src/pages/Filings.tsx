@@ -12,10 +12,10 @@ import {
   ChevronDown,
   ChevronRight,
   Info,
-  DollarSign,
-  FileText,
+  Eye,
   Upload,
-  Users,
+  FolderOpen,
+  FileText,
   Plus,
 } from 'lucide-react'
 
@@ -389,25 +389,32 @@ export function FilingsPage() {
                     {filing.createdAt ? formatDate(filing.createdAt) : '—'}
                   </div>
 
-                  {/* Status + hover actions */}
-                  <div className="w-40 flex items-center justify-end gap-1">
-                    <div className="hidden group-hover:flex items-center gap-1 mr-2">
-                      <button className="p-1 text-[#9CA3AF] hover:text-[#374151]">
-                        <DollarSign size={16} />
+                  {/* Status + hover quick actions */}
+                  <div className="w-44 flex items-center justify-end gap-2">
+                    <div className="hidden group-hover:flex items-center gap-0.5">
+                      <button
+                        title="View filing"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/filings/${filing.id}`) }}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#6B7280] hover:text-[#6C5CE7] hover:bg-[#EDE9FD] transition-colors"
+                      >
+                        <Eye size={13} /> View
                       </button>
-                      <button className="p-1 text-[#9CA3AF] hover:text-[#374151]">
-                        <FileText size={16} />
+                      <button
+                        title="Upload document"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/documents`) }}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#6B7280] hover:text-[#6C5CE7] hover:bg-[#EDE9FD] transition-colors"
+                      >
+                        <Upload size={13} /> Upload
                       </button>
-                      <button className="p-1 text-[#9CA3AF] hover:text-[#374151]">
-                        <Upload size={16} />
-                      </button>
-                      <button className="p-1 text-[#9CA3AF] hover:text-[#374151]">
-                        <Users size={16} />
+                      <button
+                        title="Open filing room"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/filings/room/${filing.id}`) }}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#6B7280] hover:text-[#6C5CE7] hover:bg-[#EDE9FD] transition-colors"
+                      >
+                        <FolderOpen size={13} /> Room
                       </button>
                     </div>
-                    <div className="group-hover:hidden">
-                      <StatusBadge status={filing.status} />
-                    </div>
+                    <StatusBadge status={filing.status} />
                   </div>
                 </div>
               ))}

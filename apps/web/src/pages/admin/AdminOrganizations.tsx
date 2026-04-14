@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { format } from 'date-fns'
 import { Search, X } from 'lucide-react'
+import { Pagination } from '@/components/Pagination'
+
+const PAGE_SIZE = 15
 
 export function AdminOrganizations() {
   const queryClient = useQueryClient()
@@ -19,6 +22,7 @@ export function AdminOrganizations() {
 
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'created' | 'founders'>('name')
+  const [page, setPage] = useState(1)
 
   if (isLoading) return <div className="p-6">Loading organizations...</div>
 
@@ -37,6 +41,13 @@ export function AdminOrganizations() {
     return (a.name || '').localeCompare(b.name || '')
   })
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  function handleSearch(v: string) { setSearch(v); setPage(1) }
+  function handleSort(v: typeof sortBy) { setSortBy(v); setPage(1) }
+
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center">
@@ -53,12 +64,12 @@ export function AdminOrganizations() {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search organizations..."
             className="h-9 w-full rounded-lg border border-[#E5E7EB] bg-white pl-9 pr-8 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#374151]">
+            <button onClick={() => handleSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#374151]">
               <X size={14} />
             </button>
           )}
@@ -67,7 +78,7 @@ export function AdminOrganizations() {
           {([['name', 'Name'], ['created', 'Newest'], ['founders', 'Founders']] as const).map(([key, label]) => (
             <button
               key={key}
-              onClick={() => setSortBy(key)}
+              onClick={() => handleSort(key)}
               className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
                 sortBy === key
                   ? 'bg-[#111827] text-white'
@@ -93,7 +104,7 @@ export function AdminOrganizations() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#E5E7EB]">
-            {filtered.map((org: any) => (
+            {paginated.map((org: any) => (
               <tr key={org.id} className="hover:bg-[#F9FAFB]/50 transition-colors">
                 <td className="px-6 py-4 font-medium text-[#111827]">
                   <Link to={`/admin/organizations/${org.id}`} className="text-[#6C5CE7] hover:underline">
@@ -114,12 +125,21 @@ export function AdminOrganizations() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {paginated.length === 0 && (
               <tr><td colSpan={6} className="px-6 py-8 text-center text-[#6B7280]">{search ? 'No organizations match your search.' : 'No organizations found.'}</td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        page={safePage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setPage}
+        itemLabel="organizations"
+      />
     </div>
   )
 }
