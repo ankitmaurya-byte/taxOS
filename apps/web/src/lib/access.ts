@@ -16,7 +16,7 @@ const ROUTE_RULES: Array<{ paths: string[]; rule: AccessRule }> = [
   { paths: ['/home'], rule: { roles: ['founder', 'team_member'] } },
   { paths: ['/profile'], rule: { roles: ['admin', 'founder', 'team_member', 'cpa'] } },
   { paths: ['/profile/create-account'], rule: { roles: ['admin', 'founder'] } },
-  { paths: ['/admin/founder-applications', '/admin/tracking', '/admin/users/:id', '/admin/organizations', '/admin/organizations/:id', '/admin/entities', '/admin/filings'], rule: { roles: ['admin'] } },
+  { paths: ['/admin/founder-applications', '/admin/tracking', '/admin/users/:id', '/admin/organizations', '/admin/organizations/:id', '/admin/entities', '/admin/filings', '/admin/filings/:id', '/admin/chat-monitor'], rule: { roles: ['admin'] } },
   { paths: ['/filings', '/filings/:id', '/filings/room', '/filings/room/:id'], rule: { roles: ['founder', 'team_member', 'cpa'], permission: 'canViewFilings' } },
   { paths: ['/cpa/review'], rule: { roles: ['cpa'] } },
   { paths: ['/estimated-tax', '/deadlines', '/action-centre'], rule: { roles: ['founder', 'team_member'], permission: 'canViewFilings' } },
@@ -24,7 +24,7 @@ const ROUTE_RULES: Array<{ paths: string[]; rule: AccessRule }> = [
   { paths: ['/approvals'], rule: { roles: ['founder', 'team_member', 'cpa'], permission: 'canApproveFilings' } },
   { paths: ['/audit'], rule: { roles: ['admin', 'founder', 'cpa'] } },
   { paths: ['/team'], rule: { roles: ['founder'], permission: 'canManageTeam' } },
-  { paths: ['/entities', '/entities/overview', '/entities/address-book', '/entities/:entityId', '/registrations', '/rd-tax-credits', '/command-center', '/incorporation', '/dissolution'], rule: { roles: ['founder'] } },
+  { paths: ['/entities', '/entities/overview', '/entities/address-book', '/entities/:entityId', '/registrations', '/rd-tax-credits', '/command-center', '/incorporation', '/dissolution'], rule: { roles: ['founder', 'admin'] } },
   { paths: ['/advisor', '/chat', '/chat-hub'], rule: { roles: ['admin', 'founder', 'cpa', 'team_member'] } },
 ]
 

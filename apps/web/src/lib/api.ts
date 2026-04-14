@@ -146,6 +146,20 @@ const deleteOrganization = (id: string) => request<any>(`/admin/organizations/${
 const getGlobalEntities = () => request<any[]>('/admin/global-entities')
 const getGlobalFilings = () => request<any[]>('/admin/global-filings')
 
+// Admin entity & filing management (cross-org)
+const adminUpdateEntity = (id: string, payload: any) => request<any>(`/admin/entities/${id}`, { method: 'PUT', data: payload }, { successMessage: 'Entity updated.' })
+const adminDissolveEntity = (id: string) => request<any>(`/admin/entities/${id}`, { method: 'DELETE' }, { successMessage: 'Entity dissolved.' })
+const adminGetFiling = (id: string) => request<any>(`/admin/filings/${id}`)
+const adminUpdateFilingStatus = (id: string, status: string) => request<any>(`/admin/filings/${id}/status`, { method: 'PUT', data: { status } }, { successMessage: 'Filing status updated.' })
+const adminUpdateFilingData = (id: string, fields: Record<string, unknown>) => request<any>(`/admin/filings/${id}/data`, { method: 'PUT', data: { fields } }, { successMessage: 'Filing data saved.' })
+const adminGetAgentConversations = (params?: { orgId?: string; userId?: string }) => {
+  const qs = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+  return request<any[]>(`/admin/agent-conversations${qs}`)
+}
+const adminGetOrgMessages = (orgId: string) => request<any[]>(`/chat/org/${orgId}`)
+const adminGetFounderMessages = () => request<any[]>('/chat/founders')
+const adminGetCpaMessages = () => request<any[]>('/chat/cpas')
+
 const getSystemUsers = () =>
   request<any[]>('/admin/system-users')
 
@@ -608,6 +622,15 @@ export const api = {
     getOrganizationOverview,
     createCpa,
     assignCpaOrganization,
+    updateEntity: adminUpdateEntity,
+    dissolveEntity: adminDissolveEntity,
+    getFiling: adminGetFiling,
+    updateFilingStatus: adminUpdateFilingStatus,
+    updateFilingData: adminUpdateFilingData,
+    getAgentConversations: adminGetAgentConversations,
+    getOrgChatMessages: adminGetOrgMessages,
+    getFounderMessages: adminGetFounderMessages,
+    getCpaMessages: adminGetCpaMessages,
   },
   members: {
     getAll: getMembers,

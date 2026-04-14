@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/lib/api'
-import { Search, X, Calendar } from 'lucide-react'
+import { Search, X, Calendar, Pencil, Check } from 'lucide-react'
 import { Pagination } from '@/components/Pagination'
 
 const FILING_STATUSES = ['intake', 'ai_prep', 'cpa_review', 'founder_approval', 'submitted', 'archived']
@@ -25,6 +25,7 @@ function formatDate(iso: string | null | undefined) {
 }
 
 export function AdminFilings() {
+  const queryClient = useQueryClient()
   const { data: filings, isLoading } = useQuery({
     queryKey: ['admin-global-filings'],
     queryFn: () => api.admin.getGlobalFilings(),
@@ -35,6 +36,18 @@ export function AdminFilings() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
+
+  // Inline status edit
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editStatus, setEditStatus] = useState('')
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => api.admin.updateFilingStatus(id, status),
+    onSuccess: () => {
+      setEditingId(null)
+      queryClient.invalidateQueries({ queryKey: ['admin-global-filings'] })
+    },
+  })
 
   if (isLoading) return <div className="p-6 text-sm text-[#6B7280]">Loading global filings...</div>
 
@@ -201,16 +214,45 @@ export function AdminFilings() {
               <th className="px-5 py-3.5">Entity</th>
               <th className="px-5 py-3.5">CPA Assigned</th>
               <th className="px-5 py-3.5">Created</th>
+              <th className="px-5 py-3.5 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#E5E7EB]">
             {paginated.map((f: any) => (
               <tr key={f.id} className="hover:bg-[#F9FAFB]/50">
-                <td className="px-5 py-3.5 font-medium text-[#111827]">{f.formName} ({f.formType})</td>
+                <td className="px-5 py-3.5 font-medium text-[#111827]">
+                  <Link to={`/admin/filings/${f.id}`} className="text-[#6C5CE7] hover:underline">
+                    {f.formName} ({f.formType})
+                  </Link>
+                </td>
                 <td className="px-5 py-3.5">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${STATUS_STYLES[f.status] || 'bg-[#E0E7FF] text-[#4338CA]'}`}>
-                    {f.status?.replace(/_/g, ' ')}
-                  </span>
+                  {editingId === f.id ? (
+                    <div className="flex items-center gap-1">
+                      <select
+                        className="border rounded px-1.5 py-0.5 text-xs"
+                        value={editStatus}
+                        onChange={ev => setEditStatus(ev.target.value)}
+                      >
+                        {FILING_STATUSES.map(s => (
+                          <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => updateStatusMutation.mutate({ id: f.id, status: editStatus })}
+                        disabled={updateStatusMutation.isPending}
+                        className="p-0.5 text-green-600 hover:text-green-800 disabled:opacity-50"
+                      >
+                        <Check size={13} />
+                      </button>
+                      <button onClick={() => setEditingId(null)} className="p-0.5 text-gray-400 hover:text-gray-600">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${STATUS_STYLES[f.status] || 'bg-[#E0E7FF] text-[#4338CA]'}`}>
+                      {f.status?.replace(/_/g, ' ')}
+                    </span>
+                  )}
                 </td>
                 <td className="px-5 py-3.5 text-[#6C5CE7] hover:underline">
                   <Link to={`/admin/organizations/${f.orgId}`}>{f.orgName}</Link>
@@ -220,6 +262,16 @@ export function AdminFilings() {
                   {f.cpaName || 'Unassigned'}
                 </td>
                 <td className="px-5 py-3.5 text-[#6B7280] whitespace-nowrap">{formatDate(f.createdAt)}</td>
+                <td className="px-5 py-3.5 text-right">
+                  {editingId !== f.id && (
+                    <button
+                      onClick={() => { setEditingId(f.id); setEditStatus(f.status) }}
+                      className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#6C5CE7] bg-[#EEF2FF] hover:bg-[#E0E7FF] rounded ml-auto"
+                    >
+                      <Pencil size={11} /> Edit
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
             {paginated.length === 0 && (
@@ -232,6 +284,7 @@ export function AdminFilings() {
           </tbody>
         </table>
       </div>
+
 
       <Pagination
         page={safePage}

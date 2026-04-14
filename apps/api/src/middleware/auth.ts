@@ -90,6 +90,8 @@ export function blockRoles(...roles: AuthUser['role'][]) {
 export function requirePermission(permission: PermissionKey) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ error: 'Not authenticated' })
+    // Admins bypass all granular permission checks — they have platform-wide access
+    if (req.user.role === 'admin') return next()
     if (!req.user.permissions?.[permission]) {
       return res.status(403).json({ error: 'Insufficient permissions' })
     }

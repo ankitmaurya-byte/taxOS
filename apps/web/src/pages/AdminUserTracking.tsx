@@ -24,15 +24,16 @@ export function AdminUserTracking() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['system-users'] })
   })
 
-  const [showCreate, setShowCreate] = useState(false)
-  const [formData, setFormData] = useState({ name: '', email: '', role: 'founder', password: 'Password123!', orgId: '' })
+  const [showInviteCpa, setShowInviteCpa] = useState(false)
+  const [cpaEmail, setCpaEmail] = useState('')
 
-  const createMutation = useMutation({
-    mutationFn: (data: any) => api.admin.createUser(data),
+  const inviteCpaMutation = useMutation({
+    mutationFn: (email: string) => api.admin.createCpa({ email }),
     onSuccess: () => {
-      setShowCreate(false)
+      setShowInviteCpa(false)
+      setCpaEmail('')
       queryClient.invalidateQueries({ queryKey: ['system-users'] })
-    }
+    },
   })
 
   if (isLoading) return <div className="p-6 text-[#6B7280]">Loading users...</div>
@@ -72,10 +73,10 @@ export function AdminUserTracking() {
           <p className="mt-1 text-sm text-[#6B7280]">Full control over founders, team members, and CPAs.</p>
         </div>
         <button
-          onClick={() => setShowCreate(true)}
+          onClick={() => setShowInviteCpa(true)}
           className="px-4 py-2 bg-[#6C5CE7] text-white rounded-lg font-medium hover:bg-[#5a4bce] transition-colors"
         >
-          + Create User
+          + Invite CPA
         </button>
       </div>
 
@@ -216,24 +217,33 @@ export function AdminUserTracking() {
         itemLabel="users"
       />
 
-      {showCreate && (
+      {showInviteCpa && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl w-[400px]">
-            <h2 className="text-xl font-semibold mb-4">Create New User</h2>
+          <div className="bg-white p-6 rounded-xl w-[400px] shadow-xl">
+            <h2 className="text-xl font-semibold mb-1">Invite CPA</h2>
+            <p className="text-sm text-[#6B7280] mb-5">The CPA will receive an email invitation to set up their account.</p>
             <div className="space-y-4">
-              <input type="text" placeholder="Full Name" className="w-full p-2 border rounded" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-              <input type="email" placeholder="Email Address" className="w-full p-2 border rounded" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-              <select className="w-full p-2 border rounded" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
-                <option value="founder">Founder</option>
-                <option value="team_member">Team Member</option>
-                <option value="cpa">CPA</option>
-                <option value="admin">Admin</option>
-              </select>
-              <input type="text" placeholder="Organization ID (Optional)" className="w-full p-2 border rounded" value={formData.orgId} onChange={e => setFormData({...formData, orgId: e.target.value})} />
+              <div>
+                <label className="block text-xs font-medium text-[#374151] mb-1">Email Address</label>
+                <input
+                  type="email"
+                  placeholder="cpa@example.com"
+                  className="w-full p-2.5 border rounded-lg text-sm"
+                  value={cpaEmail}
+                  onChange={e => setCpaEmail(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && cpaEmail.trim() && inviteCpaMutation.mutate(cpaEmail.trim())}
+                />
+              </div>
             </div>
             <div className="mt-6 flex justify-end gap-2">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm bg-gray-100 rounded hover:bg-gray-200">Cancel</button>
-              <button onClick={() => createMutation.mutate(formData)} className="px-4 py-2 text-sm bg-[#6C5CE7] text-white rounded hover:bg-[#5a4bce]">Confirm Create</button>
+              <button onClick={() => { setShowInviteCpa(false); setCpaEmail('') }} className="px-4 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+              <button
+                onClick={() => inviteCpaMutation.mutate(cpaEmail.trim())}
+                disabled={!cpaEmail.trim() || inviteCpaMutation.isPending}
+                className="px-4 py-2 text-sm bg-[#6C5CE7] text-white rounded-lg hover:bg-[#5a4bce] disabled:opacity-50"
+              >
+                {inviteCpaMutation.isPending ? 'Sending...' : 'Send Invite'}
+              </button>
             </div>
           </div>
         </div>

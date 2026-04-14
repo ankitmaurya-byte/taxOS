@@ -115,7 +115,8 @@ function ReferralCard() {
 /* ─── Promo / Ad Card ─── */
 
 function PromoCard() {
-  const [activeSlide, setActiveSlide] = useState(0)
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(true);
 
   const slides = [
     {
@@ -143,15 +144,20 @@ function PromoCard() {
       cta: "View perks",
       bg: "bg-[#F3F4F6]",
     },
-  ]
+  ];
+
+  // 👇 clone first slide at end
+  let extendedSlides = [...slides, ...slides,...slides,...slides,];
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % slides.length)
-    }, 2000)
+      
+        setActiveSlide((prev) => (prev + 1)  % extendedSlides.length);
+      
+    }, 2000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="relative overflow-hidden rounded-2xl shadow-sm h-full">
@@ -162,7 +168,7 @@ function PromoCard() {
           transform: `translateX(-${activeSlide * 100}%)`,
         }}
       >
-        {slides.map((slide, i) => (
+        {extendedSlides.map((slide, i) => (
           <div
             key={i}
             className={`min-w-full h-full p-6 ${slide.bg} flex flex-col justify-between relative`}
@@ -204,15 +210,13 @@ function PromoCard() {
             key={i}
             onClick={() => setActiveSlide(i)}
             className={`h-2 rounded-full ${
-              i === activeSlide
-                ? "w-6 bg-[#374151]"
-                : "w-2 bg-[#D1D5DB]"
+              i === activeSlide % 3 ? "w-6 bg-[#374151]" : "w-2 bg-[#D1D5DB]"
             }`}
           />
         ))}
       </div>
     </div>
-  )
+  );
 }
 /* ─── Main Export ─── */
 export function HomeBottomSection() {

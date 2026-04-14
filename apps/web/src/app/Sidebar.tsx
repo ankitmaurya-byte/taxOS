@@ -69,6 +69,7 @@ const NAV_ENTRIES: NavEntry[] = [
   { icon: Users, label: 'Admin: Orgs', href: '/admin/organizations' },
   { icon: FolderOpen, label: 'Admin: Entities', href: '/admin/entities' },
   { icon: FileText, label: 'Admin: Filings', href: '/admin/filings' },
+  { icon: MessageCircle, label: 'Admin: Chat Monitor', href: '/admin/chat-monitor' },
   
   // ── Collapsible "Other Services" group ──────────────────────────────────────
   {

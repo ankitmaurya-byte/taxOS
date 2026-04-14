@@ -44,12 +44,12 @@ export function getOrgMessages(req: Request, res: Response, next: NextFunction) 
   try {
     const { orgId } = req.params as { orgId: string }
 
-    // Founders/team_members must belong to the org; CPAs must be assigned to it
+    // Founders/team_members must belong to the org; CPAs must be assigned; admin sees any org
     if (req.user!.role === 'cpa') {
       if (!ensureCpaHasOrgAccess(req.user!.userId, orgId)) {
         throw new AppError('CPA not assigned to this organization', 403)
       }
-    } else if (req.user!.orgId !== orgId) {
+    } else if (req.user!.role !== 'admin' && req.user!.orgId !== orgId) {
       throw new AppError('You are not a member of this organization', 403)
     }
 
@@ -105,7 +105,7 @@ export function postOrgMessage(req: Request, res: Response, next: NextFunction) 
 
 export function getFounderMessages(req: Request, res: Response, next: NextFunction) {
   try {
-    if (req.user!.role !== 'founder') throw new AppError('Only founders can access this chat', 403)
+    if (req.user!.role !== 'founder' && req.user!.role !== 'admin') throw new AppError('Only founders and admins can access this chat', 403)
 
     const messages = db.select().from(founderChatMessages)
       .orderBy(desc(founderChatMessages.createdAt))

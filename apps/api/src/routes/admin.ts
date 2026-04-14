@@ -17,6 +17,12 @@ import {
   listAllEntities,
   listAllFilings,
   listFounderApplications,
+  updateAnyEntity,
+  dissolveAnyEntity,
+  updateAnyFilingStatus,
+  getFilingDetails,
+  updateAnyFilingData,
+  listAllAgentConversations,
 } from '../controllers/admin.controller'
 import { authMiddleware, requireActiveAccount, requireRole } from '../middleware/auth'
 
@@ -49,5 +55,15 @@ router.delete('/organizations/:id', toggleSuspendOrganization)
 // Global Discovery
 router.get('/global-entities', listAllEntities)
 router.get('/global-filings', listAllFilings)
+
+// Entity & Filing management (admin cross-org)
+router.put('/entities/:id', updateAnyEntity)
+router.delete('/entities/:id', dissolveAnyEntity)
+router.get('/filings/:id', getFilingDetails)
+router.put('/filings/:id/status', updateAnyFilingStatus)
+router.put('/filings/:id/data', updateAnyFilingData)
+
+// Agent conversations (admin monitoring)
+router.get('/agent-conversations', listAllAgentConversations)
 
 export default router

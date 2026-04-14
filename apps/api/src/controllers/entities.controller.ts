@@ -139,12 +139,11 @@ export async function createEntity(req: Request, res: Response, next: NextFuncti
 }
 
 // ─── GET /api/entities/:id ───────────────────────────
-// Returns a single entity by ID, scoped to the user's org.
-// Connected fields: req.params.id as string → entities.id, req.user.orgId → entities.orgId
+// Returns a single entity by ID, scoped to the user's org (admin bypasses scope).
 export function getEntity(req: Request, res: Response) {
-  const entity = db.select().from(entities)
-    .where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId)))
-    .get()
+  const entity = req.user!.role === 'admin'
+    ? db.select().from(entities).where(eq(entities.id, req.params.id as string)).get()
+    : db.select().from(entities).where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId))).get()
   if (!entity) return res.status(404).json({ error: 'Entity not found' })
   res.json(entity)
 }
@@ -239,9 +238,9 @@ export function getEstimatedTaxProjection(req: Request, res: Response) {
 export async function updateEntity(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateEntitySchema.parse(req.body)
-    const existing = db.select().from(entities)
-      .where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId)))
-      .get()
+    const existing = req.user!.role === 'admin'
+      ? db.select().from(entities).where(eq(entities.id, req.params.id as string)).get()
+      : db.select().from(entities).where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId))).get()
     if (!existing) return res.status(404).json({ error: 'Entity not found' })
 
     const majorBusinessActivity = data.majorBusinessActivity ?? undefined
@@ -257,9 +256,9 @@ export async function updateEntity(req: Request, res: Response, next: NextFuncti
 // Soft delete: sets entities.status = 'dissolved' (does NOT remove the row).
 // Connected fields: req.params.id as string → entities.id
 export function deleteEntity(req: Request, res: Response) {
-  const existing = db.select().from(entities)
-    .where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId)))
-    .get()
+  const existing = req.user!.role === 'admin'
+    ? db.select().from(entities).where(eq(entities.id, req.params.id as string)).get()
+    : db.select().from(entities).where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId))).get()
   if (!existing) return res.status(404).json({ error: 'Entity not found' })
 
   db.update(entities).set({ status: 'dissolved' }).where(eq(entities.id, req.params.id as string)).run()

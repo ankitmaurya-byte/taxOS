@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express'
 import bcrypt from 'bcrypt'
-import { and, eq, sql } from 'drizzle-orm'
-import { assignCpaOrgSchema, createCpaSchema, founderApplicationReviewSchema } from 'shared'
+import { and, desc, eq, sql } from 'drizzle-orm'
+import { assignCpaOrgSchema, createCpaSchema, founderApplicationReviewSchema, updateEntitySchema, updateFilingStatusSchema } from 'shared'
 import { db } from '../db'
-import { cpaAssignments, entities, filings, founderApplications, invites, organizations, users } from '../db/schema'
+import { agentConversations, cpaAssignments, documents, entities, filings, founderApplications, invites, organizations, users } from '../db/schema'
 import { sendFounderApprovedEmail, sendFounderRejectedEmail, sendInviteEmail } from '../lib/mailer'
 import { generateAppToken, getFutureIso } from '../lib/tokens'
 import { AppError, withContext } from '../lib/errors'
@@ -260,8 +260,17 @@ export function getUserDetails(req: Request, res: Response, next: NextFunction) 
 
 export function updateUser(req: Request, res: Response, next: NextFunction) {
   try {
+    const existing = db.select().from(users).where(eq(users.id, req.params.id as string)).get()
+    if (!existing) throw new AppError('User not found', 404)
     const { name, email, role, status, orgId } = req.body
-    const user = db.update(users).set({ name, email, role, status, orgId }).where(eq(users.id, req.params.id as string)).returning().get()
+    // Only update fields that were explicitly provided — never overwrite orgId with undefined
+    const patch: Record<string, unknown> = {}
+    if (name !== undefined) patch.name = name
+    if (email !== undefined) patch.email = email
+    if (role !== undefined) patch.role = role
+    if (status !== undefined) patch.status = status
+    if (orgId !== undefined) patch.orgId = orgId
+    const user = db.update(users).set(patch as any).where(eq(users.id, req.params.id as string)).returning().get()
     res.json(user)
   } catch (err) { next(withContext(err as Error, 'updateUser')) }
 }
@@ -273,6 +282,103 @@ export function deleteUser(req: Request, res: Response, next: NextFunction) {
     db.update(users).set({ status: 'suspended' }).where(eq(users.id, user.id)).run()
     res.json({ message: 'User suspended' })
   } catch (err) { next(withContext(err as Error, 'deleteUser')) }
+}
+
+// ---- ENTITY & FILING MANAGEMENT (admin cross-org) ----
+
+export function updateAnyEntity(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = updateEntitySchema.parse(req.body)
+    const existing = db.select().from(entities).where(eq(entities.id, req.params.id as string)).get()
+    if (!existing) throw new AppError('Entity not found', 404)
+    const { majorBusinessActivity: mba, ...rest } = data
+    const updated = db.update(entities)
+      .set({ ...rest, majorBusinessActivity: mba ?? undefined, foreignSubsidiaries: data.foreignSubsidiaries as any })
+      .where(eq(entities.id, req.params.id as string))
+      .returning().get()
+    res.json(updated)
+  } catch (err) { next(withContext(err as Error, 'updateAnyEntity')) }
+}
+
+export function dissolveAnyEntity(req: Request, res: Response, next: NextFunction) {
+  try {
+    const existing = db.select().from(entities).where(eq(entities.id, req.params.id as string)).get()
+    if (!existing) throw new AppError('Entity not found', 404)
+    db.update(entities).set({ status: 'dissolved' }).where(eq(entities.id, req.params.id as string)).run()
+    res.json({ message: 'Entity dissolved' })
+  } catch (err) { next(withContext(err as Error, 'dissolveAnyEntity')) }
+}
+
+export async function updateAnyFilingStatus(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { status } = updateFilingStatusSchema.parse(req.body)
+    const filing = db.select().from(filings).where(eq(filings.id, req.params.id as string)).get()
+    if (!filing) throw new AppError('Filing not found', 404)
+    const updated = db.update(filings).set({ status, updatedAt: new Date().toISOString() })
+      .where(eq(filings.id, filing.id)).returning().get()
+    res.json(updated)
+  } catch (err) { next(withContext(err as Error, 'updateAnyFilingStatus')) }
+}
+
+// ---- FILING DETAILS & DATA (admin cross-org) ----
+
+export function getFilingDetails(req: Request, res: Response, next: NextFunction) {
+  try {
+    const filing = db.select().from(filings).where(eq(filings.id, req.params.id as string)).get()
+    if (!filing) throw new AppError('Filing not found', 404)
+    const org = filing.orgId ? db.select().from(organizations).where(eq(organizations.id, filing.orgId)).get() : null
+    const entity = filing.entityId ? db.select().from(entities).where(eq(entities.id, filing.entityId)).get() : null
+    const cpa = filing.cpaAssignedId ? db.select().from(users).where(eq(users.id, filing.cpaAssignedId)).get() : null
+    const docs = db.select().from(documents).where(eq(documents.filingId, filing.id)).all()
+    const conversations = db.select().from(agentConversations).where(eq(agentConversations.filingId, filing.id)).all()
+    res.json({ ...filing, org, entity, cpa, documents: docs, conversations })
+  } catch (err) { next(withContext(err as Error, 'getFilingDetails')) }
+}
+
+export function updateAnyFilingData(req: Request, res: Response, next: NextFunction) {
+  try {
+    const filing = db.select().from(filings).where(eq(filings.id, req.params.id as string)).get()
+    if (!filing) throw new AppError('Filing not found', 404)
+    const { fields } = req.body as { fields: Record<string, unknown> }
+    const merged = { ...(filing.filingData || {}), ...fields }
+    const updated = db.update(filings)
+      .set({ filingData: merged, updatedAt: new Date().toISOString() })
+      .where(eq(filings.id, filing.id)).returning().get()
+    res.json({ message: 'Filing data updated', filingData: updated.filingData })
+  } catch (err) { next(withContext(err as Error, 'updateAnyFilingData')) }
+}
+
+// ---- AGENT CONVERSATIONS (admin) ----
+
+export function listAllAgentConversations(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { orgId, userId } = req.query as { orgId?: string; userId?: string }
+    let convos = db.select().from(agentConversations).orderBy(desc(agentConversations.updatedAt)).all()
+    if (orgId) convos = convos.filter(c => c.orgId === orgId)
+
+    const allFilings = db.select().from(filings).all()
+    const allOrgs = db.select().from(organizations).all()
+    const orgDict = Object.fromEntries(allOrgs.map(o => [o.id, o]))
+    const filingDict = Object.fromEntries(allFilings.map(f => [f.id, f]))
+
+    let result = convos.map(c => ({
+      ...c,
+      orgName: orgDict[c.orgId]?.name || 'Unknown',
+      filingForm: c.filingId ? filingDict[c.filingId]?.formName || 'Unknown' : null,
+      filingStatus: c.filingId ? filingDict[c.filingId]?.status || null : null,
+    }))
+
+    // Filter by userId: keep conversations where at least one user message has that userId context
+    // (agent conversations don't have userId directly; filter by orgId of user's org instead)
+    if (userId) {
+      const targetUser = db.select().from(users).where(eq(users.id, userId)).get()
+      if (targetUser?.orgId) {
+        result = result.filter(c => c.orgId === targetUser.orgId)
+      }
+    }
+
+    res.json(result)
+  } catch (err) { next(withContext(err as Error, 'listAllAgentConversations')) }
 }
 
 // ---- GLOBAL DISCOVERY ----

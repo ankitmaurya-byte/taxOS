@@ -26,9 +26,9 @@ router.get('/', requirePermission('canViewFilings'), listEntities)
 router.get('/:id', requirePermission('canViewFilings'), getEntity)
 router.get('/:id/estimated-tax', requirePermission('canViewFilings'), getEstimatedTaxProjection)
 
-// Write routes — founder only
-router.post('/', requireRole('founder'), createEntity)
-router.put('/:id', requireRole('founder'), updateEntity)
-router.delete('/:id', requireRole('founder'), deleteEntity)
+// Write routes — founder or admin
+router.post('/', requireRole('founder', 'admin'), createEntity)
+router.put('/:id', requireRole('founder', 'admin'), updateEntity)
+router.delete('/:id', requireRole('founder', 'admin'), deleteEntity)
 
 export default router

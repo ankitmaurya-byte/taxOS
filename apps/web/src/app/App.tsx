@@ -44,6 +44,8 @@ import { AdminOrganizationDetails } from '@/pages/admin/AdminOrganizationDetails
 import { AdminUserDetails } from '@/pages/admin/AdminUserDetails'
 import { AdminEntities } from '@/pages/admin/AdminEntities'
 import { AdminFilings } from '@/pages/admin/AdminFilings'
+import { AdminFilingDetail } from '@/pages/admin/AdminFilingDetail'
+import { AdminChatMonitor } from '@/pages/admin/AdminChatMonitor'
 import { FounderSignupPage } from '@/pages/FounderSignup'
 import { CpaReviewQueue } from '@/pages/CpaReviewQueue'
 import { TeamManagementPage } from '@/pages/TeamManagement'
@@ -118,6 +120,8 @@ const protectedRoutes = [
   { path: 'admin/organizations/:id',     element: <AdminOrganizationDetails /> },
   { path: 'admin/entities',             element: <AdminEntities /> },
   { path: 'admin/filings',              element: <AdminFilings /> },
+  { path: 'admin/filings/:id',          element: <AdminFilingDetail /> },
+  { path: 'admin/chat-monitor',         element: <AdminChatMonitor /> },
 
   // ── Founder ──────────────────────────────────────────────────────────────────
   { path: 'home',                  element: <HomePage /> },
