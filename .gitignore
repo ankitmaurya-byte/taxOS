@@ -6,6 +6,8 @@ dist/
 *.db-wal
 db-shm/
 db-wal/
+logs/
+apps/api/logs/
 apps/api/uploads/*
 !apps/api/uploads/.gitkeep
 .vite/
