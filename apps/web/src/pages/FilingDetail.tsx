@@ -79,6 +79,7 @@ export function FilingDetailPage() {
   const rejectFiling = useAuthStore(s => s.rejectFiling)
   const cpaApproveFiling = useAuthStore(s => s.cpaApproveFiling)
   const cpaRejectFiling = useAuthStore(s => s.cpaRejectFiling)
+  const claimFilingReview = useAuthStore(s => s.claimFilingReview)
 
   useEffect(() => {
     if (!id) return
@@ -132,8 +133,6 @@ export function FilingDetailPage() {
   const canEscalate = (status === 'intake' || status === 'ai_prep') && isFounder
   // Archive: founder can archive submitted filings
   const canArchive = status === 'submitted' && isFounder
-  // CPA approve/reject at cpa_review
-  const canCpaApprove = status === 'cpa_review' && isCpa
   // Advance: only intake → ai_prep (founder/CPA)
   const canAdvanceStatus = (s: string | undefined) => {
     if (s === 'intake') return isFounder || isCpa
@@ -148,6 +147,10 @@ export function FilingDetailPage() {
 
   // Review lock info
   const reviewLock = filing?.reviewLock as { cpaUserId: string; cpaName: string; cpaEmail: string; status: string } | null
+  // CPA approve only if CPA has claimed this filing
+  const canCpaApprove = status === 'cpa_review' && isCpa && reviewLock?.cpaUserId === user?.id
+  // CPA can claim if cpa_review and not yet claimed
+  const canCpaClaim = status === 'cpa_review' && isCpa && !reviewLock
   // Rejection remarks
   const rejectionRemarks = (filing?.rejectionRemarks || []) as { source: string; reason: string; date: string }[]
   // CPAs notified for claim
@@ -326,18 +329,43 @@ export function FilingDetailPage() {
 const renderValue = (value: any): React.ReactNode => {
   if (value === null || value === undefined) return '—';
 
-  // Prefill agent objects: { value, confidence, source, ... } — show just the value
-  if (typeof value === 'object' && 'value' in value) {
-    return String(value.value ?? '—');
+  // Arrays → comma-separated
+  if (Array.isArray(value)) {
+    return value.map(v => String(v)).join(', ') || '—';
   }
 
+  // Prefill agent objects: { value, confidence, source, needsCpaReview }
+  if (typeof value === 'object' && 'value' in value) {
+    const conf = value.confidence != null ? Math.round(value.confidence * 100) : null;
+    return (
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[#111827]">{String(value.value ?? '—')}</span>
+        {conf != null && (
+          <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+            conf >= 90 ? 'bg-green-100 text-green-700' :
+            conf >= 75 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+          }`}>
+            {conf}%
+          </span>
+        )}
+        {value.source && (
+          <span className="text-[10px] text-[#9CA3AF]">via {value.source}</span>
+        )}
+        {value.needsCpaReview && (
+          <span className="inline-flex items-center rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700">Review</span>
+        )}
+      </div>
+    );
+  }
+
+  // Generic objects → key-value pairs
   if (typeof value === 'object') {
     return (
-      <div className="pl-2 border-l border-gray-200 space-y-1">
+      <div className="rounded-lg bg-[#F9FAFB] border border-[#F3F4F6] px-3 py-2 space-y-1.5">
         {Object.entries(value).map(([k, v]) => (
-          <div key={k} className="text-sm">
-            <span className="font-medium text-gray-700">{formatKey(k)}:</span>{' '}
-            <span className="text-gray-900">{renderValue(v)}</span>
+          <div key={k} className="flex items-start gap-2 text-sm">
+            <span className="font-medium text-[#6B7280] min-w-[100px] shrink-0">{formatKey(k)}</span>
+            <span className="text-[#111827]">{renderValue(v)}</span>
           </div>
         ))}
       </div>
@@ -500,9 +528,17 @@ const renderValue = (value: any): React.ReactNode => {
             </span>
             <span className="text-[#6B7280]">Tax Year:</span>
             <span className="text-[#111827]">{filing.taxYear || '—'}</span>
-            <span className="text-[#6B7280]">Founder Approved:</span>
+            <span className="text-[#6B7280]">Approved By:</span>
             <span className="text-[#111827]">
-              {filing.founderApprovedAt ? formatDate(filing.founderApprovedAt) : '—'}
+              {filing.founderApprovedAt
+                ? <>
+                    {(filing as any).approvedBy
+                      ? <>{(filing as any).approvedBy.name} ({(filing as any).approvedBy.email}) — {formatDate(filing.founderApprovedAt)}</>
+                      : formatDate(filing.founderApprovedAt)
+                    }
+                  </>
+                : <span className="text-[#9CA3AF]">To be approved</span>
+              }
             </span>
             <span className="text-[#6B7280]">Last Updated:</span>
             <span className="text-[#111827]">
@@ -607,7 +643,7 @@ const renderValue = (value: any): React.ReactNode => {
             <p className="mb-8 text-sm text-[#6B7280]">Waiting for founder to review and approve this filing.</p>
           )}
 
-          {/* CPA Review — CPA actions: approve only */}
+          {/* CPA Review — CPA claimed: approve */}
           {canCpaApprove && (
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-3">
               <button
@@ -616,6 +652,31 @@ const renderValue = (value: any): React.ReactNode => {
                 className="h-10 rounded-lg bg-[#15803D] px-5 text-sm font-medium text-white hover:bg-[#166534] disabled:opacity-50"
               >
                 {cpaApproveLoading ? 'Approving...' : 'Approve Filing'}
+              </button>
+              <button
+                onClick={() => {
+                  const reason = window.prompt('Rejection reason (filing will be sent back to AI Prep):')
+                  if (reason) handleCpaReject(reason)
+                }}
+                disabled={cpaRejectLoading}
+                className="h-10 rounded-lg border border-red-200 px-5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+              >
+                Reject Filing
+              </button>
+            </div>
+          )}
+
+          {/* CPA Review — CPA not claimed: claim button */}
+          {canCpaClaim && (
+            <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-3">
+              <button
+                onClick={async () => {
+                  if (!id) return
+                  await claimFilingReview(id)
+                }}
+                className="h-10 rounded-lg bg-[#6C5CE7] px-5 text-sm font-medium text-white hover:bg-[#5B4BD5]"
+              >
+                Claim Filing
               </button>
             </div>
           )}

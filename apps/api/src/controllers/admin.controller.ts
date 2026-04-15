@@ -352,7 +352,10 @@ export function updateAnyFilingData(req: Request, res: Response, next: NextFunct
 
 export function listAllAgentConversations(req: Request, res: Response, next: NextFunction) {
   try {
-    const { orgId, userId } = req.query as { orgId?: string; userId?: string }
+    const { orgId, userId, limit: limitStr, offset: offsetStr } = req.query as { orgId?: string; userId?: string; limit?: string; offset?: string }
+    const limit = Math.min(Number(limitStr) || 20, 100)
+    const offset = Number(offsetStr) || 0
+
     let convos = db.select().from(agentConversations).orderBy(desc(agentConversations.updatedAt)).all()
     if (orgId) convos = convos.filter(c => c.orgId === orgId)
 
@@ -368,8 +371,6 @@ export function listAllAgentConversations(req: Request, res: Response, next: Nex
       filingStatus: c.filingId ? filingDict[c.filingId]?.status || null : null,
     }))
 
-    // Filter by userId: keep conversations where at least one user message has that userId context
-    // (agent conversations don't have userId directly; filter by orgId of user's org instead)
     if (userId) {
       const targetUser = db.select().from(users).where(eq(users.id, userId)).get()
       if (targetUser?.orgId) {
@@ -377,7 +378,9 @@ export function listAllAgentConversations(req: Request, res: Response, next: Nex
       }
     }
 
-    res.json(result)
+    const total = result.length
+    const paged = result.slice(offset, offset + limit)
+    res.json({ conversations: paged, total, limit, offset })
   } catch (err) { next(withContext(err as Error, 'listAllAgentConversations')) }
 }
 

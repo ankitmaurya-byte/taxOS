@@ -44,11 +44,11 @@ export function ChatRoom({ channel, orgId, title }: ChatRoomProps) {
     let cancelled = false
     async function loadHistory() {
       try {
-        let data: Message[]
-        if (channel === 'org' && orgId) data = await api.chat.getOrgMessages(orgId) as Message[]
-        else if (channel === 'founders') data = await api.chat.getFounderMessages() as Message[]
-        else data = await api.chat.getCpaMessages() as Message[]
-        if (!cancelled) setMessages(data)
+        let res: any
+        if (channel === 'org' && orgId) res = await api.chat.getOrgMessages(orgId, { limit: 50, offset: 0 })
+        else if (channel === 'founders') res = await api.chat.getFounderMessages({ limit: 50, offset: 0 })
+        else res = await api.chat.getCpaMessages({ limit: 50, offset: 0 })
+        if (!cancelled) setMessages(res.messages || res)
       } finally {
         if (!cancelled) setLoading(false)
       }

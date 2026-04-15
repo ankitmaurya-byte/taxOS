@@ -3,12 +3,16 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Pagination, usePagination } from '@/components/ui/pagination'
 import { formatDate, daysUntil } from '@/lib/utils'
+
+const PAGE_SIZE = 15
 
 export function DeadlinesPage() {
   const [selectedEntityId, setSelectedEntityId] = useState('')
   const [selectedDeadlineId, setSelectedDeadlineId] = useState<string | null>(null)
   const [runLoading, setRunLoading] = useState(false)
+  const [page, setPage] = useState(1)
 
   const deadlines = useAuthStore(s => s.deadlines)
   const entities = useAuthStore(s => s.entities)
@@ -73,7 +77,7 @@ export function DeadlinesPage() {
       </div>
 
       <div className="space-y-3">
-        {deadlines.map(deadline => {
+        {usePagination(deadlines, PAGE_SIZE).getPage(page).map(deadline => {
           const days = daysUntil(deadline.dueDate)
           return (
             <Card
@@ -113,6 +117,7 @@ export function DeadlinesPage() {
             </Card>
           )
         })}
+        <Pagination currentPage={page} totalPages={Math.max(1, Math.ceil(deadlines.length / PAGE_SIZE))} onPageChange={setPage} />
       </div>
 
       {selectedDeadline && (

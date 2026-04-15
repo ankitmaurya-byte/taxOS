@@ -318,7 +318,7 @@ export function FilingsPage() {
           <div className="w-40 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
             Deadline
           </div>
-          <div className="w-40 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider text-right">
+          <div className="w-60 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider text-right">
             Status
           </div>
         </div>
@@ -390,7 +390,7 @@ export function FilingsPage() {
                   </div>
 
                   {/* Status + hover quick actions */}
-                  <div className="w-44 flex items-center justify-end gap-2">
+                  <div className="w-64 flex items-center justify-end gap-2">
                     <div className="hidden group-hover:flex items-center gap-0.5">
                       <button
                         title="View filing"

@@ -152,13 +152,22 @@ const adminDissolveEntity = (id: string) => request<any>(`/admin/entities/${id}`
 const adminGetFiling = (id: string) => request<any>(`/admin/filings/${id}`)
 const adminUpdateFilingStatus = (id: string, status: string) => request<any>(`/admin/filings/${id}/status`, { method: 'PUT', data: { status } }, { successMessage: 'Filing status updated.' })
 const adminUpdateFilingData = (id: string, fields: Record<string, unknown>) => request<any>(`/admin/filings/${id}/data`, { method: 'PUT', data: { fields } }, { successMessage: 'Filing data saved.' })
-const adminGetAgentConversations = (params?: { orgId?: string; userId?: string }) => {
-  const qs = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
-  return request<any[]>(`/admin/agent-conversations${qs}`)
+const adminGetAgentConversations = (params?: Record<string, string>) => {
+  const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+  return request<{ conversations: any[]; total: number }>(`/admin/agent-conversations${qs}`)
 }
-const adminGetOrgMessages = (orgId: string) => request<any[]>(`/chat/org/${orgId}`)
-const adminGetFounderMessages = () => request<any[]>('/chat/founders')
-const adminGetCpaMessages = () => request<any[]>('/chat/cpas')
+const adminGetOrgMessages = (orgId: string, params?: { limit?: number; offset?: number }) => {
+  const qs = params ? '&' + new URLSearchParams({ limit: String(params.limit || 20), offset: String(params.offset || 0) }).toString() : ''
+  return request<{ messages: any[]; total: number }>(`/chat/org/${orgId}?${qs.replace('&', '')}`)
+}
+const adminGetFounderMessages = (params?: { limit?: number; offset?: number }) => {
+  const qs = params ? '?' + new URLSearchParams({ limit: String(params.limit || 20), offset: String(params.offset || 0) }).toString() : ''
+  return request<{ messages: any[]; total: number }>(`/chat/founders${qs}`)
+}
+const adminGetCpaMessages = (params?: { limit?: number; offset?: number }) => {
+  const qs = params ? '?' + new URLSearchParams({ limit: String(params.limit || 20), offset: String(params.offset || 0) }).toString() : ''
+  return request<{ messages: any[]; total: number }>(`/chat/cpas${qs}`)
+}
 
 const getSystemUsers = () =>
   request<any[]>('/admin/system-users')
@@ -367,20 +376,26 @@ const exportAuditCsv = async (filingId?: string) => {
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 
-const getOrgMessages = (orgId: string) =>
-  request<any[]>(`/chat/org/${orgId}`)
+const getOrgMessages = (orgId: string, params?: { limit?: number; offset?: number }) => {
+  const qs = params ? '?' + new URLSearchParams({ limit: String(params.limit || 20), offset: String(params.offset || 0) }).toString() : ''
+  return request<{ messages: any[]; total: number }>(`/chat/org/${orgId}${qs}`)
+}
 
 const postOrgMessage = (orgId: string, message: string) =>
   request<any>(`/chat/org/${orgId}`, { method: 'POST', data: { message } })
 
-const getFounderMessages = () =>
-  request<any[]>('/chat/founders')
+const getFounderMessages = (params?: { limit?: number; offset?: number }) => {
+  const qs = params ? '?' + new URLSearchParams({ limit: String(params.limit || 20), offset: String(params.offset || 0) }).toString() : ''
+  return request<{ messages: any[]; total: number }>(`/chat/founders${qs}`)
+}
 
 const postFounderMessage = (message: string) =>
   request<any>('/chat/founders', { method: 'POST', data: { message } })
 
-const getCpaMessages = () =>
-  request<any[]>('/chat/cpas')
+const getCpaMessages = (params?: { limit?: number; offset?: number }) => {
+  const qs = params ? '?' + new URLSearchParams({ limit: String(params.limit || 20), offset: String(params.offset || 0) }).toString() : ''
+  return request<{ messages: any[]; total: number }>(`/chat/cpas${qs}`)
+}
 
 const postCpaMessage = (message: string) =>
   request<any>('/chat/cpas', { method: 'POST', data: { message } })

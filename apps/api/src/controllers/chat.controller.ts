@@ -31,7 +31,7 @@ import { ensureCpaHasOrgAccess } from '../lib/rbac'
 import { AppError, withContext } from '../lib/errors'
 import { broadcastToOrg, broadcastToRole } from '../services/ws.service'
 
-const PAGE_LIMIT = 100
+const DEFAULT_LIMIT = 20
 
 function senderInfo(senderId: string) {
   const u = db.select({ name: users.name, role: users.role }).from(users).where(eq(users.id, senderId)).get()
@@ -53,15 +53,20 @@ export function getOrgMessages(req: Request, res: Response, next: NextFunction) 
       throw new AppError('You are not a member of this organization', 403)
     }
 
+    const limit = Math.min(Number(req.query.limit) || DEFAULT_LIMIT, 100)
+    const offset = Number(req.query.offset) || 0
+
+    const total = db.select().from(orgChatMessages).where(eq(orgChatMessages.orgId, orgId)).all().length
     const messages = db.select().from(orgChatMessages)
       .where(eq(orgChatMessages.orgId, orgId))
       .orderBy(desc(orgChatMessages.createdAt))
-      .limit(PAGE_LIMIT)
+      .limit(limit)
+      .offset(offset)
       .all()
       .reverse()
 
     const enriched = messages.map(m => ({ ...m, sender: senderInfo(m.senderId) }))
-    res.json(enriched)
+    res.json({ messages: enriched, total, limit, offset })
   } catch (err) { next(withContext(err as Error, 'getOrgMessages')) }
 }
 
@@ -107,13 +112,18 @@ export function getFounderMessages(req: Request, res: Response, next: NextFuncti
   try {
     if (req.user!.role !== 'founder' && req.user!.role !== 'admin') throw new AppError('Only founders and admins can access this chat', 403)
 
+    const limit = Math.min(Number(req.query.limit) || DEFAULT_LIMIT, 100)
+    const offset = Number(req.query.offset) || 0
+
+    const total = db.select().from(founderChatMessages).all().length
     const messages = db.select().from(founderChatMessages)
       .orderBy(desc(founderChatMessages.createdAt))
-      .limit(PAGE_LIMIT)
+      .limit(limit)
+      .offset(offset)
       .all()
       .reverse()
 
-    res.json(messages.map(m => ({ ...m, sender: senderInfo(m.senderId) })))
+    res.json({ messages: messages.map(m => ({ ...m, sender: senderInfo(m.senderId) })), total, limit, offset })
   } catch (err) { next(withContext(err as Error, 'getFounderMessages')) }
 }
 
@@ -150,13 +160,18 @@ export function getCpaMessages(req: Request, res: Response, next: NextFunction) 
   try {
     if (req.user!.role !== 'cpa' && req.user!.role !== 'admin') throw new AppError('Only CPAs and admins can access this chat', 403)
 
+    const limit = Math.min(Number(req.query.limit) || DEFAULT_LIMIT, 100)
+    const offset = Number(req.query.offset) || 0
+
+    const total = db.select().from(cpaChatMessages).all().length
     const messages = db.select().from(cpaChatMessages)
       .orderBy(desc(cpaChatMessages.createdAt))
-      .limit(PAGE_LIMIT)
+      .limit(limit)
+      .offset(offset)
       .all()
       .reverse()
 
-    res.json(messages.map(m => ({ ...m, sender: senderInfo(m.senderId) })))
+    res.json({ messages: messages.map(m => ({ ...m, sender: senderInfo(m.senderId) })), total, limit, offset })
   } catch (err) { next(withContext(err as Error, 'getCpaMessages')) }
 }
 

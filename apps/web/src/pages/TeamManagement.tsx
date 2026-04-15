@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/auth'
+import { Pagination, usePagination } from '@/components/ui/pagination'
 import {
   Search,
   X,
@@ -11,6 +12,8 @@ import {
   Check,
   AlertCircle,
 } from 'lucide-react'
+
+const PAGE_SIZE = 15
 
 const PERMISSION_LABELS: Record<string, string> = {
   canViewDashboard: 'View Dashboard',
@@ -48,6 +51,7 @@ export function TeamManagementPage() {
 
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('all')
+  const [memberPage, setMemberPage] = useState(1)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
@@ -166,7 +170,7 @@ export function TeamManagementPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((member: any) => (
+          {usePagination(filtered, PAGE_SIZE).getPage(memberPage).map((member: any) => (
             <MemberCard
               key={member.id}
               member={member}
@@ -177,6 +181,7 @@ export function TeamManagementPage() {
               onUpdatePermissions={updateMemberPermissions}
             />
           ))}
+          <Pagination currentPage={memberPage} totalPages={Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))} onPageChange={setMemberPage} />
         </div>
       )}
 

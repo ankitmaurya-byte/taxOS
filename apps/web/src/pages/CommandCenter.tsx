@@ -5,17 +5,22 @@ import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ConfidenceBadge } from '@/components/agents/ConfidenceBadge'
 import { CreateFilingModal } from '@/components/filings/CreateFilingModal'
+import { Pagination, usePagination } from '@/components/ui/pagination'
 import { Button } from '@/components/ui/button'
 import { daysUntil, formatDate } from '@/lib/utils'
 import { useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import type { FilingStatus } from 'shared'
 
+const KANBAN_PAGE_SIZE = 15
+
 const KANBAN_COLUMNS: FilingStatus[] = ['intake', 'ai_prep', 'cpa_review', 'founder_approval', 'submitted', 'archived']
 
 export function CommandCenter() {
   const navigate = useNavigate()
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [approvalPage, setApprovalPage] = useState(1)
+  const [kanbanShown, setKanbanShown] = useState<Record<string, number>>({})
 
   const filings = useAuthStore(s => s.filings)
   const deadlines = useAuthStore(s => s.deadlines)
@@ -35,6 +40,8 @@ export function CommandCenter() {
 
   const urgentItems = deadlines.filter(d => (d.urgencyScore || 0) >= 90).slice(0, 5)
   const pendingApprovals = approvals.filter(a => a.status === 'pending')
+  const approvalPagination = usePagination(pendingApprovals, 10)
+  const pagedApprovals = approvalPagination.getPage(approvalPage)
   const recentActivity = auditLog.slice(0, 10)
 
   return (
@@ -80,6 +87,9 @@ export function CommandCenter() {
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {KANBAN_COLUMNS.map(status => {
                   const items = filings.filter(f => f.status === status)
+                  const shown = kanbanShown[status] || KANBAN_PAGE_SIZE
+                  const visible = items.slice(0, shown)
+                  const hasMore = items.length > shown
                   return (
                     <div key={status} className="min-w-[160px] flex-1">
                       <div className="mb-2 flex items-center gap-2">
@@ -87,7 +97,7 @@ export function CommandCenter() {
                         <span className="text-xs text-gray-500">{items.length}</span>
                       </div>
                       <div className="space-y-2">
-                        {items.map(filing => (
+                        {visible.map(filing => (
                           <div
                             key={filing.id}
                             className="cursor-pointer rounded-md border bg-white p-3 hover:shadow-sm transition-shadow"
@@ -102,6 +112,14 @@ export function CommandCenter() {
                             )}
                           </div>
                         ))}
+                        {hasMore && (
+                          <button
+                            onClick={() => setKanbanShown(prev => ({ ...prev, [status]: shown + KANBAN_PAGE_SIZE }))}
+                            className="w-full rounded-md border border-dashed border-[#D1D5DB] py-2 text-xs font-medium text-[#6B7280] hover:bg-[#F9FAFB]"
+                          >
+                            Load more ({items.length - shown} remaining)
+                          </button>
+                        )}
                       </div>
                     </div>
                   )
@@ -168,7 +186,7 @@ export function CommandCenter() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-2">
-              {pendingApprovals.map(a => (
+              {pagedApprovals.map(a => (
                 <div key={a.id} className="rounded-md border p-4 cursor-pointer hover:shadow-sm" onClick={() => navigate('/approvals')}>
                   <p className="text-sm font-medium text-gray-900">{a.summary}</p>
                   {a.aiRecommendation && (
@@ -177,6 +195,7 @@ export function CommandCenter() {
                 </div>
               ))}
             </div>
+            <Pagination currentPage={approvalPage} totalPages={approvalPagination.totalPages} onPageChange={setApprovalPage} />
           </CardContent>
         </Card>
       )}

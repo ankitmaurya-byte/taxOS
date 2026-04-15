@@ -309,7 +309,13 @@ export function getFiling(req: Request, res: Response) {
       notifiedAt: n.notifiedAt || n.createdAt,
     }))
 
-  res.json({ ...filing, conversations, documents: docs, approvals, reviewLock: reviewLockWithName, myNotification, rejectionRemarks, notifiedCpas })
+  // Founder who approved (if any)
+  const founderApproval = approvals.find((a: any) => a.queueType === 'founder' && a.status === 'approved' && a.resolvedById)
+  const approvedBy = founderApproval?.resolvedById
+    ? { name: getReviewerName(founderApproval.resolvedById), email: getReviewerEmail(founderApproval.resolvedById) }
+    : null
+
+  res.json({ ...filing, conversations, documents: docs, approvals, reviewLock: reviewLockWithName, myNotification, rejectionRemarks, notifiedCpas, approvedBy })
 }
 
 // ─── PUT /api/filings/:id/status ──────────────────────────────────────────────
@@ -442,8 +448,17 @@ export async function rejectFiling(req: Request, res: Response, next: NextFuncti
 
     db.update(filings).set({
       status: 'ai_prep',
+      cpaAssignedId: null,
       updatedAt: now,
     }).where(eq(filings.id, req.params.id as string)).run()
+
+    // Release any active CPA lock
+    const lock = getActiveLock(req.params.id as string)
+    if (lock) {
+      db.update(filingReviewLocks)
+        .set({ status: 'released', releasedAt: now })
+        .where(eq(filingReviewLocks.id, lock.id)).run()
+    }
 
     const pending = db.select().from(approvalQueue)
       .where(and(
@@ -602,9 +617,10 @@ export async function cpaRejectFiling(req: Request, res: Response, next: NextFun
         .where(eq(filingReviewLocks.id, lock.id)).run()
     }
 
-    // Set status back to ai_prep on CPA rejection
+    // Set status back to ai_prep and unassign CPA
     db.update(filings).set({
       status: 'ai_prep',
+      cpaAssignedId: null,
       updatedAt: now,
     }).where(eq(filings.id, filingId)).run()
 

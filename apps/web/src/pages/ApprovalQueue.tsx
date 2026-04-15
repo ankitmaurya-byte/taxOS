@@ -6,6 +6,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ConfidenceBadge } from '@/components/agents/ConfidenceBadge'
+import { Pagination, usePagination } from '@/components/ui/pagination'
+
+const PAGE_SIZE = 10
 
 export function ApprovalQueue() {
   const approvals = useAuthStore(s => s.approvals)
@@ -20,6 +23,8 @@ export function ApprovalQueue() {
   const [chatErrors, setChatErrors] = useState<Record<string, string>>({})
   const [resolveLoading, setResolveLoading] = useState<Record<string, boolean>>({})
   const [escalateLoading, setEscalateLoading] = useState<Record<string, boolean>>({})
+  const [pendingPage, setPendingPage] = useState(1)
+  const [resolvedPage, setResolvedPage] = useState(1)
 
   useEffect(() => { fetchApprovals() }, [fetchApprovals])
 
@@ -61,6 +66,8 @@ export function ApprovalQueue() {
 
   const pending = approvals.filter(a => a.status === 'pending')
   const resolved = approvals.filter(a => a.status !== 'pending')
+  const pendingPag = usePagination(pending, PAGE_SIZE)
+  const resolvedPag = usePagination(resolved, PAGE_SIZE)
 
   return (
     <div className="space-y-6">
@@ -74,7 +81,7 @@ export function ApprovalQueue() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {pending.map(approval => (
+          {pendingPag.getPage(pendingPage).map(approval => (
             <Card key={approval.id} className="border-l-4 border-l-orange-400">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -166,6 +173,7 @@ export function ApprovalQueue() {
               </CardContent>
             </Card>
           ))}
+          <Pagination currentPage={pendingPage} totalPages={pendingPag.totalPages} onPageChange={setPendingPage} />
         </div>
       )}
 
@@ -173,7 +181,7 @@ export function ApprovalQueue() {
         <>
           <h2 className="text-lg font-semibold text-gray-700 mt-8">Resolved</h2>
           <div className="grid gap-3">
-            {resolved.map(approval => (
+            {resolvedPag.getPage(resolvedPage).map(approval => (
               <Card key={approval.id} className="opacity-60">
                 <CardContent className="flex items-center justify-between p-4">
                   <p className="text-sm text-gray-600">{approval.summary}</p>
@@ -184,6 +192,7 @@ export function ApprovalQueue() {
               </Card>
             ))}
           </div>
+          <Pagination currentPage={resolvedPage} totalPages={resolvedPag.totalPages} onPageChange={setResolvedPage} />
         </>
       )}
     </div>
