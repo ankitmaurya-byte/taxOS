@@ -9,7 +9,7 @@ import { generateAppToken, getFutureIso } from '../lib/tokens'
 import { AppError, withContext } from '../lib/errors'
 
 export function listFounderApplications(_req: Request, res: Response) {
-  const items = db.select().from(founderApplications).all()
+  const items = db.select().from(founderApplications).orderBy(desc(founderApplications.createdAt)).all()
   res.json(items)
 }
 
@@ -115,7 +115,7 @@ export async function assignCpaOrganization(req: Request, res: Response, next: N
 }
 
 export function listCpas(_req: Request, res: Response) {
-  const cpas = db.select().from(users).where(eq(users.role, 'cpa')).all()
+  const cpas = db.select().from(users).where(eq(users.role, 'cpa')).orderBy(desc(users.createdAt)).all()
   const assignments = db.select().from(cpaAssignments).all()
   res.json(cpas.map((cpa) => ({
     ...cpa,
@@ -124,7 +124,7 @@ export function listCpas(_req: Request, res: Response) {
 }
 
 export function listOrganizationOverview(_req: Request, res: Response) {
-  const allOrganizations = db.select().from(organizations).all()
+  const allOrganizations = db.select().from(organizations).orderBy(desc(organizations.createdAt)).all()
   const allUsers = db.select().from(users).all()
   const assignments = db.select().from(cpaAssignments).all()
 
@@ -150,7 +150,7 @@ export function listOrganizationOverview(_req: Request, res: Response) {
 }
 
 export function listSystemUsers(_req: Request, res: Response) {
-  const allUsers = db.select().from(users).all()
+  const allUsers = db.select().from(users).orderBy(desc(users.createdAt)).all()
   const allOrganizations = db.select().from(organizations).all()
 
   const orgDict = Object.fromEntries(allOrganizations.map(o => [o.id, o]))
@@ -186,11 +186,11 @@ export function getOrganizationDetails(req: Request, res: Response, next: NextFu
     const org = db.select().from(organizations).where(eq(organizations.id, req.params.id as string)).get()
     if (!org) throw new AppError('Organization not found', 404)
     
-    const orgUsers = db.select().from(users).where(eq(users.orgId, org.id)).all()
-    const orgEntities = db.select().from(entities).where(eq(entities.orgId, org.id)).all()
+    const orgUsers = db.select().from(users).where(eq(users.orgId, org.id)).orderBy(desc(users.createdAt)).all()
+    const orgEntities = db.select().from(entities).where(eq(entities.orgId, org.id)).orderBy(desc(entities.createdAt)).all()
     const assignedCpasIds = db.select().from(cpaAssignments).where(eq(cpaAssignments.organizationId, org.id)).all().map(a => a.userId)
     const assignedCpas = assignedCpasIds.length ? db.select().from(users).where(sql`${users.id} IN ${assignedCpasIds}`).all() : []
-    const orgFilings = db.select().from(filings).where(eq(filings.orgId, org.id)).all()
+    const orgFilings = db.select().from(filings).where(eq(filings.orgId, org.id)).orderBy(desc(filings.updatedAt)).all()
 
     res.json({ ...org, users: orgUsers, entities: orgEntities, cpas: assignedCpas, filings: orgFilings })
   } catch (err) { next(withContext(err as Error, 'getOrganizationDetails')) }
@@ -252,7 +252,7 @@ export function getUserDetails(req: Request, res: Response, next: NextFunction) 
        if (assignments.length) {
          cpaOrgs = db.select().from(organizations).where(sql`${organizations.id} IN ${assignments.map(a => a.organizationId)}`).all()
        }
-       assignedFilings = db.select().from(filings).where(eq(filings.cpaAssignedId, user.id)).all()
+       assignedFilings = db.select().from(filings).where(eq(filings.cpaAssignedId, user.id)).orderBy(desc(filings.updatedAt)).all()
     }
     res.json({ ...user, organization: org, cpaOrganizations: cpaOrgs, assignedFilings })
   } catch (err) { next(withContext(err as Error, 'getUserDetails')) }
@@ -329,8 +329,8 @@ export function getFilingDetails(req: Request, res: Response, next: NextFunction
     const org = filing.orgId ? db.select().from(organizations).where(eq(organizations.id, filing.orgId)).get() : null
     const entity = filing.entityId ? db.select().from(entities).where(eq(entities.id, filing.entityId)).get() : null
     const cpa = filing.cpaAssignedId ? db.select().from(users).where(eq(users.id, filing.cpaAssignedId)).get() : null
-    const docs = db.select().from(documents).where(eq(documents.filingId, filing.id)).all()
-    const conversations = db.select().from(agentConversations).where(eq(agentConversations.filingId, filing.id)).all()
+    const docs = db.select().from(documents).where(eq(documents.filingId, filing.id)).orderBy(desc(documents.createdAt)).all()
+    const conversations = db.select().from(agentConversations).where(eq(agentConversations.filingId, filing.id)).orderBy(desc(agentConversations.createdAt)).all()
     res.json({ ...filing, org, entity, cpa, documents: docs, conversations })
   } catch (err) { next(withContext(err as Error, 'getFilingDetails')) }
 }
@@ -385,7 +385,7 @@ export function listAllAgentConversations(req: Request, res: Response, next: Nex
 
 export function listAllEntities(_req: Request, res: Response, next: NextFunction) {
   try {
-    const allEntities = db.select().from(entities).all()
+    const allEntities = db.select().from(entities).orderBy(desc(entities.createdAt)).all()
     const allOrganizations = db.select().from(organizations).all()
     const orgDict = Object.fromEntries(allOrganizations.map(o => [o.id, o]))
     
@@ -398,7 +398,7 @@ export function listAllEntities(_req: Request, res: Response, next: NextFunction
 
 export function listAllFilings(_req: Request, res: Response, next: NextFunction) {
   try {
-    const allFilings = db.select().from(filings).all()
+    const allFilings = db.select().from(filings).orderBy(desc(filings.updatedAt)).all()
     const allOrganizations = db.select().from(organizations).all()
     const allEntities = db.select().from(entities).all()
     const allUsers = db.select().from(users).all()

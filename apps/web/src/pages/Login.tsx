@@ -19,7 +19,9 @@ function MarketingPanel() {
         </p>
       </div>
       <div className="relative mx-auto mb-8 mt-6 h-[320px] w-[90%] rounded-2xl border border-white/15 bg-white/95 p-5 shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
-        <div className="text-xl font-semibold text-[#1E174A]">Business Insights</div>
+        <div className="text-xl font-semibold text-[#1E174A]">
+          Business Insights
+        </div>
         <div className="mt-4 grid gap-4 md:grid-cols-[1.3fr_1fr]">
           <div className="rounded-xl border border-[#ECE7FB] bg-[#FBFAFF] p-4">
             <div className="text-xs font-medium text-[#1E174A]">Cash Flow</div>
@@ -36,14 +38,22 @@ function MarketingPanel() {
             <div className="mt-4 flex h-[100px] items-end justify-between gap-2">
               {[56, 42, 58, 44, 50, 70].map((height, index) => (
                 <div key={index} className="flex flex-1 items-end gap-0.5">
-                  <div className="w-1/2 rounded-t-sm bg-[#B8A7FF]" style={{ height: height * 0.75 }} />
-                  <div className="w-1/2 rounded-t-sm bg-[#D6D1E6]" style={{ height: height * 0.54 }} />
+                  <div
+                    className="w-1/2 rounded-t-sm bg-[#B8A7FF]"
+                    style={{ height: height * 0.75 }}
+                  />
+                  <div
+                    className="w-1/2 rounded-t-sm bg-[#D6D1E6]"
+                    style={{ height: height * 0.54 }}
+                  />
                 </div>
               ))}
             </div>
           </div>
           <div className="rounded-xl border border-[#ECE7FB] bg-white p-4">
-            <div className="text-xs font-medium text-[#1E174A]">Financial Health</div>
+            <div className="text-xs font-medium text-[#1E174A]">
+              Financial Health
+            </div>
             <div className="mt-4 space-y-5 text-[#4E476F]">
               <div>
                 <p className="text-[10px] text-[#8C86A6]">Net Burn Rate</p>
@@ -52,7 +62,9 @@ function MarketingPanel() {
               <div>
                 <p className="text-[10px] text-[#8C86A6]">Runway</p>
                 <p className="mt-1 text-2xl font-semibold">Infinite</p>
-                <p className="mt-0.5 text-xs text-[#8C86A6]">You&apos;re profitable!</p>
+                <p className="mt-0.5 text-xs text-[#8C86A6]">
+                  You&apos;re profitable!
+                </p>
               </div>
             </div>
           </div>
@@ -65,8 +77,13 @@ function MarketingPanel() {
 export function LoginPage() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
-  const [email, setEmail] = useState("superadmin@taxos.ai");
-  const [password, setPassword] = useState("admin1234");
+  const [email, setEmail] = useState(() => {
+    return localStorage.getItem("login_email") || "superadmin@taxos.ai";
+  });
+
+  const [password, setPassword] = useState(() => {
+    return localStorage.getItem("login_password") || "admin1234";
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -76,6 +93,9 @@ export function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
+      localStorage.setItem("login_email", email);
+      localStorage.setItem("login_password", password);
+
       navigate(getPostLoginPath(useAuthStore.getState().user));
     } catch (err: any) {
       setError(err.message);
@@ -88,7 +108,9 @@ export function LoginPage() {
     <div className="grid min-h-screen bg-[#FCFBFF] lg:grid-cols-[1.08fr_0.92fr]">
       <div className="flex min-h-screen flex-col px-6 py-6 lg:px-16 lg:py-10">
         <div className="flex items-center justify-between">
-          <div className="text-3xl font-semibold tracking-[-0.03em] text-[#5B2FFF]">inkle</div>
+          <div className="text-3xl font-semibold tracking-[-0.03em] text-[#5B2FFF]">
+            inkle
+          </div>
           <button className="flex items-center gap-1.5 text-sm text-[#6F6A8B]">
             <HelpCircle size={15} /> Help
           </button>
@@ -96,16 +118,23 @@ export function LoginPage() {
 
         <div className="flex flex-1 items-center">
           <div className="w-full max-w-md">
-            <h1 className="text-3xl font-semibold tracking-[-0.02em] text-[#1E174A]">Sign in</h1>
+            <h1 className="text-3xl font-semibold tracking-[-0.02em] text-[#1E174A]">
+              Sign in
+            </h1>
             <p className="mt-2 text-sm text-[#6F6A8B]">
               Don&apos;t have an account?{" "}
-              <Link to="/onboarding/start" className="font-medium text-[#5B2FFF]">
+              <Link
+                to="/onboarding/start"
+                className="font-medium text-[#5B2FFF]"
+              >
                 Sign up <ChevronRight className="inline" size={14} />
               </Link>
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8">
-              <label className="mb-1.5 block text-sm font-medium text-[#4E4970]">Work email address</label>
+              <label className="mb-1.5 block text-sm font-medium text-[#4E4970]">
+                Work email address
+              </label>
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -115,7 +144,9 @@ export function LoginPage() {
                 className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
               />
 
-              <label className="mb-1.5 mt-4 block text-sm font-medium text-[#4E4970]">Password</label>
+              <label className="mb-1.5 mt-4 block text-sm font-medium text-[#4E4970]">
+                Password
+              </label>
               <input
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -135,7 +166,9 @@ export function LoginPage() {
               </button>
 
               <p className="mt-5 text-xs text-[#8B84A8] leading-5">
-                Demo: Founder → demo@taxos.ai / demo1234 · Admin → admin@taxos.ai / admin1234 · Super Admin → superadmin@taxos.ai / admin1234 · Others → password123
+                Demo: Founder → demo@taxos.ai / demo1234 · Admin →
+                admin@taxos.ai / admin1234 · Super Admin → superadmin@taxos.ai /
+                admin1234 · Others → password123
               </p>
             </form>
           </div>

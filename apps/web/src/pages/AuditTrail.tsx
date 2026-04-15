@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate } from '@/lib/utils'
-import { Search, X, Download, Calendar } from 'lucide-react'
+import { Search, X, Download, Calendar, ChevronDown, ChevronRight } from 'lucide-react'
 import { Pagination } from '@/components/Pagination'
 
 const PAGE_SIZE = 15
@@ -35,6 +35,7 @@ export function AuditTrail() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
 
   useEffect(() => { fetchAuditLog() }, [fetchAuditLog])
 
@@ -86,6 +87,22 @@ export function AuditTrail() {
 
   function handleFilter(v: string | null) { setActorFilter(v); setPage(1) }
   function handleSearch(v: string) { setSearch(v); setPage(1) }
+
+  function toggleExpand(id: number) {
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function formatEntryDetails(entry: any) {
+    const parts: string[] = []
+    if (entry.inputs) parts.push(`Inputs: ${JSON.stringify(entry.inputs)}`)
+    if (entry.outputs) parts.push(`Outputs: ${JSON.stringify(entry.outputs)}`)
+    return parts.join('\n')
+  }
 
   // ── Export helpers ────────────────────────────────────
   function toCsv(rows: any[]) {
@@ -247,8 +264,14 @@ export function AuditTrail() {
             className={`rounded-xl border-l-4 border border-[#E5E7EB] px-4 py-3.5 ${ACTOR_COLORS[entry.actorType] || ACTOR_COLORS.system}`}
           >
             <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1 min-w-0">
+              <div className="space-y-1 min-w-0 flex-1">
                 <div className="flex items-center flex-wrap gap-2">
+                  <button
+                    onClick={() => toggleExpand(entry.id)}
+                    className="p-1 hover:bg-[#E5E7EB] rounded transition-colors"
+                  >
+                    {expandedIds.has(entry.id) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </button>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${ACTOR_BADGE[entry.actorType] || ACTOR_BADGE.system}`}>
                     {entry.actorType}
                   </span>
@@ -263,6 +286,22 @@ export function AuditTrail() {
                 </div>
                 {entry.reasoning && (
                   <p className="text-sm text-[#6B7280] leading-relaxed">{entry.reasoning}</p>
+                )}
+                {expandedIds.has(entry.id) && (
+                  <div className="mt-2 p-3 bg-white rounded-lg border border-[#E5E7EB] text-xs font-mono space-y-1">
+                    {entry.inputs && (
+                      <div>
+                        <span className="font-semibold text-[#374151]">Inputs:</span>
+                        <pre className="mt-1 whitespace-pre-wrap break-all text-[#6B7280]">{JSON.stringify(entry.inputs, null, 2)}</pre>
+                      </div>
+                    )}
+                    {entry.outputs && (
+                      <div className={entry.inputs ? 'mt-2' : ''}>
+                        <span className="font-semibold text-[#374151]">Outputs:</span>
+                        <pre className="mt-1 whitespace-pre-wrap break-all text-[#6B7280]">{JSON.stringify(entry.outputs, null, 2)}</pre>
+                      </div>
+                    )}
+                  </div>
                 )}
                 <div className="flex items-center flex-wrap gap-3 text-xs text-[#9CA3AF]">
                   <span>{formatDate(entry.createdAt)}</span>

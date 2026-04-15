@@ -291,7 +291,24 @@ export function FilingDetailPage() {
       </div>
     )
   }
+const renderValue = (value: any): React.ReactNode => {
+  if (value === null || value === undefined) return '—';
 
+  if (typeof value === 'object') {
+    return (
+      <div className="pl-2 border-l border-gray-200 space-y-1">
+        {Object.entries(value).map(([k, v]) => (
+          <div key={k} className="text-sm">
+            <span className="font-medium text-gray-700">{formatKey(k)}:</span>{' '}
+            <span className="text-gray-900">{renderValue(v)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return String(value);
+};
   // Status-aware center content
   const centerContent = (() => {
     if (isArchived) {
@@ -702,7 +719,7 @@ export function FilingDetailPage() {
                       <tr key={key} className="border-t border-[#F3F4F6]">
                         <td className="px-4 py-2 text-sm text-[#6B7280] font-medium">{formatKey(key)}</td>
                         <td className="px-4 py-2 text-sm text-[#111827]">
-                          {typeof value === 'object' ? JSON.stringify(value) : String(value ?? '—')}
+                        {renderValue(value)}
                         </td>
                       </tr>
                     ))}

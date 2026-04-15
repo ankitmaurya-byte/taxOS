@@ -79,9 +79,19 @@ Filing data so far: ${JSON.stringify(filing.filingData)}
       }
     }
 
+    // Convert all field values to strings
+    const stringifiedFields: Record<string, { value: string; confidence?: number; source?: string; reasoning?: string; needsCpaReview?: boolean }> = {}
+    for (const [key, field] of Object.entries(result.fields || {})) {
+      const f = field as { value: any; confidence?: number; source?: string; reasoning?: string; needsCpaReview?: boolean }
+      stringifiedFields[key] = {
+        ...f,
+        value: f.value != null ? String(f.value) : '',
+      }
+    }
+
     // Update filing with prefilled data
     db.update(filings).set({
-      filingData: result.fields as any,
+      filingData: stringifiedFields as any,
       aiConfidenceScore: result.overallConfidence,
       aiSummary: result.summary,
       aiReasoning: result.reasoning,

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, desc } from 'drizzle-orm'
 import { assignPermissionsSchema, createInviteSchema, createRoleTemplateSchema } from 'shared'
 import { db } from '../db'
 import { invites, organizations, permissions, roleTemplates, users } from '../db/schema'
@@ -11,6 +11,7 @@ import { AppError, withContext } from '../lib/errors'
 export function listMembers(req: Request, res: Response) {
   const members = db.select().from(users)
     .where(eq(users.orgId, req.user!.orgId!))
+    .orderBy(desc(users.createdAt))
     .all()
   const permissionRecords = db.select().from(permissions)
     .where(eq(permissions.organizationId, req.user!.orgId!))

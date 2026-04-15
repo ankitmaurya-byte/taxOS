@@ -35,7 +35,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { db } from '../db'
 import { entities, deadlines, filings } from '../db/schema'
 import { createEntitySchema, updateEntitySchema, estimatedTaxProjectionSchema } from 'shared'
@@ -76,6 +76,7 @@ function getQuarterStatus(dueDate: string) {
 export function listEntities(req: Request, res: Response) {
   const result = db.select().from(entities)
     .where(eq(entities.orgId, req.user!.orgId))
+    .orderBy(desc(entities.createdAt))
     .all()
   res.json(result)
 }

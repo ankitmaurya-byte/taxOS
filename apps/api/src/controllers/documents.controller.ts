@@ -30,7 +30,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { db } from '../db'
 import { documents } from '../db/schema'
 import { AppError, withContext } from '../lib/errors'
@@ -47,6 +47,7 @@ export function listDocuments(req: Request, res: Response) {
   const { filingId, reviewStatus } = req.query
   const results = db.select().from(documents)
     .where(eq(documents.orgId, req.user!.orgId))
+    .orderBy(desc(documents.createdAt))
     .all()
     .filter(d => {
       if (filingId && d.filingId !== filingId) return false

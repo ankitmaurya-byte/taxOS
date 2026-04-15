@@ -33,7 +33,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { db } from '../db'
 import { approvalQueue, filingReviewLocks, filings, users } from '../db/schema'
 import { resolveApprovalSchema } from 'shared'
@@ -60,6 +60,7 @@ function getReviewerName(userId: string) {
 export function listApprovals(req: Request, res: Response) {
   const results = db.select().from(approvalQueue)
     .where(eq(approvalQueue.orgId, req.user!.orgId))
+    .orderBy(desc(approvalQueue.createdAt))
     .all()
     .filter(a => {
       if (req.user!.role === 'founder') return a.queueType === 'founder'
