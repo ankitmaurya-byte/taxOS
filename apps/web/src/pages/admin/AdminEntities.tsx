@@ -192,7 +192,12 @@ export function AdminEntities() {
               ) : (
                 <tr key={e.id} className="hover:bg-[#F9FAFB]/50">
                   <td className="px-6 py-4 font-medium text-[#111827]">
-                    {e.legalName}
+                    <Link
+                      to={`/entities/${e.id}?from=admin`}
+                      className="text-[#6C5CE7] hover:underline"
+                    >
+                      {e.legalName}
+                    </Link>
                     {e.status === 'dissolved' && <span className="ml-2 text-xs text-red-500">[dissolved]</span>}
                   </td>
                   <td className="px-6 py-4">

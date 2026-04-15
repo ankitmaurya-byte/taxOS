@@ -63,6 +63,7 @@ export function EntityDetailPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = (searchParams.get('tab') as TabKey) || 'overview'
+  const fromAdmin = searchParams.get('from') === 'admin'
   const [updateLoading, setUpdateLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
@@ -93,7 +94,9 @@ export function EntityDetailPage() {
     .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   const setTab = (tab: TabKey) => {
-    setSearchParams({ tab })
+    const params: Record<string, string> = { tab }
+    if (fromAdmin) params.from = 'admin'
+    setSearchParams(params)
   }
 
   if (isLoading) {
@@ -114,13 +117,13 @@ export function EntityDetailPage() {
 
   return (
     <div>
-      {/* Breadcrumb — navigates back to /entities/overview (EntitiesOverviewPage) */}
+      {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-2 text-sm">
         <button
-          onClick={() => navigate('/entities/overview')}
+          onClick={() => navigate(fromAdmin ? '/admin/entities' : '/entities/overview')}
           className="text-[#6C5CE7] hover:underline"
         >
-          My Entities
+          {fromAdmin ? 'Admin: Entities' : 'My Entities'}
         </button>
         <ChevronRight size={14} className="text-[#9CA3AF]" />
       </div>
@@ -133,7 +136,7 @@ export function EntityDetailPage() {
               if (window.confirm(`Dissolve ${entity.legalName}?`)) {
                 setDeleteLoading(true)
                 try { await deleteEntity(entityId!) } finally { setDeleteLoading(false) }
-                navigate('/entities/overview')
+                navigate(fromAdmin ? '/admin/entities' : '/entities/overview')
               }
             }}
             disabled={deleteLoading}

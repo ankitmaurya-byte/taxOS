@@ -38,17 +38,17 @@ import { auditLog } from '../db/schema'
 export function listAuditLogs(req: Request, res: Response) {
   const { filingId, actorType, from, to } = req.query
 
-  const results = db.select().from(auditLog)
-    .where(eq(auditLog.orgId, req.user!.orgId))
-    .orderBy(desc(auditLog.createdAt))
-    .all()
-    .filter(entry => {
-      if (filingId && entry.filingId !== filingId) return false
-      if (actorType && entry.actorType !== actorType) return false
-      if (from && entry.createdAt < (from as string)) return false
-      if (to && entry.createdAt > (to as string)) return false
-      return true
-    })
+  const baseQuery = db.select().from(auditLog).orderBy(desc(auditLog.createdAt))
+  const results = (req.user!.role === 'admin'
+    ? baseQuery
+    : baseQuery.where(eq(auditLog.orgId, req.user!.orgId))
+  ).all().filter(entry => {
+    if (filingId && entry.filingId !== filingId) return false
+    if (actorType && entry.actorType !== actorType) return false
+    if (from && entry.createdAt < (from as string)) return false
+    if (to && entry.createdAt > (to as string)) return false
+    return true
+  })
 
   res.json(results)
 }
@@ -63,11 +63,11 @@ export function listAuditLogs(req: Request, res: Response) {
 export function exportAuditCsv(req: Request, res: Response) {
   const { filingId } = req.query
 
-  const results = db.select().from(auditLog)
-    .where(eq(auditLog.orgId, req.user!.orgId))
-    .orderBy(desc(auditLog.createdAt))
-    .all()
-    .filter(entry => !filingId || entry.filingId === filingId)
+  const baseExportQuery = db.select().from(auditLog).orderBy(desc(auditLog.createdAt))
+  const results = (req.user!.role === 'admin'
+    ? baseExportQuery
+    : baseExportQuery.where(eq(auditLog.orgId, req.user!.orgId))
+  ).all().filter(entry => !filingId || entry.filingId === filingId)
 
   const headers = 'Timestamp,Actor Type,Actor ID,Action,Reasoning,Confidence,Model Version'
   const rows = results.map(r =>
