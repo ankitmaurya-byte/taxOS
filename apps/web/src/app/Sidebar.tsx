@@ -163,10 +163,10 @@ export function Sidebar({ collapsed }: SidebarProps) {
             className="absolute left-2 right-2 top-[calc(100%-4px)] z-50 rounded-2xl bg-[#F7F7F8] shadow-[0_8px_30px_rgba(0,0,0,0.10)] border border-[#EBEBED] py-1.5 overflow-hidden"
           >
             {[
-              { label: 'Books -    Please hire me ',      icon: BookOpen  },
-              { label: 'Tax -           😭😭',        icon: Receipt   },
-              { label: 'Sales Tax -     🙏🙏',  icon: Percent   },
-              { label: 'Mailroom -      🛐🛐',   icon: Mail      },
+              { label: 'Books -',      icon: BookOpen  },
+              { label: 'Tax -',        icon: Receipt   },
+              { label: 'Sales Tax -',  icon: Percent   },
+              { label: 'Mailroom -',   icon: Mail      },
               { label: 'Community',  icon: Users     },
             ].map(({ label, icon: Icon }) => {
               const active = activeWorkspace === label
