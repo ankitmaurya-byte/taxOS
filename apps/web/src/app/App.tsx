@@ -24,6 +24,7 @@ import { ActionCentrePage } from '@/pages/ActionCentre'
 import { DocumentsPage } from '@/pages/Documents'
 import { DocumentVault } from '@/pages/DocumentVault'
 import { ApprovalQueue } from '@/pages/ApprovalQueue'
+import { ClaimFilings } from '@/pages/ClaimFilings'
 import { AuditTrail } from '@/pages/AuditTrail'
 import { DeadlinesPage } from '@/pages/Deadlines'
 import { IncorporationPage } from '@/pages/Incorporation'
@@ -110,6 +111,7 @@ const protectedRoutes = [
   { path: 'documents',         element: <DocumentsPage /> },
   { path: 'documents/vault',   element: <DocumentVault /> },
   { path: 'approvals',         element: <ApprovalQueue /> },
+  { path: 'claim-filings',     element: <ClaimFilings /> },
 
   // ── Admin ────────────────────────────────────────────────────────────────────
   { path: 'dashboard',                    element: <DashboardPage /> },

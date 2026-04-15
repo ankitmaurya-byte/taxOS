@@ -58,8 +58,9 @@ function getReviewerName(userId: string) {
 //   admin   → sees all items
 // Connected fields: req.user.orgId → approvalQueue.orgId, req.user.role → filter logic
 export function listApprovals(req: Request, res: Response) {
-  const results = db.select().from(approvalQueue)
-    .where(eq(approvalQueue.orgId, req.user!.orgId))
+  const results = db
+    .select()
+    .from(approvalQueue)
     .orderBy(desc(approvalQueue.createdAt))
     .all()
     .filter(a => {
@@ -67,6 +68,7 @@ export function listApprovals(req: Request, res: Response) {
       if (req.user!.role === 'cpa') return a.queueType === 'cpa'
       return true
     })
+
   res.json(results)
 }
 

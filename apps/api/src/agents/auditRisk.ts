@@ -1,6 +1,6 @@
 import { BaseAgent } from './base'
 import { db } from '../db'
-import { filings, entities, approvalQueue } from '../db/schema'
+import { filings, entities } from '../db/schema'
 import { eq } from 'drizzle-orm'
 
 const AUDIT_RISK_PROMPT = `
@@ -58,27 +58,11 @@ AI confidence: ${filing.aiConfidenceScore}
       }
     }
 
-    // If high risk, block submission and create mandatory CPA queue item
-    if (result.overallRiskScore > 60) {
-      db.insert(approvalQueue).values({
-        orgId,
-        filingId,
-        queueType: 'cpa',
-        status: 'pending',
-        summary: `MANDATORY CPA REVIEW: Audit risk score ${result.overallRiskScore}/100 (${result.riskLevel}). ${result.flaggedItems?.length || 0} items flagged.`,
-        aiRecommendation: result.reasoning,
-      }).run()
+    return {
+      riskScore: result.overallRiskScore,
+      riskLevel: result.riskLevel,
+      flaggedItems: result.flaggedItems || [],
+      summary: result.reasoning,
     }
-
-    await this.log({
-      orgId,
-      filingId,
-      action: 'risk_scored',
-      reasoning: `Audit risk score: ${result.overallRiskScore}/100 (${result.riskLevel}). ${result.reasoning}`,
-      confidenceScore: (100 - result.overallRiskScore) / 100,
-      outputs: result,
-    })
-
-    return result
   }
 }

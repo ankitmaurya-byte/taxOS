@@ -53,10 +53,10 @@ import { AppError, withContext } from '../lib/errors'
 import { sendToUser, sendToUsers } from '../services/sse.service'
 
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
-  intake:           ['ai_prep'],
+  intake:           ['ai_prep', 'cpa_review'],
   ai_prep:          ['cpa_review', 'intake'],
   cpa_review:       ['founder_approval', 'ai_prep'],
-  founder_approval: ['submitted', 'cpa_review'],
+  founder_approval: ['submitted', 'cpa_review', 'ai_prep'],
   submitted:        ['archived'],
   archived:         [],
 }
@@ -71,6 +71,10 @@ function getActiveLock(filingId: string) {
 
 function getReviewerName(userId: string) {
   return db.select({ name: users.name }).from(users).where(eq(users.id, userId)).get()?.name || 'Another CPA'
+}
+
+function getReviewerEmail(userId: string) {
+  return db.select({ email: users.email }).from(users).where(eq(users.id, userId)).get()?.email || ''
 }
 
 function ensureCpaReviewAccess(req: Request, filingId: string, orgId: string) {
@@ -270,6 +274,9 @@ export function getFiling(req: Request, res: Response) {
   const approvals = db.select().from(approvalQueue)
     .where(eq(approvalQueue.filingId, filingId)).all()
   const reviewLock = getActiveLock(filingId)
+  const reviewLockWithName = reviewLock
+    ? { ...reviewLock, cpaName: getReviewerName(reviewLock.cpaUserId), cpaEmail: getReviewerEmail(reviewLock.cpaUserId) }
+    : null
 
   // Include pending CPA notification for this user (if any)
   const myNotification = db.select().from(cpaNotifications)
@@ -279,7 +286,30 @@ export function getFiling(req: Request, res: Response) {
       eq(cpaNotifications.status, 'pending'),
     )).get() || null
 
-  res.json({ ...filing, conversations, documents: docs, approvals, reviewLock, myNotification })
+  // Gather rejection remarks from approvalQueue and cpaRejections
+  const rejectionRemarks = [
+    ...approvals
+      .filter((a: any) => a.rejectionReason)
+      .map((a: any) => ({ source: a.queueType === 'founder' ? 'Founder' : 'CPA', reason: a.rejectionReason, date: a.resolvedAt })),
+    ...db.select().from(cpaRejections)
+      .where(eq(cpaRejections.filingId, filingId))
+      .all()
+      .map((r: any) => ({ source: 'CPA', reason: r.reason, date: r.createdAt })),
+  ].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+
+  // CPAs who received claim notification for this filing
+  const notifiedCpas = db.select().from(cpaNotifications)
+    .where(eq(cpaNotifications.filingId, filingId))
+    .all()
+    .map((n: any) => ({
+      cpaUserId: n.cpaUserId,
+      cpaName: getReviewerName(n.cpaUserId),
+      cpaEmail: getReviewerEmail(n.cpaUserId),
+      status: n.status,
+      notifiedAt: n.notifiedAt || n.createdAt,
+    }))
+
+  res.json({ ...filing, conversations, documents: docs, approvals, reviewLock: reviewLockWithName, myNotification, rejectionRemarks, notifiedCpas })
 }
 
 // ─── PUT /api/filings/:id/status ──────────────────────────────────────────────
@@ -408,9 +438,11 @@ export async function rejectFiling(req: Request, res: Response, next: NextFuncti
       .get()
     if (!filing) throw new AppError('Filing not found', 404)
 
+    const now = new Date().toISOString()
+
     db.update(filings).set({
-      status: 'cpa_review',
-      updatedAt: new Date().toISOString(),
+      status: 'ai_prep',
+      updatedAt: now,
     }).where(eq(filings.id, req.params.id as string)).run()
 
     const pending = db.select().from(approvalQueue)
@@ -423,7 +455,7 @@ export async function rejectFiling(req: Request, res: Response, next: NextFuncti
       db.update(approvalQueue).set({
         status: 'rejected',
         rejectionReason: reason,
-        resolvedAt: new Date().toISOString(),
+        resolvedAt: now,
         resolvedById: req.user!.userId,
       }).where(eq(approvalQueue.id, item.id)).run()
     }
@@ -437,7 +469,18 @@ export async function rejectFiling(req: Request, res: Response, next: NextFuncti
       reasoning: `Founder rejected filing. Reason: ${reason}`,
     })
 
-    res.json({ message: 'Filing rejected and sent back to CPA review' })
+    // Notify via SSE about rejection with remarks
+    sendToUser(filing.orgId, {
+      type: 'filing_status_changed',
+      data: {
+        filingId: filing.id,
+        newStatus: 'ai_prep',
+        reason,
+        message: `Filing ${filing.formType} rejected by founder. Reason: ${reason}`,
+      },
+    })
+
+    res.json({ message: 'Filing rejected and sent back to AI Prep', remarks: reason })
   } catch (err) { next(withContext(err as Error, 'rejectFiling')) }
 }
 
@@ -559,6 +602,12 @@ export async function cpaRejectFiling(req: Request, res: Response, next: NextFun
         .where(eq(filingReviewLocks.id, lock.id)).run()
     }
 
+    // Set status back to ai_prep on CPA rejection
+    db.update(filings).set({
+      status: 'ai_prep',
+      updatedAt: now,
+    }).where(eq(filings.id, filingId)).run()
+
     auditLogger.log({
       orgId: filing.orgId,
       filingId,
@@ -566,6 +615,17 @@ export async function cpaRejectFiling(req: Request, res: Response, next: NextFun
       actorId: req.user!.userId,
       action: 'cpa_rejected',
       reasoning: `CPA rejected filing. Reason: ${reason}`,
+    })
+
+    // Notify org about CPA rejection with remarks
+    sendToUser(filing.orgId, {
+      type: 'filing_status_changed',
+      data: {
+        filingId,
+        newStatus: 'ai_prep',
+        reason: reason.trim(),
+        message: `CPA rejected filing ${filing.formType}. Reason: ${reason.trim()}`,
+      },
     })
 
     let topCpaIds: string[] = []
@@ -617,10 +677,31 @@ export function pauseFiling(req: Request, res: Response) {
     actorType: 'founder',
     actorId: req.user!.userId,
     action: 'workflow_paused',
-    reasoning: 'Founder requested pause on AI workflow',
+    reasoning: 'Founder requested workflow stop',
   })
 
-  res.json({ message: 'AI workflow paused' })
+  // If filing at cpa_review and CPA has claimed it, notify CPA and release lock
+  if (filing.status === 'cpa_review') {
+    const lock = getActiveLock(filing.id)
+    if (lock) {
+      // Release lock
+      db.update(filingReviewLocks)
+        .set({ status: 'released', releasedAt: new Date().toISOString() })
+        .where(eq(filingReviewLocks.id, lock.id)).run()
+
+      // Notify CPA via SSE
+      sendToUsers([lock.cpaUserId], {
+        type: 'filing_status_changed',
+        data: {
+          filingId: filing.id,
+          message: `Workflow stopped for filing ${filing.formType}. Your review has been released.`,
+          action: 'workflow_stopped',
+        },
+      })
+    }
+  }
+
+  res.json({ message: 'Workflow stopped' })
 }
 
 // ─── POST /api/filings/:id/escalate-cpa ──────────────────────────────────────
@@ -634,6 +715,12 @@ export function escalateToCpa(req: Request, res: Response) {
     .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
     .get()
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
+
+  // Set status to cpa_review
+  db.update(filings).set({
+    status: 'cpa_review',
+    updatedAt: new Date().toISOString(),
+  }).where(eq(filings.id, filing.id)).run()
 
   // Create approval queue entry
   db.insert(approvalQueue).values({
@@ -713,11 +800,46 @@ export function claimFilingReview(req: Request, res: Response) {
   const lock = getActiveLock(filing.id)
   if (lock) return res.json(lock)
 
+  // Assign CPA to filing
+  db.update(filings).set({
+    cpaAssignedId: req.user!.userId,
+    updatedAt: new Date().toISOString(),
+  }).where(eq(filings.id, filing.id)).run()
+
   const created = db.insert(filingReviewLocks).values({
     filingId: filing.id,
     cpaUserId: req.user!.userId,
     status: 'active',
   }).returning().get()
+
+  // Dismiss all other CPA notifications for this filing (someone claimed it)
+  db.update(cpaNotifications)
+    .set({ status: 'dismissed', respondedAt: new Date().toISOString() })
+    .where(and(
+      eq(cpaNotifications.filingId, filing.id),
+      ne(cpaNotifications.cpaUserId, req.user!.userId),
+      eq(cpaNotifications.status, 'pending'),
+    )).run()
+
+  // Notify other CPAs that this filing was claimed
+  const dismissedCpas = db.select({ cpaUserId: cpaNotifications.cpaUserId })
+    .from(cpaNotifications)
+    .where(and(
+      eq(cpaNotifications.filingId, filing.id),
+      ne(cpaNotifications.cpaUserId, req.user!.userId),
+      eq(cpaNotifications.status, 'dismissed'),
+    )).all()
+
+  if (dismissedCpas.length > 0) {
+    sendToUsers(dismissedCpas.map(c => c.cpaUserId), {
+      type: 'filing_claimed',
+      data: {
+        filingId: filing.id,
+        message: `Filing ${filing.formType} has been claimed by another CPA.`,
+      },
+    })
+  }
+
   res.status(201).json(created)
 }
 

@@ -55,6 +55,10 @@ export function FilingDetailPage() {
   const [approveLoading, setApproveLoading] = useState(false)
   const [rejectLoading, setRejectLoading] = useState(false)
   const [archiveLoading, setArchiveLoading] = useState(false)
+  const [cpaApproveLoading, setCpaApproveLoading] = useState(false)
+  const [cpaRejectLoading, setCpaRejectLoading] = useState(false)
+  const [stopWorkflowLoading, setStopWorkflowLoading] = useState(false)
+  const [auditRiskResult, setAuditRiskResult] = useState<any>(null)
 
   const filingDetails = useAuthStore(s => s.filingDetails)
   const entities = useAuthStore(s => s.entities)
@@ -73,6 +77,8 @@ export function FilingDetailPage() {
   const runAuditRisk = useAuthStore(s => s.runAuditRisk)
   const approveFiling = useAuthStore(s => s.approveFiling)
   const rejectFiling = useAuthStore(s => s.rejectFiling)
+  const cpaApproveFiling = useAuthStore(s => s.cpaApproveFiling)
+  const cpaRejectFiling = useAuthStore(s => s.cpaRejectFiling)
 
   useEffect(() => {
     if (!id) return
@@ -116,31 +122,36 @@ export function FilingDetailPage() {
   const isSubmitted = status === 'submitted'
 
   // Agent action visibility — per status AND per role
-  // Intake/Prefill: founder or CPA can trigger agents
-  const canStartIntake = (status === 'intake') && !intakeConversation && (isFounder || isCpa)
+  // Intake: all agent actions available
+  const canStartIntake = (status === 'intake' || status === 'ai_prep') && !intakeConversation && (isFounder || isCpa)
   const canRunPrefill = (status === 'intake' || status === 'ai_prep') && (isFounder || isCpa)
-  const canRunAuditRisk = (status === 'ai_prep' || status === 'cpa_review') && (isFounder || isCpa)
-  // Pause & escalate: founder-only actions (backend enforces requireRole('founder'))
-  // Not available at founder_approval (founder should approve/reject, not pause or escalate)
-  const canPause = (status === 'intake' || status === 'ai_prep' || status === 'cpa_review') && isFounder
-  const canEscalate = (status === 'intake' || status === 'ai_prep' || status === 'cpa_review') && isFounder
+  const canRunAuditRisk = (status === 'intake' || status === 'ai_prep' || status === 'founder_approval') && (isFounder || isCpa)
+  // Pause/Stop: intake has pause. ai_prep + cpa_review have stop workflow (founder only)
+  const canPause = status === 'intake' && isFounder
+  const canStopWorkflow = (status === 'ai_prep' || status === 'cpa_review') && isFounder
+  const canEscalate = (status === 'intake' || status === 'ai_prep') && isFounder
   // Archive: founder can archive submitted filings
   const canArchive = status === 'submitted' && isFounder
-  // CPA can advance cpa_review → founder_approval
-  // Founder cannot self-advance to founder_approval (HITL gate)
-  const canAdvanceStatus = (status: string | undefined) => {
-    if (status === 'cpa_review') return isCpa // only CPA can advance to founder_approval
-    if (status === 'intake' || status === 'ai_prep') return isFounder || isCpa
+  // CPA approve/reject at cpa_review
+  const canCpaApprove = status === 'cpa_review' && isCpa
+  // Advance: only intake → ai_prep (founder/CPA)
+  const canAdvanceStatus = (s: string | undefined) => {
+    if (s === 'intake') return isFounder || isCpa
     return false
   }
 
-  // Status transition actions (only for active workflow stages)
+  // Status transition actions
   const statusActions: Record<string, { label: string; nextStatus: string } | undefined> = {
     intake: { label: 'Move to AI Prep', nextStatus: 'ai_prep' },
-    ai_prep: { label: 'Send to CPA Review', nextStatus: 'cpa_review' },
-    cpa_review: { label: 'Send to Founder Approval', nextStatus: 'founder_approval' },
   }
   const statusAction = filing && canAdvanceStatus(filing.status) ? statusActions[filing.status] : undefined
+
+  // Review lock info
+  const reviewLock = filing?.reviewLock as { cpaUserId: string; cpaName: string; cpaEmail: string; status: string } | null
+  // Rejection remarks
+  const rejectionRemarks = (filing?.rejectionRemarks || []) as { source: string; reason: string; date: string }[]
+  // CPAs notified for claim
+  const notifiedCpas = (filing?.notifiedCpas || []) as { cpaUserId: string; cpaName: string; cpaEmail: string; status: string; notifiedAt: string }[]
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -226,7 +237,10 @@ export function FilingDetailPage() {
   const handleAuditRisk = async () => {
     if (!id) return
     setAuditRiskLoading(true)
-    try { await runAuditRisk(id) } finally { setAuditRiskLoading(false) }
+    try {
+      const result = await runAuditRisk(id)
+      setAuditRiskResult(result)
+    } finally { setAuditRiskLoading(false) }
   }
 
   const handleApprove = async () => {
@@ -239,6 +253,24 @@ export function FilingDetailPage() {
     if (!id) return
     setRejectLoading(true)
     try { await rejectFiling(id, reason) } finally { setRejectLoading(false) }
+  }
+
+  const handleCpaApprove = async () => {
+    if (!id) return
+    setCpaApproveLoading(true)
+    try { await cpaApproveFiling(id) } finally { setCpaApproveLoading(false) }
+  }
+
+  const handleCpaReject = async (reason: string) => {
+    if (!id) return
+    setCpaRejectLoading(true)
+    try { await cpaRejectFiling(id, reason) } finally { setCpaRejectLoading(false) }
+  }
+
+  const handleStopWorkflow = async () => {
+    if (!id) return
+    setStopWorkflowLoading(true)
+    try { await pauseFiling(id) } finally { setStopWorkflowLoading(false) }
   }
 
   const handleArchive = async () => {
@@ -293,6 +325,11 @@ export function FilingDetailPage() {
   }
 const renderValue = (value: any): React.ReactNode => {
   if (value === null || value === undefined) return '—';
+
+  // Prefill agent objects: { value, confidence, source, ... } — show just the value
+  if (typeof value === 'object' && 'value' in value) {
+    return String(value.value ?? '—');
+  }
 
   if (typeof value === 'object') {
     return (
@@ -420,11 +457,11 @@ const renderValue = (value: any): React.ReactNode => {
 
           {/* Details grid */}
           <div className="grid grid-cols-2 gap-x-12 gap-y-3 text-[13px] mb-8">
-            <span className="text-[#6B7280]">Agent:</span>
+            <span className="text-[#6B7280]">Reviewing by:</span>
             <span className="text-[#111827]">
-              {filing.cpaAssignedId
-                ? `CPA (${filing.cpaAssignedId.slice(0, 8)}...)`
-                : '—'}
+              {reviewLock
+                ? <span className="inline-flex items-center gap-1 text-[#15803D]"><ShieldCheck size={13} />{reviewLock.cpaEmail || reviewLock.cpaName}</span>
+                : <span className="text-[#9CA3AF]">CPA not assigned yet</span>}
             </span>
             <span className="text-[#6B7280]">Preparer:</span>
             <span className="text-[#111827]">
@@ -473,7 +510,60 @@ const renderValue = (value: any): React.ReactNode => {
             </span>
           </div>
 
-          {/* Founder approval actions — prominent, separate from workflow buttons */}
+          {/* Rejection remarks */}
+          {rejectionRemarks.length > 0 && (
+            <div className="mb-8 w-full max-w-4xl rounded-xl border border-amber-200 bg-amber-50 p-4 text-left">
+              <h3 className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1.5">
+                <AlertTriangle size={14} />
+                Remarks
+              </h3>
+              <div className="space-y-2">
+                {rejectionRemarks.map((remark, i) => (
+                  <div key={i} className="rounded-lg bg-white border border-amber-100 px-3 py-2 text-sm">
+                    <span className="font-medium text-amber-700">{remark.source}:</span>{' '}
+                    <span className="text-[#374151]">{remark.reason}</span>
+                    {remark.date && (
+                      <span className="ml-2 text-xs text-[#9CA3AF]">{formatDate(remark.date)}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notified CPAs — hide once claimed */}
+          {notifiedCpas.length > 0 && !reviewLock && (
+            <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-white p-4 text-left">
+              <h3 className="text-sm font-semibold text-[#111827] mb-3 flex items-center gap-1.5">
+                <Eye size={14} className="text-[#6C5CE7]" />
+                Claim Sent To ({notifiedCpas.length} CPAs)
+              </h3>
+              <div className="space-y-2">
+                {notifiedCpas.map((cpa, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-lg bg-[#F9FAFB] px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EDE9FD] text-xs font-bold text-[#6C5CE7]">
+                        {(cpa.cpaName || 'C')[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-[#111827]">{cpa.cpaName}</p>
+                        <p className="text-xs text-[#6B7280]">{cpa.cpaEmail}</p>
+                      </div>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                      cpa.status === 'approved' ? 'bg-green-100 text-green-700' :
+                      cpa.status === 'dismissed' ? 'bg-gray-100 text-gray-500' :
+                      'bg-amber-100 text-amber-700'
+                    }`}>
+                      {cpa.status === 'approved' ? 'Claimed' : cpa.status === 'dismissed' ? 'Dismissed' : 'Pending'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Founder approval actions — approve, reject, audit risk, edit */}
           {status === 'founder_approval' && isFounder && (
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-3">
               <button
@@ -485,7 +575,7 @@ const renderValue = (value: any): React.ReactNode => {
               </button>
               <button
                 onClick={() => {
-                  const reason = window.prompt('Rejection reason:')
+                  const reason = window.prompt('Rejection reason (will be sent back to AI Prep):')
                   if (reason) handleReject(reason)
                 }}
                 disabled={rejectLoading}
@@ -493,11 +583,59 @@ const renderValue = (value: any): React.ReactNode => {
               >
                 Reject Filing
               </button>
+              {canRunAuditRisk && (
+                <button
+                  onClick={handleAuditRisk}
+                  disabled={auditRiskLoading}
+                  className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
+                >
+                  {auditRiskLoading ? 'Scoring Risk...' : 'Run Audit Risk'}
+                </button>
+              )}
+              <button
+                onClick={() => setShowEditData(true)}
+                className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] flex items-center gap-1.5"
+              >
+                <Pencil size={14} />
+                Edit Filing
+              </button>
             </div>
           )}
 
-          {/* Workflow action buttons — hidden at founder_approval and terminal states */}
-          {!isTerminal && status !== 'founder_approval' && (
+          {/* Founder approval — non-founder sees wait message only */}
+          {status === 'founder_approval' && !isFounder && (
+            <p className="mb-8 text-sm text-[#6B7280]">Waiting for founder to review and approve this filing.</p>
+          )}
+
+          {/* CPA Review — CPA actions: approve only */}
+          {canCpaApprove && (
+            <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-3">
+              <button
+                onClick={handleCpaApprove}
+                disabled={cpaApproveLoading}
+                className="h-10 rounded-lg bg-[#15803D] px-5 text-sm font-medium text-white hover:bg-[#166534] disabled:opacity-50"
+              >
+                {cpaApproveLoading ? 'Approving...' : 'Approve Filing'}
+              </button>
+            </div>
+          )}
+
+          {/* CPA Review — founder: only Stop Workflow */}
+          {status === 'cpa_review' && canStopWorkflow && (
+            <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
+              <button
+                onClick={handleStopWorkflow}
+                disabled={stopWorkflowLoading}
+                className="h-10 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+              >
+                {stopWorkflowLoading ? 'Stopping...' : 'Stop Workflow'}
+              </button>
+              <p className="flex items-center text-xs text-[#6B7280]">Waiting for CPA to review. Stop workflow to release CPA lock.</p>
+            </div>
+          )}
+
+          {/* Intake & AI Prep workflow buttons */}
+          {!isTerminal && (status === 'intake' || status === 'ai_prep') && (
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
               {canStartIntake && (
                 <button
@@ -549,6 +687,16 @@ const renderValue = (value: any): React.ReactNode => {
                 </button>
               )}
 
+              {canStopWorkflow && (
+                <button
+                  onClick={handleStopWorkflow}
+                  disabled={stopWorkflowLoading}
+                  className="h-10 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {stopWorkflowLoading ? 'Stopping...' : 'Stop Workflow'}
+                </button>
+              )}
+
               {canEscalate && (
                 <button
                   onClick={handleEscalate}
@@ -592,6 +740,53 @@ const renderValue = (value: any): React.ReactNode => {
                 <Download size={16} />
                 Export Filing
               </button>
+            </div>
+          )}
+
+          {/* Audit Risk Result */}
+          {auditRiskResult && (
+            <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-white p-4 text-left">
+              <h3 className="text-sm font-semibold text-[#111827] mb-3 flex items-center gap-1.5">
+                <ShieldCheck size={14} />
+                Audit Risk Assessment
+              </h3>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="rounded-lg bg-[#F9FAFB] px-3 py-2.5">
+                  <span className="text-xs text-[#6B7280]">Risk Score</span>
+                  <p className={`text-lg font-bold ${
+                    auditRiskResult.riskScore > 60 ? 'text-red-600' :
+                    auditRiskResult.riskScore > 30 ? 'text-amber-600' : 'text-green-600'
+                  }`}>
+                    {auditRiskResult.riskScore}/100
+                  </p>
+                </div>
+                <div className="rounded-lg bg-[#F9FAFB] px-3 py-2.5">
+                  <span className="text-xs text-[#6B7280]">Risk Level</span>
+                  <p className="text-lg font-bold text-[#111827]">{auditRiskResult.riskLevel}</p>
+                </div>
+              </div>
+              {auditRiskResult.summary && (
+                <div className="rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] p-3 text-sm text-[#374151] whitespace-pre-wrap mb-3">
+                  {auditRiskResult.summary}
+                </div>
+              )}
+              {auditRiskResult.flaggedItems?.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-[#6B7280] uppercase">Flagged Items</h4>
+                  {auditRiskResult.flaggedItems.map((item: any, i: number) => (
+                    <div key={i} className="rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm">
+                      <span className={`inline-block mr-2 px-1.5 py-0.5 rounded text-xs font-medium ${
+                        item.severity === 'high' ? 'bg-red-100 text-red-700' :
+                        item.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                      }`}>{item.severity}</span>
+                      <span className="text-[#374151]">{item.description || item.issue}</span>
+                      {item.recommendation && (
+                        <p className="mt-1 text-xs text-[#6B7280]">{item.recommendation}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -695,13 +890,15 @@ const renderValue = (value: any): React.ReactNode => {
               <h3 className="text-sm font-semibold text-[#111827]">
                 Filing Data {Object.keys(filing.filingData ?? {}).length > 0 && `(${Object.keys(filing.filingData).length} fields)`}
               </h3>
-              <button
-                onClick={() => setShowEditData(true)}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#E5E7EB] text-xs font-medium text-[#374151] hover:bg-[#F9FAFB] transition-colors"
-              >
-                <Pencil size={13} />
-                Edit / Add Fields
-              </button>
+              {(status === 'intake' || status === 'ai_prep') && (
+                <button
+                  onClick={() => setShowEditData(true)}
+                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#E5E7EB] text-xs font-medium text-[#374151] hover:bg-[#F9FAFB] transition-colors"
+                >
+                  <Pencil size={13} />
+                  Edit / Add Fields
+                </button>
+              )}
             </div>
             {Object.keys(filing.filingData ?? {}).length === 0 ? (
               <p className="text-sm text-[#6B7280] italic">No data fields yet. Use "Edit / Add Fields" to add them manually.</p>
@@ -951,7 +1148,16 @@ function FilingDataEditor({
   onSaved: () => void
 }) {
   const [rows, setRows] = useState<{ key: string; value: string }[]>(
-    Object.entries(initialData).map(([k, v]) => ({ key: k, value: String(v ?? '') }))
+    Object.entries(initialData).map(([k, v]) => {
+      // Handle prefill objects { value, confidence, ... } — extract value field
+      if (v && typeof v === 'object' && 'value' in (v as any)) {
+        return { key: k, value: String((v as any).value ?? '') }
+      }
+      if (v && typeof v === 'object') {
+        return { key: k, value: JSON.stringify(v) }
+      }
+      return { key: k, value: String(v ?? '') }
+    })
   )
   const [newKey, setNewKey] = useState('')
   const [newValue, setNewValue] = useState('')
@@ -983,7 +1189,13 @@ function FilingDataEditor({
     setSaving(true)
     setError('')
     try {
-      const fields: Record<string, string> = {}
+      // Build fields from rows — also null out deleted keys so backend merge removes them
+      const fields: Record<string, string | null> = {}
+      // Mark removed keys as null
+      for (const key of Object.keys(initialData)) {
+        if (!rows.some(r => r.key === key)) fields[key] = null
+      }
+      // Set current rows
       for (const r of rows) fields[r.key] = r.value
       await api.updateFilingData(filingId, fields)
       onSaved()

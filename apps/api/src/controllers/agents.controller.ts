@@ -219,7 +219,7 @@ export async function runAuditRisk(req: Request, res: Response, next: NextFuncti
     const { filingId } = req.body
     const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
     if (!filing) throw new AppError('Filing not found', 404)
-    assertAgentAllowed(filing, 'audit risk agent', ['ai_prep', 'cpa_review'])
+    assertAgentAllowed(filing, 'audit risk agent', ['intake', 'ai_prep', 'cpa_review', 'founder_approval'])
 
     const result = await auditRiskAgent.scoreRisk(filingId, req.user!.orgId)
     res.json(result)

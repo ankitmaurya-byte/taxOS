@@ -89,28 +89,15 @@ Filing data so far: ${JSON.stringify(filing.filingData)}
       }
     }
 
-    // Update filing with prefilled data
+    // Update filing with prefilled data — move to ai_prep if intake, else keep status
     db.update(filings).set({
       filingData: stringifiedFields as any,
       aiConfidenceScore: result.overallConfidence,
       aiSummary: result.summary,
       aiReasoning: result.reasoning,
-      status: 'cpa_review',
+      ...(filing.status === 'intake' ? { status: 'ai_prep' } : {}),
       updatedAt: new Date().toISOString(),
     }).where(eq(filings.id, filingId)).run()
-
-    // Check if CPA review needed
-    const needsReview = Object.values(result.fields || {}).some((f: any) => f.needsCpaReview)
-    if (needsReview || result.overallConfidence < 0.8) {
-      db.insert(approvalQueue).values({
-        orgId,
-        filingId,
-        queueType: 'cpa',
-        status: 'pending',
-        summary: `Form ${filing.formType} prefill complete (confidence: ${Math.round(result.overallConfidence * 100)}%). Fields flagged for CPA review.`,
-        aiRecommendation: result.reasoning,
-      }).run()
-    }
 
     await this.log({
       orgId,

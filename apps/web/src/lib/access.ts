@@ -24,7 +24,8 @@ const ROUTE_RULES: Array<{ paths: string[]; rule: AccessRule }> = [
   { paths: ['/cpa/review'], rule: { roles: ['cpa'] } },
   { paths: ['/estimated-tax', '/deadlines', '/action-centre'], rule: { roles: ['founder', 'team_member'], permission: 'canViewFilings' } },
   { paths: ['/documents', '/documents/vault'], rule: { roles: ['founder', 'team_member', 'cpa'], permission: 'canViewDocuments' } },
-  { paths: ['/approvals'], rule: { roles: ['founder', 'team_member', 'cpa'], permission: 'canApproveFilings' } },
+  { paths: ['/approvals'], rule: { roles: ['founder', 'team_member', 'admin'], permission: 'canApproveFilings' } },
+  { paths: ['/claim-filings'], rule: { roles: ['cpa'] } },
   { paths: ['/audit'], rule: { roles: ['admin', 'founder', 'cpa'] } },
   { paths: ['/team'], rule: { roles: ['founder'], permission: 'canManageTeam' } },
 

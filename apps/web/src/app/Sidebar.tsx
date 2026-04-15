@@ -20,6 +20,7 @@ import {
   LogOut,
   ClipboardList,
   ClipboardCheck,
+  Inbox,
   MoreHorizontal,
   ChevronDown,
   ChevronRight as ChevronRightIcon,
@@ -93,6 +94,7 @@ const BOTTOM_PINNED: NavItem[] = [
   // { icon: Users, label: 'Create Account', href: '/profile/create-account' },
   
   { icon: ClipboardList, label: 'Approvals', href: '/approvals' },
+  { icon: Inbox, label: 'Claim Filings', href: '/claim-filings' },
   { icon: Users, label: 'Founder Applications', href: '/admin/founder-applications' },
   { icon: MessageCircle, label: 'Chat', href: '/chat' },
   { icon: Zap, label: 'Action Centre', href: '/action-centre' },
@@ -357,7 +359,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
           <div
             role="menu"
             aria-label="Profile menu"
-            className="absolute bottom-[calc(100%+4px)] left-4 z-20 w-[280px] rounded-2xl border border-gray-200 bg-white py-2 shadow-lg"
+            className="absolute bottom-[calc(90%)] left-4 z-20 w-[280px] rounded-2xl border border-gray-200 bg-white py-2 shadow-lg"
           >
             {/* Profile header in dropdown */}
             <div className="flex items-center gap-3 px-4 py-3">

@@ -379,11 +379,13 @@ interface AuthState {
   updateFilingStatus: (id: string, status: string) => Promise<void>
   approveFiling: (id: string) => Promise<void>
   rejectFiling: (id: string, reason: string) => Promise<void>
+  cpaApproveFiling: (id: string) => Promise<void>
+  cpaRejectFiling: (id: string, reason: string) => Promise<void>
   claimFilingReview: (id: string) => Promise<void>
   releaseFilingReview: (id: string) => Promise<void>
   startIntake: (id: string) => Promise<void>
   runPrefill: (id: string) => Promise<void>
-  runAuditRisk: (id: string) => Promise<void>
+  runAuditRisk: (id: string) => Promise<any>
   pauseFiling: (id: string) => Promise<void>
   escalateToCpa: (id: string) => Promise<void>
   extractDocument: (documentId: string) => Promise<void>
@@ -702,6 +704,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await get().fetchFiling(id)
   },
 
+  cpaApproveFiling: async (id) => {
+    await api.filings.cpaApprove(id)
+    await get().fetchFilings()
+    await get().fetchFiling(id)
+  },
+
+  cpaRejectFiling: async (id, reason) => {
+    await api.filings.cpaReject(id, reason)
+    await get().fetchFilings()
+    await get().fetchFiling(id)
+  },
+
   startIntake: async (id) => {
     await api.agents.startIntake(id)
     await get().fetchFilings()
@@ -715,9 +729,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   runAuditRisk: async (id) => {
-    await api.agents.runAuditRisk(id)
-    await get().fetchFilings()
-    await get().fetchFiling(id)
+    const result = await api.agents.runAuditRisk(id)
+    return result
   },
 
   pauseFiling: async (id) => {

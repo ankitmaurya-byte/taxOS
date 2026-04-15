@@ -21,16 +21,16 @@ export function CpaReviewQueue() {
     queryKey: ['cpa-review-queue', user?.id],
     queryFn: async () => {
       const all = await api.filings.getAll() as any[]
-      // Show filings assigned to this CPA OR in cpa_review status
+      // Show only filings assigned to this CPA that are in active review stages
       return all.filter(
-        (f) => f.cpaAssignedId === user?.id || f.status === 'cpa_review'
+        (f) => f.cpaAssignedId === user?.id && (f.status === 'cpa_review' || f.status === 'founder_approval')
       )
     },
     enabled: !!user,
   })
 
-  const pending = filings.filter((f) => f.status === 'cpa_review')
-  const others = filings.filter((f) => f.status !== 'cpa_review')
+  const pending = filings.filter((f: any) => f.status === 'cpa_review')
+  const others = filings.filter((f: any) => f.status === 'founder_approval')
 
   return (
     <div className="space-y-6 p-6 max-w-5xl mx-auto">
@@ -51,8 +51,8 @@ export function CpaReviewQueue() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Awaiting Review', value: pending.length, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-          { label: 'Total Assigned', value: filings.length, color: 'text-[#6C5CE7] bg-[#EDE9FD] border-[#C4B5FD]' },
-          { label: 'Completed', value: others.filter((f) => f.status === 'submitted').length, color: 'text-green-700 bg-green-50 border-green-200' },
+          { label: 'Total Active', value: filings.length, color: 'text-[#6C5CE7] bg-[#EDE9FD] border-[#C4B5FD]' },
+          { label: 'Sent to Founder', value: others.length, color: 'text-blue-700 bg-blue-50 border-blue-200' },
         ].map((stat) => (
           <div key={stat.label} className={`rounded-xl border px-5 py-4 ${stat.color}`}>
             <p className="text-2xl font-bold">{stat.value}</p>
@@ -90,10 +90,10 @@ export function CpaReviewQueue() {
             </div>
           )}
 
-          {/* Other filings */}
+          {/* Filings sent to founder approval */}
           {others.length > 0 && (
             <div>
-              <h2 className="mb-3 text-sm font-semibold text-[#4B5563]">Other assigned filings</h2>
+              <h2 className="mb-3 text-sm font-semibold text-[#4B5563]">Sent to Founder Approval</h2>
               <div className="space-y-2">
                 {others.map((filing: any) => (
                   <FilingCard key={filing.id} filing={filing} />
