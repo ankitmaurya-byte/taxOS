@@ -24,6 +24,7 @@ export function ActionCentrePage() {
   const items = [
     ...pending.map((a: any) => ({
       id: a.id,
+      filingId: a.filingId,
       title: a.summary,
       description: a.aiRecommendation || 'Approval required',
       date: a.createdAt,
@@ -72,7 +73,7 @@ export function ActionCentrePage() {
               key={item.id}
               className="bg-white border border-[#E5E7EB] rounded-xl px-5 py-4 flex items-center justify-between hover:border-[#D1D5DB] cursor-pointer transition-colors"
               onClick={() =>
-                navigate(item.type === 'approval' ? '/approvals' : '/filings')
+                navigate(item.type === 'approval' && item.filingId ? `/filings/${item.filingId}` : item.type === 'approval' ? '/approvals' : '/filings')
               }
             >
               <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -84,9 +85,9 @@ export function ActionCentrePage() {
               </div>
               <div className="flex items-center gap-3 flex-shrink-0 ml-4">
                 <span className="text-xs text-[#9CA3AF]">{formatDate(item.date)}</span>
-                <button className="h-8 px-3 text-[13px] font-medium text-[#6C5CE7] border border-[#6C5CE7] rounded-lg hover:bg-[#EDE9FD] transition-colors">
+                <span className="h-8 px-3 text-[13px] font-medium text-[#6C5CE7] border border-[#6C5CE7] rounded-lg hover:bg-[#EDE9FD] transition-colors inline-flex items-center">
                   {item.type === 'approval' ? 'Review' : 'View'}
-                </button>
+                </span>
               </div>
             </div>
           ))}

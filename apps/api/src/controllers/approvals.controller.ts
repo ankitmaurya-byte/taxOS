@@ -64,8 +64,8 @@ export function listApprovals(req: Request, res: Response) {
     .orderBy(desc(approvalQueue.createdAt))
     .all()
     .filter(a => {
-      if (req.user!.role === 'founder') return a.queueType === 'founder'
-      if (req.user!.role === 'cpa') return a.queueType === 'cpa'
+      if (req.user!.role === 'founder') return a.queueType === 'founder' && a.orgId === req.user!.orgId
+      if (req.user!.role === 'cpa') return a.queueType === 'cpa' && a.orgId === req.user!.orgId
       return true
     })
 

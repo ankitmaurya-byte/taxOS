@@ -30,6 +30,104 @@ const STATUS_OPTIONS: { key: FilingStatus; label: string }[] = [
   { key: 'archived', label: 'Archived' },
 ]
 
+function formatFieldLabel(key: string) {
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/[_-]/g, ' ')
+    .replace(/^\w/, c => c.toUpperCase())
+    .trim()
+}
+
+function formatFieldValue(value: unknown): string {
+  if (value == null) return '—'
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  if (typeof value === 'number') return value.toLocaleString('en-US')
+  if (typeof value === 'string') return value || '—'
+  return String(value)
+}
+
+function isCurrency(key: string, value: unknown): boolean {
+  if (typeof value !== 'number') return false
+  const hints = ['amount', 'income', 'tax', 'revenue', 'cost', 'expense', 'fee', 'salary', 'wage', 'payment', 'balance', 'credit', 'deduction', 'gross', 'net', 'total', 'price', 'profit', 'loss']
+  const lower = key.toLowerCase()
+  return hints.some(h => lower.includes(h))
+}
+
+function FilingDataFields({ data, depth = 0 }: { data: Record<string, any>; depth?: number }) {
+  const entries = Object.entries(data)
+
+  return (
+    <div className={depth > 0 ? 'rounded-lg border border-[#E5E7EB] overflow-hidden' : ''}>
+      {entries.map(([key, value], idx) => {
+        const isLast = idx === entries.length - 1
+        const isObject = value != null && typeof value === 'object' && !Array.isArray(value)
+        const isArray = Array.isArray(value)
+
+        // Nested object — render as section
+        if (isObject) {
+          return (
+            <div key={key} className={!isLast ? 'border-b border-[#F3F4F6]' : ''}>
+              <div className="bg-[#F9FAFB] px-4 py-2.5">
+                <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{formatFieldLabel(key)}</p>
+              </div>
+              <div className="px-4 py-2">
+                <FilingDataFields data={value} depth={depth + 1} />
+              </div>
+            </div>
+          )
+        }
+
+        // Array — render each item
+        if (isArray) {
+          return (
+            <div key={key} className={!isLast ? 'border-b border-[#F3F4F6]' : ''}>
+              <div className="bg-[#F9FAFB] px-4 py-2.5">
+                <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{formatFieldLabel(key)}</p>
+              </div>
+              <div className="px-4 py-2 space-y-2">
+                {value.map((item: any, i: number) => (
+                  <div key={i}>
+                    {item != null && typeof item === 'object' ? (
+                      <div className="rounded-lg border border-[#E5E7EB] overflow-hidden">
+                        <div className="bg-[#FAFAFA] px-3 py-1.5 border-b border-[#F3F4F6]">
+                          <span className="text-[11px] font-medium text-[#9CA3AF]">#{i + 1}</span>
+                        </div>
+                        <FilingDataFields data={item} depth={depth + 1} />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 px-1 py-1">
+                        <span className="text-[11px] text-[#9CA3AF]">#{i + 1}</span>
+                        <span className="text-sm text-[#111827]">{formatFieldValue(item)}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {value.length === 0 && (
+                  <p className="text-sm text-[#9CA3AF] italic py-1">None</p>
+                )}
+              </div>
+            </div>
+          )
+        }
+
+        // Primitive value — clean row
+        const currencyField = isCurrency(key, value)
+        return (
+          <div
+            key={key}
+            className={`flex items-center justify-between px-4 py-3 ${!isLast ? 'border-b border-[#F3F4F6]' : ''} ${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}
+          >
+            <span className="text-sm text-[#6B7280]">{formatFieldLabel(key)}</span>
+            <span className={`text-sm font-medium text-[#111827] text-right max-w-[60%] break-words ${currencyField ? 'tabular-nums' : ''}`}>
+              {currencyField ? `$${(value as number).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : formatFieldValue(value)}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function FilingRoom() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -328,16 +426,11 @@ export function FilingRoom() {
                 </div>
               )}
               {filing.filingData && typeof filing.filingData === 'object' && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Filing Data</p>
-                  {Object.entries(filing.filingData as Record<string, any>).map(([key, value]) => (
-                    <div key={key} className="flex justify-between rounded-md border px-3 py-2">
-                      <span className="text-sm text-gray-600">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                      <span className="text-sm font-medium">
-                        {typeof value === 'number' ? `$${value.toLocaleString()}` : JSON.stringify(value)}
-                      </span>
-                    </div>
-                  ))}
+                <div className='overflow-y-scroll max-h-96'>
+                  <p className="text-sm font-medium text-[#111827] mb-3">Filing Data</p>
+                  <div className="rounded-xl border border-[#E5E7EB] overflow-hidden">
+                    <FilingDataFields data={filing.filingData as Record<string, any>} />
+                  </div>
                 </div>
               )}
 

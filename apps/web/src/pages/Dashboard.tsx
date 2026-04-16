@@ -83,8 +83,8 @@ export function DashboardPage() {
           </div>
 
           <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
-            <h2 className="text-lg font-medium text-[#111827]">Founder review queue</h2>
-            <div className="mt-4 space-y-3">
+            <h2 className="text-lg font-medium text-[#111827] mb-4">Founder review queue</h2>
+            <div className="space-y-3">
               {founderApplications.slice(0, 5).map((item: ApiFounderApplication) => (
                 <div
                   key={item.id}
@@ -95,17 +95,27 @@ export function DashboardPage() {
                     <p className="font-medium text-[#111827]">{item.organizationName}</p>
                     <p className="text-sm text-[#6B7280]">{item.name} · {item.email}</p>
                   </div>
-                  <span className="rounded-full bg-[#F3F4F6] px-3 py-1 text-xs text-[#374151]">{item.status}</span>
+                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${item.status === 'pending' ? 'bg-[#FEF3C7] text-[#92400E]' : item.status === 'approved' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-[#FEE2E2] text-[#991B1B]'}`}>{item.status}</span>
                 </div>
               ))}
               {founderApplicationsLoading && <p className="text-sm text-[#6B7280]">Loading...</p>}
             </div>
+            {founderApplications.length > 5 && (
+              <div className="mt-4 border-t border-[#E5E7EB] pt-3 text-center">
+                <button
+                  onClick={() => navigate('/admin/founder-applications')}
+                  className="text-sm font-medium text-[#6C5CE7] hover:text-[#5A4BD1] transition-colors"
+                >
+                  View all applications &rarr;
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
-            <h2 className="text-lg font-medium text-[#111827]">Platform organization overview</h2>
-            <div className="mt-4 space-y-3">
-              {adminOrganizations.slice(0, 6).map((organization) => (
+            <h2 className="text-lg font-medium text-[#111827] mb-4">Platform organization overview</h2>
+            <div className="space-y-3">
+              {adminOrganizations.slice(0, 5).map((organization) => (
                 <div
                   key={organization.id}
                   onClick={() => navigate(`/admin/organizations/${organization.id}`)}
@@ -124,6 +134,16 @@ export function DashboardPage() {
               ))}
               {!adminOrganizations.length && !cpasLoading && !founderApplicationsLoading && <p className="text-sm text-[#6B7280]">No organizations found.</p>}
             </div>
+            {adminOrganizations.length > 5 && (
+              <div className="mt-4 border-t border-[#E5E7EB] pt-3 text-center">
+                <button
+                  onClick={() => navigate('/admin/organizations')}
+                  className="text-sm font-medium text-[#6C5CE7] hover:text-[#5A4BD1] transition-colors"
+                >
+                  View all organizations &rarr;
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}

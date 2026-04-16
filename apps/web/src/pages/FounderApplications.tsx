@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { Search, X } from 'lucide-react'
+import { Pagination } from '@/components/Pagination'
+
+const PAGE_SIZE = 10
 
 export function FounderApplicationsPage() {
   const { founderApplications, founderApplicationsLoading, fetchFounderApplications, reviewFounderApplication } = useAuthStore()
@@ -10,6 +13,7 @@ export function FounderApplicationsPage() {
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     if (founderApplications.length === 0 && !founderApplicationsLoading) {
@@ -46,6 +50,10 @@ export function FounderApplicationsPage() {
     )
   }
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
   const pendingCount = founderApplications.filter((a: any) => a.status === 'pending').length
   const approvedCount = founderApplications.filter((a: any) => a.status === 'approved').length
   const rejectedCount = founderApplications.filter((a: any) => a.status === 'rejected').length
@@ -80,7 +88,7 @@ export function FounderApplicationsPage() {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             placeholder="Search by org, name, email, jurisdiction..."
             className="h-9 w-full rounded-lg border border-[#E5E7EB] bg-white pl-9 pr-8 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
           />
@@ -92,7 +100,7 @@ export function FounderApplicationsPage() {
         </div>
         <div className="flex gap-1.5">
           <button
-            onClick={() => setStatusFilter(null)}
+            onClick={() => { setStatusFilter(null); setPage(1) }}
             className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
               !statusFilter ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F9FAFB]'
             }`}
@@ -102,7 +110,7 @@ export function FounderApplicationsPage() {
           {(['pending', 'approved', 'rejected'] as const).map((status) => (
             <button
               key={status}
-              onClick={() => setStatusFilter(status)}
+              onClick={() => { setStatusFilter(status); setPage(1) }}
               className={`h-9 px-3 rounded-lg text-xs font-medium capitalize transition-colors ${
                 statusFilter === status
                   ? 'bg-[#111827] text-white'
@@ -119,7 +127,7 @@ export function FounderApplicationsPage() {
       <p className="text-xs text-[#6B7280]">{filtered.length} application{filtered.length !== 1 ? 's' : ''}</p>
 
       <div className="space-y-4">
-        {filtered.map((application: any) => (
+        {paginated.map((application: any) => (
           <div key={application.id} className="rounded-xl border border-[#E5E7EB] bg-white p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -164,10 +172,19 @@ export function FounderApplicationsPage() {
             )}
           </div>
         ))}
-        {filtered.length === 0 && (
+        {paginated.length === 0 && (
           <p className="text-sm text-[#6B7280]">{search || statusFilter ? 'No applications match your filters.' : 'No founder applications found.'}</p>
         )}
       </div>
+
+      <Pagination
+        page={safePage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setPage}
+        itemLabel="applications"
+      />
 
       {rejectPopupId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
