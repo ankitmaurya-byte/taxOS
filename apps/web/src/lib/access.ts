@@ -26,7 +26,7 @@ const ROUTE_RULES: Array<{ paths: string[]; rule: AccessRule }> = [
   { paths: ['/documents', '/documents/vault'], rule: { roles: ['founder', 'team_member', 'cpa'], permission: 'canViewDocuments' } },
   { paths: ['/approvals'], rule: { roles: ['founder', 'team_member', 'admin'], permission: 'canApproveFilings' } },
   { paths: ['/claim-filings'], rule: { roles: ['cpa'] } },
-  { paths: ['/audit'], rule: { roles: ['admin', 'founder', 'cpa'] } },
+  { paths: ['/audit'], rule: { roles: ['admin', 'founder', 'cpa', 'team_member'] } },
   { paths: ['/team'], rule: { roles: ['founder'], permission: 'canManageTeam' } },
 
   // 🔥 keep this (admin still allowed here)

@@ -509,10 +509,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchFiling: async (id) => {
-    try {
-      const data = await api.filings.get(id) as FilingDetail
-      set((state) => ({ filingDetails: { ...state.filingDetails, [id]: data } }))
-    } catch { /* ignore */ }
+    const data = await api.filings.get(id) as FilingDetail
+    set((state) => ({ filingDetails: { ...state.filingDetails, [id]: data } }))
   },
 
   fetchApprovals: async () => {

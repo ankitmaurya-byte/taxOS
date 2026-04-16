@@ -156,6 +156,61 @@ const rejectionReasons = [
   'Capital gains classification needs review.',
 ]
 
+const vaultNames = [
+  'Tax Returns 2025', 'Tax Returns 2024', 'Incorporation Docs', 'Financial Statements',
+  'Payroll Records', 'Contractor Agreements', 'Board Resolutions', 'Insurance Policies',
+  'Compliance Documents', 'R&D Documentation', 'Cap Table & Equity', 'Legal Agreements',
+  'Bank Statements', 'Expense Reports', 'Investor Relations', 'State Filings',
+]
+const vaultDescriptions = [
+  'All federal and state tax return documents and supporting materials.',
+  'Financial records including P&L, balance sheets, and cash flow statements.',
+  'Payroll records, W-2s, and employment tax documents.',
+  'Contractor 1099s, agreements, and payment records.',
+  'Corporate governance documents and board meeting minutes.',
+  'Business insurance policies and certificates.',
+  'Regulatory compliance and licensing documents.',
+  'Research & development documentation for tax credit claims.',
+  'Capitalization table exports and equity agreements.',
+  'Legal contracts, NDAs, and partnership agreements.',
+  null, null, null,
+]
+const folderNames = [
+  'Q1', 'Q2', 'Q3', 'Q4', 'Federal', 'State', 'Archive', 'Drafts',
+  'Pending Review', 'Approved', 'Receipts', 'Invoices', 'Contracts',
+  'Correspondence', 'Supporting Docs', 'Amendments', 'Extensions',
+]
+const docSummaries = [
+  'W-2 wage and tax statement showing total compensation, federal and state withholdings, and social security contributions for the tax year.',
+  'Quarterly bank statement showing deposits, withdrawals, and ending balance for business checking account.',
+  'Profit and loss statement summarizing revenue, cost of goods sold, operating expenses, and net income.',
+  'Balance sheet showing total assets, liabilities, and stockholders equity at fiscal year end.',
+  'Invoice summary listing all client invoices issued during the quarter with payment status.',
+  '1099-NEC form for independent contractor compensation paid during the tax year.',
+  'Certificate of incorporation from the Delaware Secretary of State.',
+  'Board resolution authorizing officer compensation and equity grants.',
+  'Stock ledger showing all share issuances, transfers, and current ownership percentages.',
+  'Payroll summary report with gross wages, tax withholdings, and net pay by employee.',
+  'Federal tax payment receipt confirming estimated quarterly tax payment.',
+  'Depreciation schedule listing all fixed assets with cost basis, useful life, and accumulated depreciation.',
+  'Commercial lease agreement for primary office space.',
+  'Business insurance policy covering general liability and professional indemnity.',
+  'Cap table export showing current equity ownership distribution among founders and investors.',
+  'Bank reconciliation report matching bank statement transactions to accounting records.',
+  'Employee expense report with categorized business expenses and receipt attachments.',
+  'Accounts receivable aging report showing outstanding invoices by due date.',
+  'Accounts payable report listing vendor invoices pending payment.',
+  'Trial balance showing all general ledger account balances at period end.',
+]
+const docKeyEntities = [
+  ['Acme Inc', 'IRS', 'Delaware Secretary of State'],
+  ['Wells Fargo', 'Silicon Valley Bank', 'Chase Business'],
+  ['Revenue', 'Net Income', 'Operating Expenses'],
+  ['Total Assets', 'Total Liabilities', 'Retained Earnings'],
+  ['Gusto', 'ADP', 'Rippling'],
+  ['Form W-2', 'Form 1099', 'Form 1120'],
+]
+
 const genName = () => `${pick(firstNames)} ${pick(lastNames)}`
 const genCompanyName = () => `${pick(companyPrefixes)} ${pick(companySuffixes)}`
 const genEIN = () => `${rand(10, 99)}-${rand(1000000, 9999999)}`
@@ -205,6 +260,8 @@ const FILINGS_PER_ORG = { min: 10, max: 30 }
 const DOCS_PER_ORG = { min: 20, max: 60 }
 const AUDIT_LOGS_PER_ORG = { min: 40, max: 100 }
 const CONVERSATIONS_PER_ORG = { min: 8, max: 25 }
+const VAULTS_PER_ORG = { min: 2, max: 5 }
+const FOLDERS_PER_VAULT = { min: 2, max: 6 }
 
 async function fakeSeed() {
   console.log('🌱 Starting fake data seed (10x scale)...\n')
@@ -246,11 +303,47 @@ async function fakeSeed() {
       message TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE IF NOT EXISTS vaults (
+      id TEXT PRIMARY KEY NOT NULL,
+      org_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      created_by_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS folders (
+      id TEXT PRIMARY KEY NOT NULL,
+      vault_id TEXT NOT NULL,
+      parent_id TEXT,
+      name TEXT NOT NULL,
+      created_by_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS document_contexts (
+      id TEXT PRIMARY KEY NOT NULL,
+      document_id TEXT NOT NULL,
+      org_id TEXT NOT NULL,
+      vault_id TEXT,
+      raw_text TEXT,
+      summary TEXT,
+      key_entities TEXT DEFAULT '[]',
+      metadata TEXT DEFAULT '{}',
+      chunk_index INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
   `)
+
+  // Ensure vault/folder columns on documents
+  try { sqlite.exec(`ALTER TABLE documents ADD COLUMN vault_id TEXT`) } catch {}
+  try { sqlite.exec(`ALTER TABLE documents ADD COLUMN folder_id TEXT`) } catch {}
 
   // ─── Clean existing data ──────────────────────────
   console.log('Cleaning existing tables...')
   sqlite.exec(`
+    DELETE FROM document_contexts;
+    DELETE FROM folders;
+    DELETE FROM vaults;
     DELETE FROM cpa_notifications;
     DELETE FROM cpa_rejections;
     DELETE FROM org_chat_messages;
@@ -284,6 +377,8 @@ async function fakeSeed() {
   const allFilings: { id: string; orgId: string; entityId: string; status: string; cpaAssignedId: string | null }[] = []
   const allTemplates: { id: string; orgId: string | null }[] = []
   const orgCpaMap = new Map<string, string[]>()
+  const allVaults: { id: string; orgId: string }[] = []
+  const allFolders: { id: string; vaultId: string }[] = []
 
   // ─── 1. Organizations ─────────────────────────────
   console.log(`Creating ${NUM_ORGS} organizations...`)
@@ -619,18 +714,78 @@ async function fakeSeed() {
   }
   console.log(`  → ${allFilings.length} filings`)
 
+  // ─── 12b. Vaults & Folders ─────────────────────────
+  console.log('Creating vaults and folders...')
+  let folderCount = 0
+  for (const orgId of allOrgs) {
+    const founder = allUsers.find(u => u.orgId === orgId && u.role === 'founder')
+    if (!founder) continue
+    const numVaults = rand(VAULTS_PER_ORG.min, VAULTS_PER_ORG.max)
+    const chosenVaultNames = pickN(vaultNames, numVaults)
+
+    for (const vName of chosenVaultNames) {
+      const vaultId = uuid()
+      db.insert(schema.vaults).values({
+        id: vaultId, orgId, name: vName,
+        description: pick(vaultDescriptions),
+        createdById: founder.id,
+        createdAt: pastDate(120), updatedAt: pastDate(30),
+      }).run()
+      allVaults.push({ id: vaultId, orgId })
+
+      // Folders within vault
+      const numFolders = rand(FOLDERS_PER_VAULT.min, FOLDERS_PER_VAULT.max)
+      const chosenFolderNames = pickN(folderNames, numFolders)
+      for (const fName of chosenFolderNames) {
+        const folderId = uuid()
+        db.insert(schema.folders).values({
+          id: folderId, vaultId, parentId: null,
+          name: fName, createdById: founder.id,
+          createdAt: pastDate(90),
+        }).run()
+        allFolders.push({ id: folderId, vaultId })
+        folderCount++
+
+        // Occasional sub-folder
+        if (rand(0, 3) === 0) {
+          const subId = uuid()
+          db.insert(schema.folders).values({
+            id: subId, vaultId, parentId: folderId,
+            name: pick(['Archive', 'Reviewed', 'Drafts', 'Final']),
+            createdById: founder.id, createdAt: pastDate(60),
+          }).run()
+          allFolders.push({ id: subId, vaultId })
+          folderCount++
+        }
+      }
+    }
+  }
+  console.log(`  → ${allVaults.length} vaults, ${folderCount} folders`)
+
   // ─── 13. Documents ────────────────────────────────
   console.log('Creating documents...')
+  const allDocIds: { id: string; orgId: string; vaultId: string | null }[] = []
   let docCount = 0
   for (const orgId of allOrgs) {
     const orgUsers = allUsers.filter(u => u.orgId === orgId)
     const orgFilings = allFilings.filter(f => f.orgId === orgId)
+    const orgVaults = allVaults.filter(v => v.orgId === orgId)
+    const orgFolders = allFolders.filter(f => orgVaults.some(v => v.id === f.vaultId))
+
     for (let j = 0; j < rand(DOCS_PER_ORG.min, DOCS_PER_ORG.max); j++) {
       const uploader = pick(orgUsers)
       const filing = orgFilings.length > 0 && rand(0, 1) ? pick(orgFilings) : null
       const fileName = pick(docNames)
+      // ~70% of docs go into a vault
+      const vault = orgVaults.length > 0 && rand(0, 9) < 7 ? pick(orgVaults) : null
+      const vaultFolders = vault ? orgFolders.filter(f => f.vaultId === vault.id) : []
+      const folder = vaultFolders.length > 0 && rand(0, 1) ? pick(vaultFolders) : null
+
+      const docId = uuid()
       db.insert(schema.documents).values({
-        id: uuid(), filingId: filing?.id, orgId, fileName,
+        id: docId, filingId: filing?.id, orgId, fileName,
+        vaultId: vault?.id || null,
+        folderId: folder?.id || null,
         storageUrl: `/uploads/${orgId}/${uuid()}-${fileName}`,
         mimeType: pick(mimeTypes),
         extractedData: rand(0, 1) ? {
@@ -643,10 +798,43 @@ async function fakeSeed() {
         reviewedByHuman: pick([true, false, false]),
         uploadedById: uploader.id,
       }).run()
+      allDocIds.push({ id: docId, orgId, vaultId: vault?.id || null })
       docCount++
     }
   }
   console.log(`  → ${docCount} documents`)
+
+  // ─── 13b. Document Contexts ───────────────────────
+  console.log('Creating document contexts...')
+  let contextCount = 0
+  for (const doc of allDocIds) {
+    // ~80% of docs get context extracted
+    if (rand(0, 9) < 2) continue
+    const summary = pick(docSummaries)
+    const entities = pick(docKeyEntities)
+    const revenue = rand(50000, 10000000)
+    const expenses = rand(30000, revenue)
+
+    db.insert(schema.documentContexts).values({
+      id: uuid(),
+      documentId: doc.id,
+      orgId: doc.orgId,
+      vaultId: doc.vaultId || null,
+      rawText: `${summary}\n\nTotal Revenue: $${revenue.toLocaleString()}\nTotal Expenses: $${expenses.toLocaleString()}\nNet Income: $${(revenue - expenses).toLocaleString()}\nTax Year: ${pick([2024, 2025])}\nEntity: ${genCompanyName()} Inc.\nEIN: ${genEIN()}\nState: ${pick(usStates)}\nFiscal Year End: ${pick(['12-31', '03-31', '06-30'])}\n\nAdditional details: ${pick(['Includes depreciation of $' + rand(10000, 500000).toLocaleString(), 'R&D expenses of $' + rand(50000, 2000000).toLocaleString(), 'Contractor payments totaling $' + rand(20000, 800000).toLocaleString(), 'Foreign income of $' + rand(10000, 1000000).toLocaleString()])}`,
+      summary,
+      keyEntities: entities as any,
+      metadata: {
+        documentType: pick(['W-2', '1099', 'Bank Statement', 'P&L', 'Balance Sheet', 'Invoice', 'Tax Return', 'Payroll Report']),
+        date: pastDate(365).split('T')[0],
+        parties: [genCompanyName(), genName()],
+        amounts: [`$${revenue.toLocaleString()}`, `$${expenses.toLocaleString()}`],
+        references: [`EIN: ${genEIN()}`, `Ref: ${rand(100000, 999999)}`],
+      } as any,
+      chunkIndex: 0,
+    }).run()
+    contextCount++
+  }
+  console.log(`  → ${contextCount} document contexts`)
 
   // ─── 14. Approval Queue ───────────────────────────
   console.log('Creating approval queue entries...')
@@ -959,7 +1147,10 @@ async function fakeSeed() {
   console.log(`  Entities:             ${allEntities.length}`)
   console.log(`  Deadlines:            ${allDeadlines.length}`)
   console.log(`  Filings:              ${allFilings.length}`)
+  console.log(`  Vaults:               ${allVaults.length}`)
+  console.log(`  Folders:              ${folderCount}`)
   console.log(`  Documents:            ${docCount}`)
+  console.log(`  Document Contexts:    ${contextCount}`)
   console.log(`  Approval Queue:       ${approvalCount}`)
   console.log(`  Filing Review Locks:  ${lockCount}`)
   console.log(`  CPA Notifications:    ${notifCount}`)

@@ -71,6 +71,35 @@ function ensureNewTables() {
       message TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`,
+    `CREATE TABLE IF NOT EXISTS vaults (
+      id TEXT PRIMARY KEY NOT NULL,
+      org_id TEXT NOT NULL REFERENCES organizations(id),
+      name TEXT NOT NULL,
+      description TEXT,
+      created_by_id TEXT NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS folders (
+      id TEXT PRIMARY KEY NOT NULL,
+      vault_id TEXT NOT NULL REFERENCES vaults(id),
+      parent_id TEXT,
+      name TEXT NOT NULL,
+      created_by_id TEXT NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS document_contexts (
+      id TEXT PRIMARY KEY NOT NULL,
+      document_id TEXT NOT NULL REFERENCES documents(id),
+      org_id TEXT NOT NULL REFERENCES organizations(id),
+      vault_id TEXT REFERENCES vaults(id),
+      raw_text TEXT,
+      summary TEXT,
+      key_entities TEXT DEFAULT '[]',
+      metadata TEXT DEFAULT '{}',
+      chunk_index INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
   ]
 
   for (const ddl of newTables) {
@@ -78,8 +107,32 @@ function ensureNewTables() {
   }
 }
 
+function ensureDocumentVaultColumns() {
+  const tableExists = sqlite
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'documents'")
+    .get() as { name: string } | undefined
+
+  if (!tableExists) return
+
+  const existingColumns = new Set(
+    (sqlite.prepare('PRAGMA table_info(documents)').all() as Array<{ name: string }>).map((column) => column.name),
+  )
+
+  const missingColumns = [
+    ['vault_id', "ALTER TABLE documents ADD COLUMN vault_id TEXT REFERENCES vaults(id)"],
+    ['folder_id', "ALTER TABLE documents ADD COLUMN folder_id TEXT REFERENCES folders(id)"],
+  ] as const
+
+  for (const [columnName, statement] of missingColumns) {
+    if (!existingColumns.has(columnName)) {
+      sqlite.prepare(statement).run()
+    }
+  }
+}
+
 ensureEntityColumns()
 ensureNewTables()
+ensureDocumentVaultColumns()
 
 export const db = drizzle(sqlite, { schema })
 export { schema }

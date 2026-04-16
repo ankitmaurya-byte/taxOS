@@ -15,6 +15,7 @@ async function seed() {
   console.log('Seeding database...')
 
   sqlite.exec(`
+    DROP TABLE IF EXISTS document_contexts;
     DROP TABLE IF EXISTS filing_review_locks;
     DROP TABLE IF EXISTS cpa_assignments;
     DROP TABLE IF EXISTS email_verification_tokens;
@@ -26,6 +27,8 @@ async function seed() {
     DROP TABLE IF EXISTS audit_log;
     DROP TABLE IF EXISTS approval_queue;
     DROP TABLE IF EXISTS documents;
+    DROP TABLE IF EXISTS folders;
+    DROP TABLE IF EXISTS vaults;
     DROP TABLE IF EXISTS filings;
     DROP TABLE IF EXISTS deadlines;
     DROP TABLE IF EXISTS entities;
@@ -186,10 +189,29 @@ async function seed() {
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE vaults (
+      id TEXT PRIMARY KEY,
+      org_id TEXT NOT NULL REFERENCES organizations(id),
+      name TEXT NOT NULL,
+      description TEXT,
+      created_by_id TEXT NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE folders (
+      id TEXT PRIMARY KEY,
+      vault_id TEXT NOT NULL REFERENCES vaults(id),
+      parent_id TEXT,
+      name TEXT NOT NULL,
+      created_by_id TEXT NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
     CREATE TABLE documents (
       id TEXT PRIMARY KEY,
       filing_id TEXT REFERENCES filings(id),
       org_id TEXT NOT NULL REFERENCES organizations(id),
+      vault_id TEXT REFERENCES vaults(id),
+      folder_id TEXT REFERENCES folders(id),
       file_name TEXT NOT NULL,
       storage_url TEXT NOT NULL,
       mime_type TEXT NOT NULL,
@@ -198,6 +220,18 @@ async function seed() {
       confidence_score REAL,
       reviewed_by_human INTEGER DEFAULT 0,
       uploaded_by_id TEXT NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE document_contexts (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL REFERENCES documents(id),
+      org_id TEXT NOT NULL REFERENCES organizations(id),
+      vault_id TEXT REFERENCES vaults(id),
+      raw_text TEXT,
+      summary TEXT,
+      key_entities TEXT DEFAULT '[]',
+      metadata TEXT DEFAULT '{}',
+      chunk_index INTEGER DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE approval_queue (
@@ -541,6 +575,172 @@ async function seed() {
     filingId: filing.id,
     cpaUserId: cpa.id,
     status: 'active',
+  }).run()
+
+  // ─── Vaults ───────────────────────────────────────
+  const taxVault = db.insert(schema.vaults).values({
+    id: 'vault-tax-2025',
+    orgId: founderOrg.id,
+    name: 'Tax Returns 2025',
+    description: 'All federal and state tax return documents for 2025.',
+    createdById: founder.id,
+  }).returning().get()
+
+  const financialVault = db.insert(schema.vaults).values({
+    id: 'vault-financial',
+    orgId: founderOrg.id,
+    name: 'Financial Statements',
+    description: 'P&L, balance sheets, and cash flow statements.',
+    createdById: founder.id,
+  }).returning().get()
+
+  const payrollVault = db.insert(schema.vaults).values({
+    id: 'vault-payroll',
+    orgId: founderOrg.id,
+    name: 'Payroll Records',
+    description: 'W-2s, payroll summaries, and employment tax docs.',
+    createdById: founder.id,
+  }).returning().get()
+
+  // ─── Folders ──────────────────────────────────────
+  const federalFolder = db.insert(schema.folders).values({
+    id: 'folder-federal',
+    vaultId: taxVault.id,
+    parentId: null,
+    name: 'Federal',
+    createdById: founder.id,
+  }).returning().get()
+
+  db.insert(schema.folders).values({
+    id: 'folder-state',
+    vaultId: taxVault.id,
+    parentId: null,
+    name: 'State',
+    createdById: founder.id,
+  }).run()
+
+  const q4Folder = db.insert(schema.folders).values({
+    id: 'folder-q4',
+    vaultId: financialVault.id,
+    parentId: null,
+    name: 'Q4 2025',
+    createdById: founder.id,
+  }).returning().get()
+
+  db.insert(schema.folders).values({
+    id: 'folder-q3',
+    vaultId: financialVault.id,
+    parentId: null,
+    name: 'Q3 2025',
+    createdById: founder.id,
+  }).run()
+
+  // ─── Documents in Vaults ──────────────────────────
+  const doc1 = db.insert(schema.documents).values({
+    id: 'doc-w2-2025',
+    filingId: filing.id,
+    orgId: founderOrg.id,
+    vaultId: payrollVault.id,
+    folderId: null,
+    fileName: 'W-2_2025.pdf',
+    storageUrl: '/uploads/W-2_2025.pdf',
+    mimeType: 'application/pdf',
+    extractedData: {
+      documentType: 'W-2',
+      taxYear: 2025,
+      fields: {
+        employerName: { value: 'Acme Inc', confidence: 0.95 },
+        wages: { value: '150000', confidence: 0.92 },
+        federalTaxWithheld: { value: '35000', confidence: 0.90 },
+      },
+      overallConfidence: 0.92,
+    },
+    aiTags: ['income', 'payroll', 'withholding'] as any,
+    confidenceScore: 0.92,
+    reviewedByHuman: false,
+    uploadedById: founder.id,
+  }).returning().get()
+
+  const doc2 = db.insert(schema.documents).values({
+    id: 'doc-pl-q4',
+    orgId: founderOrg.id,
+    vaultId: financialVault.id,
+    folderId: q4Folder.id,
+    fileName: 'profit_loss_q4_2025.pdf',
+    storageUrl: '/uploads/profit_loss_q4_2025.pdf',
+    mimeType: 'application/pdf',
+    extractedData: {
+      documentType: 'P&L Statement',
+      taxYear: 2025,
+      fields: {
+        revenue: { value: '2500000', confidence: 0.95 },
+        expenses: { value: '1800000', confidence: 0.93 },
+        netIncome: { value: '700000', confidence: 0.94 },
+      },
+      overallConfidence: 0.94,
+    },
+    aiTags: ['revenue', 'expenses', 'income'] as any,
+    confidenceScore: 0.94,
+    reviewedByHuman: true,
+    uploadedById: teamMember.id,
+  }).returning().get()
+
+  const doc3 = db.insert(schema.documents).values({
+    id: 'doc-1099-contractor',
+    filingId: filing.id,
+    orgId: founderOrg.id,
+    vaultId: taxVault.id,
+    folderId: federalFolder.id,
+    fileName: '1099_contractor_payments.pdf',
+    storageUrl: '/uploads/1099_contractor.pdf',
+    mimeType: 'application/pdf',
+    extractedData: {
+      documentType: '1099-NEC',
+      taxYear: 2025,
+      fields: {
+        contractorName: { value: 'DevCo Solutions', confidence: 0.88 },
+        totalPaid: { value: '200000', confidence: 0.85 },
+      },
+      overallConfidence: 0.86,
+    },
+    aiTags: ['contractor', 'expenses'] as any,
+    confidenceScore: 0.86,
+    reviewedByHuman: false,
+    uploadedById: founder.id,
+  }).returning().get()
+
+  // ─── Document Contexts ────────────────────────────
+  db.insert(schema.documentContexts).values({
+    id: 'ctx-w2-2025',
+    documentId: doc1.id,
+    orgId: founderOrg.id,
+    vaultId: payrollVault.id,
+    rawText: 'W-2 Wage and Tax Statement 2025\nEmployer: Acme Inc\nEIN: 12-3456789\nEmployee: Alex Chen\nWages: $150,000.00\nFederal Tax Withheld: $35,000.00\nSocial Security Wages: $150,000.00\nSocial Security Tax: $9,300.00\nMedicare Wages: $150,000.00\nMedicare Tax: $2,175.00\nState: Delaware\nState Wages: $150,000.00\nState Tax Withheld: $9,750.00',
+    summary: 'W-2 for Alex Chen from Acme Inc showing $150K wages with $35K federal withholding for tax year 2025.',
+    keyEntities: ['Acme Inc', 'Alex Chen', 'Delaware', 'IRS'] as any,
+    metadata: { documentType: 'W-2', date: '2025-01-31', parties: ['Acme Inc', 'Alex Chen'], amounts: ['$150,000', '$35,000'] } as any,
+  }).run()
+
+  db.insert(schema.documentContexts).values({
+    id: 'ctx-pl-q4',
+    documentId: doc2.id,
+    orgId: founderOrg.id,
+    vaultId: financialVault.id,
+    rawText: 'Profit & Loss Statement Q4 2025\nAcme Incorporated\n\nRevenue:\n  Software Licenses: $1,200,000\n  Consulting Services: $800,000\n  Support Contracts: $500,000\n  Total Revenue: $2,500,000\n\nExpenses:\n  Salaries & Wages: $900,000\n  Contractor Payments: $200,000\n  Cloud Infrastructure: $150,000\n  Office & Admin: $100,000\n  R&D Expenses: $300,000\n  Marketing: $150,000\n  Total Expenses: $1,800,000\n\nNet Income: $700,000',
+    summary: 'Q4 2025 P&L showing $2.5M revenue, $1.8M expenses, $700K net income. Key items: $900K salaries, $300K R&D, $200K contractor payments.',
+    keyEntities: ['Acme Incorporated', 'Revenue', 'Net Income', 'R&D'] as any,
+    metadata: { documentType: 'P&L', date: '2025-12-31', parties: ['Acme Incorporated'], amounts: ['$2,500,000', '$1,800,000', '$700,000'] } as any,
+  }).run()
+
+  db.insert(schema.documentContexts).values({
+    id: 'ctx-1099',
+    documentId: doc3.id,
+    orgId: founderOrg.id,
+    vaultId: taxVault.id,
+    rawText: '1099-NEC Nonemployee Compensation 2025\nPayer: Acme Inc\nEIN: 12-3456789\nRecipient: DevCo Solutions LLC\nTIN: 98-7654321\nNonemployee Compensation: $200,000.00\nServices: Software development and consulting for product platform.',
+    summary: '1099-NEC showing $200K paid to DevCo Solutions for software development services in 2025.',
+    keyEntities: ['Acme Inc', 'DevCo Solutions LLC'] as any,
+    metadata: { documentType: '1099-NEC', date: '2025-01-31', parties: ['Acme Inc', 'DevCo Solutions LLC'], amounts: ['$200,000'] } as any,
   }).run()
 
   console.log('Admin: admin@taxos.ai / admin1234')

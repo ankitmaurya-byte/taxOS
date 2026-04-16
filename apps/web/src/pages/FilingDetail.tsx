@@ -1,6 +1,6 @@
 // Used in: App.tsx — route /filings/:id (single filing detail page)
 import { useState, useRef, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 
@@ -37,6 +37,8 @@ import {
 
 export function FilingDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const [filingNotFound, setFilingNotFound] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [chatMessages, setChatMessages] = useState<
@@ -81,12 +83,27 @@ export function FilingDetailPage() {
   const cpaRejectFiling = useAuthStore(s => s.cpaRejectFiling)
   const claimFilingReview = useAuthStore(s => s.claimFilingReview)
 
+  // Current user role (declared early for redirect logic)
+  const user = useAuthStore(s => s.user)
+  const userRole = user?.role
+  const isFounder = userRole === 'founder'
+  const isCpa = userRole === 'cpa'
+
   useEffect(() => {
     if (!id) return
-    fetchFiling(id)
+    fetchFiling(id).catch(() => {
+      setFilingNotFound(true)
+    })
     fetchEntities()
     fetchDeadlines()
   }, [id, fetchFiling, fetchEntities, fetchDeadlines])
+
+  // Redirect if filing not found or not accessible
+  useEffect(() => {
+    if (filingNotFound) {
+      navigate(user?.role === 'founder' ? '/home' : '/dashboard', { replace: true })
+    }
+  }, [filingNotFound, navigate, user?.role])
 
   const filingData = (id ? filingDetails[id] : undefined) as any
   const filing: any = filingData?.filing ?? filingData ?? undefined
@@ -109,12 +126,6 @@ export function FilingDetailPage() {
   // Resolve entity — prefer from filing detail response, fallback to entities list
   const entity = entities.find((e: any) => e.id === filing?.entityId)
   const entityName = entity?.legalName
-
-  // Current user role
-  const user = useAuthStore(s => s.user)
-  const userRole = user?.role
-  const isFounder = userRole === 'founder'
-  const isCpa = userRole === 'cpa'
 
   // Status-based visibility flags
   const status = filing?.status as string | undefined
@@ -628,13 +639,6 @@ const renderValue = (value: any): React.ReactNode => {
                   {auditRiskLoading ? 'Scoring Risk...' : 'Run Audit Risk'}
                 </button>
               )}
-              <button
-                onClick={() => setShowEditData(true)}
-                className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] flex items-center gap-1.5"
-              >
-                <Pencil size={14} />
-                Edit Filing
-              </button>
             </div>
           )}
 

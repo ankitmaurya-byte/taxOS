@@ -48,7 +48,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { eq } from 'drizzle-orm'
 import { db } from '../db'
-import { filings, entities } from '../db/schema'
+import { filings, entities, documents, approvalQueue } from '../db/schema'
 import { IntakeAgent } from '../agents/intake'
 import { DeadlineAgent } from '../agents/deadline'
 import { DocumentAgent } from '../agents/document'
@@ -173,11 +173,27 @@ export async function runDeadlines(req: Request, res: Response, next: NextFuncti
 //   documents.extractedData ← AI-extracted JSON
 //   documents.aiTags        ← document type tags
 //   documents.confidenceScore ← extraction confidence
-//   If confidence < 0.75 → creates approvalQueue item (queueType='cpa')
+//   If confidence < 0.75 → controller creates approvalQueue item (queueType='cpa')
 export async function extractDocument(req: Request, res: Response, next: NextFunction) {
   try {
     const { documentId } = req.body
     const result = await documentAgent.extract(documentId, req.user!.orgId)
+
+    // Low confidence → flag for CPA review (controller decides, not agent)
+    if (result.overallConfidence < 0.75) {
+      const doc = db.select().from(documents).where(eq(documents.id, documentId)).get()
+      if (doc?.filingId) {
+        db.insert(approvalQueue).values({
+          orgId: req.user!.orgId,
+          filingId: doc.filingId,
+          queueType: 'cpa',
+          status: 'pending',
+          summary: `Document "${doc.fileName}" extracted with low confidence (${Math.round(result.overallConfidence * 100)}%). CPA review required.`,
+          aiRecommendation: `Flagged issues: ${(result.flaggedIssues || []).join(', ')}`,
+        }).run()
+      }
+    }
+
     res.json(result)
   } catch (err) { next(withContext(err as Error, 'extractDocument')) }
 }

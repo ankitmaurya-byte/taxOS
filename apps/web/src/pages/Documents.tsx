@@ -19,6 +19,8 @@ import {
   ChevronDown,
   X,
   Eye,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 import { useNavigate } from 'react-router-dom'
@@ -48,6 +50,7 @@ export function DocumentsPage() {
   const [reviewLoading, setReviewLoading] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [showNewMenu, setShowNewMenu] = useState(false)
+  const [retryingDocId, setRetryingDocId] = useState<string | null>(null)
 
   const documents = useAuthStore(s => s.documents)
   const fetchDocuments = useAuthStore(s => s.fetchDocuments)
@@ -67,7 +70,9 @@ export function DocumentsPage() {
     async (acceptedFiles: File[]) => {
       for (const file of acceptedFiles) {
         setUploadLoading(true)
-        try { await uploadDocument(file) } finally { setUploadLoading(false) }
+        try {
+          await uploadDocument(file)
+        } finally { setUploadLoading(false) }
       }
     },
     [uploadDocument],
@@ -81,6 +86,10 @@ export function DocumentsPage() {
       'image/jpeg': ['.jpg', '.jpeg'],
       'text/csv': ['.csv'],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'text/plain': ['.txt'],
+      'application/json': ['.json'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
     },
     maxSize: 50 * 1024 * 1024,
   })
@@ -215,7 +224,7 @@ export function DocumentsPage() {
         <p className="text-sm text-[#6B7280]">
           {isDragActive ? 'Drop files here...' : uploadLoading ? 'Uploading...' : 'Drag and drop files here or click to upload'}
         </p>
-        <p className="text-xs text-[#9CA3AF] mt-1">PDF, PNG, JPG, CSV, XLSX up to 50MB</p>
+        <p className="text-xs text-[#9CA3AF] mt-1">PDF, PNG, JPG, CSV, XLSX, TXT, JSON, DOC up to 50MB — auto-extracted for AI context</p>
       </div>
 
       {/* Recently Opened */}
@@ -320,7 +329,7 @@ export function DocumentsPage() {
                     )}
                   </div>
                   <div className="w-24">
-                    {doc.confidenceScore != null ? (
+                    {doc.confidenceScore != null && doc.confidenceScore !== -1 ? (
                       <ConfidenceBadge score={doc.confidenceScore} />
                     ) : (
                       <span className="text-xs text-[#9CA3AF]">—</span>
@@ -332,9 +341,35 @@ export function DocumentsPage() {
                         <CheckCircle2 size={12} /> Reviewed
                       </span>
                     ) : doc.extractedData ? (
-                      <span className="text-[11px] text-[#6B7280]">Extracted</span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#065F46]">
+                        <CheckCircle2 size={12} /> Complete
+                      </span>
+                    ) : doc.confidenceScore === -1 ? (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation()
+                          setRetryingDocId(doc.id)
+                          try { await extractDocument(doc.id); await fetchDocuments() } finally { setRetryingDocId(null) }
+                        }}
+                        disabled={retryingDocId === doc.id}
+                        className="inline-flex items-center gap-1 text-[11px] text-red-600 hover:text-red-700"
+                      >
+                        {retryingDocId === doc.id ? (
+                          <><RefreshCw size={11} className="animate-spin" /> Retrying...</>
+                        ) : (
+                          <><AlertCircle size={11} /> Failed · Retry</>
+                        )}
+                      </button>
+                    ) : doc.confidenceScore != null ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#D97706]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#D97706] animate-pulse" />
+                        Extracting...
+                      </span>
                     ) : (
-                      <span className="text-[11px] text-[#9CA3AF]">Pending</span>
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#6C5CE7]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#6C5CE7] animate-pulse" />
+                        Processing...
+                      </span>
                     )}
                   </div>
                   <div className="w-16 flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
@@ -388,10 +423,40 @@ export function DocumentsPage() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    {doc.confidenceScore != null && <ConfidenceBadge score={doc.confidenceScore} />}
-                    {doc.reviewedByHuman && (
+                    {doc.confidenceScore != null && doc.confidenceScore !== -1 && <ConfidenceBadge score={doc.confidenceScore} />}
+                    {doc.reviewedByHuman ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#065F46]">
                         <CheckCircle2 size={12} /> Reviewed
+                      </span>
+                    ) : doc.extractedData ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#065F46]">
+                        <CheckCircle2 size={12} /> Complete
+                      </span>
+                    ) : doc.confidenceScore === -1 ? (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation()
+                          setRetryingDocId(doc.id)
+                          try { await extractDocument(doc.id); await fetchDocuments() } finally { setRetryingDocId(null) }
+                        }}
+                        disabled={retryingDocId === doc.id}
+                        className="inline-flex items-center gap-1 text-[11px] text-red-600 hover:text-red-700"
+                      >
+                        {retryingDocId === doc.id ? (
+                          <><RefreshCw size={11} className="animate-spin" /> Retrying...</>
+                        ) : (
+                          <><AlertCircle size={11} /> Failed · Retry</>
+                        )}
+                      </button>
+                    ) : doc.confidenceScore != null ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#D97706]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#D97706] animate-pulse" />
+                        Extracting...
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#6C5CE7]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#6C5CE7] animate-pulse" />
+                        Processing...
                       </span>
                     )}
                   </div>

@@ -13,7 +13,7 @@ import { listAuditLogs, exportAuditCsv } from '../controllers/audit.controller'
 const router: Router = Router()
 router.use(authMiddleware)
 router.use(requireActiveAccount)
-router.use(requireRole('admin', 'founder', 'cpa'))
+router.use(requireRole('admin', 'founder', 'cpa', 'team_member'))
 
 router.get('/', listAuditLogs)       // GET /api/audit        → audit.controller.listAuditLogs
 router.get('/export', exportAuditCsv) // GET /api/audit/export → audit.controller.exportAuditCsv

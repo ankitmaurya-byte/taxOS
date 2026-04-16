@@ -343,6 +343,61 @@ const uploadDocument = async (file: File, filingId?: string) => {
 const markDocumentReviewed = (id: string) =>
   request<{ message: string }>(`/documents/${id}/review`, { method: 'PUT' }, { successMessage: 'Document marked as reviewed.' })
 
+// ─── Vaults ──────────────────────────────────────────────────────────────────
+
+const getVaults = () =>
+  request<any[]>('/vaults')
+
+const createVault = (payload: { name: string; description?: string }) =>
+  request<any>('/vaults', {
+    method: 'POST',
+    data: payload,
+  }, { successMessage: 'Vault created.' })
+
+const getVault = (id: string) =>
+  request<any>(`/vaults/${id}`)
+
+const updateVault = (id: string, payload: { name?: string; description?: string }) =>
+  request<any>(`/vaults/${id}`, {
+    method: 'PUT',
+    data: payload,
+  }, { successMessage: 'Vault updated.' })
+
+const deleteVault = (id: string) =>
+  request<any>(`/vaults/${id}`, { method: 'DELETE' }, { successMessage: 'Vault deleted.' })
+
+const createFolder = (vaultId: string, payload: { name: string; parentId?: string }) =>
+  request<any>(`/vaults/${vaultId}/folders`, {
+    method: 'POST',
+    data: payload,
+  }, { successMessage: 'Folder created.' })
+
+const deleteFolderApi = (vaultId: string, folderId: string) =>
+  request<any>(`/vaults/${vaultId}/folders/${folderId}`, { method: 'DELETE' }, { successMessage: 'Folder deleted.' })
+
+const getVaultDocuments = (vaultId: string, folderId?: string) => {
+  const qs = folderId ? `?folderId=${folderId}` : ''
+  return request<any[]>(`/vaults/${vaultId}/documents${qs}`)
+}
+
+const moveDocumentApi = (docId: string, payload: { vaultId?: string; folderId?: string }) =>
+  request<any>(`/documents/${docId}/move`, {
+    method: 'PUT',
+    data: payload,
+  }, { successMessage: 'Document moved.' })
+
+const uploadDocumentToVault = async (file: File, vaultId: string, folderId?: string) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('vaultId', vaultId)
+  if (folderId) formData.append('folderId', folderId)
+  const response = await apiClient.post('/documents/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  notify({ title: 'Success', message: `${file.name} uploaded to vault.`, tone: 'success' })
+  return response.data
+}
+
 // ─── Approvals ───────────────────────────────────────────────────────────────
 
 const getApprovals = () =>
@@ -571,6 +626,18 @@ export const api = {
   uploadDocument,
   markDocumentReviewed,
 
+  // Vaults
+  getVaults,
+  createVault,
+  getVault,
+  updateVault,
+  deleteVault,
+  createFolder,
+  deleteFolder: deleteFolderApi,
+  getVaultDocuments,
+  moveDocument: moveDocumentApi,
+  uploadDocumentToVault,
+
   // Approvals
   getApprovals,
   resolveApproval,
@@ -687,6 +754,18 @@ export const api = {
     get: getDocument,
     upload: uploadDocument,
     markReviewed: markDocumentReviewed,
+  },
+  vaults: {
+    getAll: getVaults,
+    get: getVault,
+    create: createVault,
+    update: updateVault,
+    delete: deleteVault,
+    createFolder,
+    deleteFolder: deleteFolderApi,
+    getDocuments: getVaultDocuments,
+    moveDocument: moveDocumentApi,
+    uploadDocument: uploadDocumentToVault,
   },
   approvals: {
     getAll: getApprovals,

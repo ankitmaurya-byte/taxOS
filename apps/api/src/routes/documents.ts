@@ -15,7 +15,9 @@ import {
   uploadDocument,
   getDocument,
   markAsReviewed,
+  getDocumentContext,
 } from '../controllers/documents.controller'
+import { moveDocument } from '../controllers/vault.controller'
 
 const router: Router = Router()
 router.use(authMiddleware)
@@ -25,5 +27,7 @@ router.get('/', requirePermission('canViewDocuments'), listDocuments)
 router.post('/upload', requirePermission('canEditDocuments'), upload.single('file'), uploadDocument)
 router.get('/:id', requirePermission('canViewDocuments'), getDocument)
 router.put('/:id/review', requirePermission('canEditDocuments'), markAsReviewed)
+router.get('/:id/context', requirePermission('canViewDocuments'), getDocumentContext)
+router.put('/:id/move', requirePermission('canEditDocuments'), moveDocument)
 
 export default router

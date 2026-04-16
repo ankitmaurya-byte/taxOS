@@ -1,5 +1,5 @@
 // Used in: App.tsx — wraps all authenticated routes with sidebar, topbar, and overlay panels
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
@@ -16,6 +16,21 @@ export function Layout() {
   const [showInkleAI, setShowInkleAI] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+
+  // Escape key closes any open panel
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      if (showInkleAI) setShowInkleAI(false)
+      else if (showGetHelp) setShowGetHelp(false)
+      else if (showNotifications) setShowNotifications(false)
+      else if (showUpgradeModal) setShowUpgradeModal(false)
+    }
+  }, [showInkleAI, showGetHelp, showNotifications, showUpgradeModal])
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F9FAFB]">
@@ -67,8 +82,16 @@ export function Layout() {
         </main>
       </div>
 
-      {/* Inkle AI slide-over panel — fixed right edge */}
-      {showInkleAI && <InkleAIPanel onClose={() => setShowInkleAI(false)} />}
+      {/* Inkle AI backdrop + slide-over panel */}
+      {showInkleAI && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowInkleAI(false)}
+          />
+          <InkleAIPanel onClose={() => setShowInkleAI(false)} />
+        </>
+      )}
       {showUpgradeModal && <UpgradePlanModal onClose={() => setShowUpgradeModal(false)} />}
       <ToastViewport />
     </div>

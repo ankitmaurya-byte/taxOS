@@ -196,11 +196,34 @@ export const filings = sqliteTable('filings', {
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 })
 
+// ─── Vaults ──────────────────────────────────────────
+export const vaults = sqliteTable('vaults', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  orgId: text('org_id').references(() => organizations.id).notNull(),
+  name: text('name').notNull(),
+  description: text('description'),
+  createdById: text('created_by_id').references(() => users.id).notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+})
+
+// ─── Folders (within vaults) ─────────────────────────
+export const folders = sqliteTable('folders', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  vaultId: text('vault_id').references(() => vaults.id).notNull(),
+  parentId: text('parent_id'),
+  name: text('name').notNull(),
+  createdById: text('created_by_id').references(() => users.id).notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+})
+
 // ─── Documents ────────────────────────────────────────
 export const documents = sqliteTable('documents', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   filingId: text('filing_id').references(() => filings.id),
   orgId: text('org_id').references(() => organizations.id).notNull(),
+  vaultId: text('vault_id').references(() => vaults.id),
+  folderId: text('folder_id').references(() => folders.id),
   fileName: text('file_name').notNull(),
   storageUrl: text('storage_url').notNull(),
   mimeType: text('mime_type').notNull(),
@@ -209,6 +232,20 @@ export const documents = sqliteTable('documents', {
   confidenceScore: real('confidence_score'),
   reviewedByHuman: integer('reviewed_by_human', { mode: 'boolean' }).default(false),
   uploadedById: text('uploaded_by_id').references(() => users.id).notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+})
+
+// ─── Document Contexts (extracted text for AI) ───────
+export const documentContexts = sqliteTable('document_contexts', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  documentId: text('document_id').references(() => documents.id).notNull(),
+  orgId: text('org_id').references(() => organizations.id).notNull(),
+  vaultId: text('vault_id').references(() => vaults.id),
+  rawText: text('raw_text'),
+  summary: text('summary'),
+  keyEntities: text('key_entities', { mode: 'json' }).$type<string[]>().default([]),
+  metadata: text('metadata', { mode: 'json' }).$type<Record<string, unknown>>().default({}),
+  chunkIndex: integer('chunk_index').default(0),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 })
 
