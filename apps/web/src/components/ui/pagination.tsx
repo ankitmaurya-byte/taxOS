@@ -27,21 +27,21 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-30 disabled:cursor-not-allowed"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5edf5] text-[#64748d] hover:bg-[#f6f9fc] disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <ChevronLeft size={14} />
       </button>
       {pages.map((p, i) =>
         p === '...' ? (
-          <span key={`dots-${i}`} className="px-1 text-xs text-[#9CA3AF]">...</span>
+          <span key={`dots-${i}`} className="px-1 text-xs text-[#64748d]">...</span>
         ) : (
           <button
             key={p}
             onClick={() => onPageChange(p)}
             className={`flex h-8 min-w-[32px] items-center justify-center rounded-lg px-2 text-xs font-medium transition-colors ${
               p === currentPage
-                ? 'bg-[#6C5CE7] text-white'
-                : 'border border-[#E5E7EB] text-[#374151] hover:bg-[#F9FAFB]'
+                ? 'bg-[#533afd] text-white'
+                : 'border border-[#e5edf5] text-[#273951] hover:bg-[#f6f9fc]'
             }`}
           >
             {p}
@@ -51,7 +51,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-30 disabled:cursor-not-allowed"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5edf5] text-[#64748d] hover:bg-[#f6f9fc] disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <ChevronRight size={14} />
       </button>

@@ -36,22 +36,22 @@ export function AdminUserDetails() {
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <Link to="/admin/tracking" className="text-sm text-[#6C5CE7] hover:underline mb-2 inline-block">
+        <Link to="/admin/tracking" className="text-sm text-[#533afd] hover:underline mb-2 inline-block">
           &larr; Back to Users
         </Link>
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-[#111827]">{user.name}</h1>
-            <p className="mt-1 text-sm text-[#6B7280]">{user.email} • {user.role}</p>
+            <h1 className="text-3xl font-bold text-[#061b31]">{user.name}</h1>
+            <p className="mt-1 text-sm text-[#64748d]">{user.email} • {user.role}</p>
           </div>
-          <button onClick={handleEditInit} className="px-4 py-2 border border-[#E5E7EB] rounded bg-white hover:bg-gray-50 text-sm font-medium">
+          <button onClick={handleEditInit} className="px-4 py-2 border border-[#e5edf5] rounded bg-white hover:bg-gray-50 text-sm font-medium">
             Edit Details
           </button>
         </div>
       </div>
 
       {isEditing && (
-        <div className="mb-6 bg-white border p-4 rounded-xl space-y-3">
+        <div className="mb-6 bg-white border p-4 rounded-md space-y-3">
           <h2 className="text-sm font-bold">Edit User Details</h2>
           <div className="flex gap-2">
             <input className="border p-2 rounded text-sm w-full" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
@@ -71,17 +71,17 @@ export function AdminUserDetails() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-[#111827]">Organization Association</h2>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4 text-[#061b31]">Organization Association</h2>
           {user.organization ? (
             <div className="p-4 bg-[#F8FAFC] rounded border">
-              <Link to={`/admin/organizations/${user.organization.id}`} className="font-semibold text-lg text-[#6C5CE7] hover:underline">
+              <Link to={`/admin/organizations/${user.organization.id}`} className="font-semibold text-lg text-[#533afd] hover:underline">
                 {user.organization.name}
               </Link>
-              <p className="text-sm text-[#6B7280]">Plan: {user.organization.plan}</p>
+              <p className="text-sm text-[#64748d]">Plan: {user.organization.plan}</p>
             </div>
           ) : (
-            <p className="text-sm text-[#9CA3AF]">Not natively attached to an organization.</p>
+            <p className="text-sm text-[#64748d]">Not natively attached to an organization.</p>
           )}
 
           {user.role === 'cpa' && user.cpaOrganizations?.length > 0 && (
@@ -97,8 +97,8 @@ export function AdminUserDetails() {
         </div>
 
         {user.role === 'cpa' && (
-          <div className="rounded-xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold mb-4 text-[#111827]">Assigned Filings</h2>
+          <div className="rounded-md border border-[#e5edf5] bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold mb-4 text-[#061b31]">Assigned Filings</h2>
             <div className="space-y-3">
               {user.assignedFilings?.map((f: any) => (
                 <div key={f.id} className="p-3 bg-orange-50 border border-orange-100 rounded">

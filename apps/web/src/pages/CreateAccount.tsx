@@ -114,10 +114,10 @@ export function CreateAccountPage() {
   return (
     <div className="space-y-6 p-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-semibold text-[#111827]">
+        <h1 className="text-2xl font-semibold text-[#061b31]">
           {isAdmin ? 'Invite CPA' : 'Invite Team Member'}
         </h1>
-        <p className="mt-1 text-sm text-[#6B7280]">
+        <p className="mt-1 text-sm text-[#64748d]">
           {isAdmin
             ? 'A secure invite link will be sent to the CPA\'s email. They must accept within 24 hours.'
             : 'A secure invite link will be sent. They must accept within 24 hours.'}
@@ -125,13 +125,13 @@ export function CreateAccountPage() {
       </div>
 
       {sent && (
-        <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+        <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
           <Check size={16} className="text-green-600 shrink-0" />
           Invite sent to <strong>{sentEmail}</strong>. They have 24 hours to accept.
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5 rounded-xl border border-[#E5E7EB] bg-white p-6">
+      <form onSubmit={handleSubmit} className="space-y-5 rounded-md border border-[#e5edf5] bg-white p-6">
         {isAdmin && (
           <div className="rounded-lg bg-[#F0EDFF] px-4 py-3 text-sm text-[#4C3D8F]">
             The CPA will receive a secure link to create their account. You can assign them to organizations after they accept.
@@ -140,16 +140,16 @@ export function CreateAccountPage() {
 
         {/* Email */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-[#374151]">Email address</label>
-          <div className="flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3 h-11 focus-within:ring-2 focus-within:ring-[#6C5CE7]">
-            <Mail size={16} className="text-[#9CA3AF]" />
+          <label className="mb-1.5 block text-sm font-medium text-[#273951]">Email address</label>
+          <div className="flex items-center gap-2 rounded-lg border border-[#e5edf5] bg-white px-3 h-11 focus-within:ring-2 focus-within:ring-[#533afd]">
+            <Mail size={16} className="text-[#64748d]" />
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               type="email"
               placeholder="colleague@company.com"
-              className="flex-1 bg-transparent text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none"
+              className="flex-1 bg-transparent text-sm text-[#061b31] placeholder:text-[#64748d] outline-none"
             />
           </div>
         </div>
@@ -158,15 +158,15 @@ export function CreateAccountPage() {
           <>
             {/* Use case with AI */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#374151]">Role / use case</label>
+              <label className="mb-1.5 block text-sm font-medium text-[#273951]">Role / use case</label>
               <input
                 value={useCase}
                 onChange={(e) => { setUseCase(e.target.value); fetchAiSuggestion(e.target.value) }}
                 placeholder="e.g. Finance manager, Operations lead..."
-                className="h-11 w-full rounded-lg border border-[#E5E7EB] px-3 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7]"
+                className="h-11 w-full rounded-lg border border-[#e5edf5] px-3 text-sm text-[#061b31] placeholder:text-[#64748d] outline-none focus:ring-2 focus:ring-[#533afd]"
               />
               {aiLoading && (
-                <p className="mt-1.5 text-xs text-[#9CA3AF] flex items-center gap-1"><Sparkles size={12} className="animate-pulse" /> Finding best template...</p>
+                <p className="mt-1.5 text-xs text-[#64748d] flex items-center gap-1"><Sparkles size={12} className="animate-pulse" /> Finding best template...</p>
               )}
               {aiSuggestion && !aiLoading && (
                 <button
@@ -174,7 +174,7 @@ export function CreateAccountPage() {
                   onClick={() => handleApplyTemplate(aiSuggestion.templateId)}
                   className={`mt-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors w-full text-left ${
                     templateId === aiSuggestion.templateId
-                      ? 'border-[#6C5CE7] bg-[#EDE9FD] text-[#6C5CE7]'
+                      ? 'border-[#533afd] bg-[#EDE9FD] text-[#533afd]'
                       : 'border-[#E0E7FF] bg-[#F0F9FF] text-[#0369A1] hover:bg-[#E0F2FE]'
                   }`}
                 >
@@ -186,13 +186,13 @@ export function CreateAccountPage() {
 
             {/* Permission mode */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#374151]">Permissions</label>
+              <label className="mb-1.5 block text-sm font-medium text-[#273951]">Permissions</label>
               <div className="flex gap-2 mb-3">
                 <button
                   type="button"
                   onClick={() => setPermissionMode('template')}
                   className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-                    permissionMode === 'template' ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB]'
+                    permissionMode === 'template' ? 'bg-[#061b31] text-white' : 'bg-white text-[#273951] border border-[#e5edf5]'
                   }`}
                 >
                   Use Template
@@ -201,7 +201,7 @@ export function CreateAccountPage() {
                   type="button"
                   onClick={() => setPermissionMode('custom')}
                   className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-                    permissionMode === 'custom' ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB]'
+                    permissionMode === 'custom' ? 'bg-[#061b31] text-white' : 'bg-white text-[#273951] border border-[#e5edf5]'
                   }`}
                 >
                   Custom
@@ -217,8 +217,8 @@ export function CreateAccountPage() {
                       onClick={() => handleApplyTemplate(t.id)}
                       className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
                         templateId === t.id
-                          ? 'bg-[#6C5CE7] text-white'
-                          : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F3F4F6]'
+                          ? 'bg-[#533afd] text-white'
+                          : 'bg-white text-[#273951] border border-[#e5edf5] hover:bg-[#f6f9fc]'
                       }`}
                     >
                       {t.name}
@@ -233,7 +233,7 @@ export function CreateAccountPage() {
                     <label
                       key={key}
                       className={`flex items-center gap-2 rounded-lg px-3 py-2.5 cursor-pointer text-sm transition-colors ${
-                        permissions[key] ? 'bg-[#EDE9FD] text-[#111827]' : 'bg-[#F9FAFB] text-[#6B7280]'
+                        permissions[key] ? 'bg-[#EDE9FD] text-[#061b31]' : 'bg-[#f6f9fc] text-[#64748d]'
                       }`}
                     >
                       <input
@@ -243,7 +243,7 @@ export function CreateAccountPage() {
                         className="sr-only"
                       />
                       <div className={`flex h-4 w-4 items-center justify-center rounded border ${
-                        permissions[key] ? 'bg-[#6C5CE7] border-[#6C5CE7] text-white' : 'border-[#D1D5DB]'
+                        permissions[key] ? 'bg-[#533afd] border-[#533afd] text-white' : 'border-[#e5edf5]'
                       }`}>
                         {permissions[key] && <Check size={10} />}
                       </div>
@@ -258,7 +258,7 @@ export function CreateAccountPage() {
 
         <button
           disabled={submitting}
-          className="h-10 rounded-lg bg-[#6C5CE7] px-6 text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50 transition-colors"
+          className="h-10 rounded-lg bg-[#533afd] px-6 text-sm font-medium text-white hover:bg-[#4434d4] disabled:opacity-50 transition-colors"
         >
           {submitting ? 'Sending...' : 'Send Invite'}
         </button>

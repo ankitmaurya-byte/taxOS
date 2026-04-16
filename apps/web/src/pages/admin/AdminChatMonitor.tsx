@@ -86,7 +86,7 @@ function ChatMessages({ fetchFn, selectedUserId, channel }: {
   }, [hasMore, loading, loadMore])
 
   if (!initialLoaded && loading)
-    return <p className="p-6 text-sm text-[#6B7280]">Loading...</p>
+    return <p className="p-6 text-sm text-[#64748d]">Loading...</p>
 
   // Filter by user client-side (messages already fetched)
   const filtered = selectedUserId
@@ -94,7 +94,7 @@ function ChatMessages({ fetchFn, selectedUserId, channel }: {
     : allMessages
 
   if (filtered.length === 0 && !loading)
-    return <p className="text-center text-sm text-[#9CA3AF] py-12">{selectedUserId ? 'No messages from this user.' : 'No messages yet.'}</p>
+    return <p className="text-center text-sm text-[#64748d] py-12">{selectedUserId ? 'No messages from this user.' : 'No messages yet.'}</p>
 
   return (
     <div ref={containerRef} onScroll={handleScroll} className="flex flex-col p-4 max-h-[600px] overflow-y-auto">
@@ -102,24 +102,24 @@ function ChatMessages({ fetchFn, selectedUserId, channel }: {
         <button
           onClick={loadMore}
           disabled={loading}
-          className="w-full py-2 mb-2 text-xs font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] rounded-lg disabled:opacity-50"
+          className="w-full py-2 mb-2 text-xs font-medium text-[#533afd] hover:bg-[#f6f9fc] rounded-lg disabled:opacity-50"
         >
           {loading ? 'Loading...' : `Load older messages (${total - allMessages.length} more)`}
         </button>
       )}
       <div className="space-y-2">
         {filtered.map((m: any, i: number) => (
-          <div key={m.id || i} className="flex items-start gap-3 py-2 border-b border-[#F3F4F6] last:border-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EDE9FD] text-[10px] font-semibold text-[#6C5CE7]">
+          <div key={m.id || i} className="flex items-start gap-3 py-2 border-b border-[#f6f9fc] last:border-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EDE9FD] text-[10px] font-semibold text-[#533afd]">
               {(m.sender?.name || m.senderId || '?').slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-semibold text-[#111827]">{m.sender?.name || m.senderId || 'Unknown'}</span>
-                <span className="text-xs text-[#6B7280] capitalize">{m.sender?.role || ''}</span>
-                <span className="ml-auto text-xs text-[#9CA3AF] whitespace-nowrap">{formatTs(m.createdAt)}</span>
+                <span className="text-sm font-semibold text-[#061b31]">{m.sender?.name || m.senderId || 'Unknown'}</span>
+                <span className="text-xs text-[#64748d] capitalize">{m.sender?.role || ''}</span>
+                <span className="ml-auto text-xs text-[#64748d] whitespace-nowrap">{formatTs(m.createdAt)}</span>
               </div>
-              <p className="text-sm text-[#374151] mt-0.5 break-words">{m.message}</p>
+              <p className="text-sm text-[#273951] mt-0.5 break-words">{m.message}</p>
             </div>
           </div>
         ))}
@@ -164,10 +164,10 @@ function ConvoMessages({ messages }: { messages: any[] }) {
   }, [hasMore])
 
   if (!messages || messages.length === 0)
-    return <p className="text-center text-sm text-[#9CA3AF] py-4">No messages in this conversation.</p>
+    return <p className="text-center text-sm text-[#64748d] py-4">No messages in this conversation.</p>
 
   return (
-    <div ref={containerRef} onScroll={handleScroll} className="bg-[#F9FAFB] px-5 py-4 max-h-72 overflow-y-auto">
+    <div ref={containerRef} onScroll={handleScroll} className="bg-[#f6f9fc] px-5 py-4 max-h-72 overflow-y-auto">
       {hasMore && (
         <button
           onClick={() => {
@@ -175,7 +175,7 @@ function ConvoMessages({ messages }: { messages: any[] }) {
             if (el) prevScrollHeight.current = el.scrollHeight
             setShown(prev => prev + CHAT_LOAD_MORE)
           }}
-          className="w-full py-1.5 mb-2 text-xs font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] rounded-lg"
+          className="w-full py-1.5 mb-2 text-xs font-medium text-[#533afd] hover:bg-[#f6f9fc] rounded-lg"
         >
           Load older ({startIdx} more)
         </button>
@@ -183,8 +183,8 @@ function ConvoMessages({ messages }: { messages: any[] }) {
       <div className="space-y-3">
         {visible.map((msg: any, i: number) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm ${
-              msg.role === 'user' ? 'bg-[#6C5CE7] text-white' : 'bg-white border border-[#E5E7EB] text-[#374151]'
+            <div className={`max-w-[75%] rounded-md px-4 py-2.5 text-sm ${
+              msg.role === 'user' ? 'bg-[#533afd] text-white' : 'bg-white border border-[#e5edf5] text-[#273951]'
             }`}>
               <p className="whitespace-pre-wrap">{msg.content}</p>
               {msg.timestamp && <p className="text-xs opacity-60 mt-1">{msg.timestamp}</p>}
@@ -258,18 +258,18 @@ function AiConversationList({ fetchFn, aiUserFilter, expandedConvo, setExpandedC
   }, [hasMore, loading, loadMore])
 
   if (!initialLoaded && loading)
-    return <p className="p-6 text-sm text-[#6B7280]">Loading...</p>
+    return <p className="p-6 text-sm text-[#64748d]">Loading...</p>
 
   if (convos.length === 0)
-    return <p className="p-6 text-center text-sm text-[#9CA3AF]">No AI conversations found.</p>
+    return <p className="p-6 text-center text-sm text-[#64748d]">No AI conversations found.</p>
 
   return (
-    <div ref={containerRef} onScroll={handleScroll} className="max-h-[600px] overflow-y-auto divide-y divide-[#F3F4F6]">
+    <div ref={containerRef} onScroll={handleScroll} className="max-h-[600px] overflow-y-auto divide-y divide-[#f6f9fc]">
       {hasMore && (
         <button
           onClick={loadMore}
           disabled={loading}
-          className="w-full py-2 text-xs font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] disabled:opacity-50"
+          className="w-full py-2 text-xs font-medium text-[#533afd] hover:bg-[#f6f9fc] disabled:opacity-50"
         >
           {loading ? 'Loading...' : `Load older conversations (${total - convos.length} more)`}
         </button>
@@ -278,16 +278,16 @@ function AiConversationList({ fetchFn, aiUserFilter, expandedConvo, setExpandedC
         <div key={conv.id}>
           <button
             onClick={() => setExpandedConvo(expandedConvo === conv.id ? null : conv.id)}
-            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-[#F9FAFB] text-left transition-colors"
+            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-[#f6f9fc] text-left transition-colors"
           >
             <div className="flex items-center gap-3">
-              <Bot size={15} className="text-[#6C5CE7]" />
+              <Bot size={15} className="text-[#533afd]" />
               <div>
-                <p className="text-sm font-medium text-[#111827]">
+                <p className="text-sm font-medium text-[#061b31]">
                   {conv.agentType}
-                  {conv.filingForm && <span className="text-[#6B7280] font-normal"> — {conv.filingForm}</span>}
+                  {conv.filingForm && <span className="text-[#64748d] font-normal"> — {conv.filingForm}</span>}
                 </p>
-                <p className="text-xs text-[#9CA3AF]">{conv.orgName} &bull; {conv.messages?.length || 0} messages &bull; {formatTs(conv.updatedAt)}</p>
+                <p className="text-xs text-[#64748d]">{conv.orgName} &bull; {conv.messages?.length || 0} messages &bull; {formatTs(conv.updatedAt)}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -298,7 +298,7 @@ function AiConversationList({ fetchFn, aiUserFilter, expandedConvo, setExpandedC
                 <Link
                   to={`/admin/filings/${conv.filingId}`}
                   onClick={e => e.stopPropagation()}
-                  className="text-xs text-[#6C5CE7] hover:underline"
+                  className="text-xs text-[#533afd] hover:underline"
                 >
                   View Filing
                 </Link>
@@ -366,18 +366,18 @@ export function AdminChatMonitor() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-[#111827]">Chat Monitor</h1>
-        <p className="mt-1 text-sm text-[#6B7280]">Read-only view of all chat channels across the platform.</p>
+        <h1 className="text-2xl font-semibold text-[#061b31]">Chat Monitor</h1>
+        <p className="mt-1 text-sm text-[#64748d]">Read-only view of all chat channels across the platform.</p>
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-[#F3F4F6] p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-[#f6f9fc] p-1 rounded-md w-fit">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === t.id ? 'bg-white text-[#6C5CE7] shadow-sm' : 'text-[#6B7280] hover:text-[#374151]'
+              tab === t.id ? 'bg-white text-[#533afd] shadow-sm' : 'text-[#64748d] hover:text-[#273951]'
             }`}
           >
             {t.icon} {t.label}
@@ -387,15 +387,15 @@ export function AdminChatMonitor() {
 
       <div className="grid grid-cols-[260px_1fr] gap-5">
         {/* Left: user filter panel */}
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 h-fit">
-          <h3 className="text-sm font-semibold text-[#374151] mb-3">
+        <div className="bg-white border border-[#e5edf5] rounded-md p-4 h-fit">
+          <h3 className="text-sm font-semibold text-[#273951] mb-3">
             {tab === 'ai' ? 'Filter by User (Org)' : 'Filter by User'}
           </h3>
 
           {/* Org selector for Org tab */}
           {tab === 'org' && (
             <div className="mb-3">
-              <label className="block text-xs text-[#6B7280] mb-1">Select Organization</label>
+              <label className="block text-xs text-[#64748d] mb-1">Select Organization</label>
               <select
                 className="w-full border rounded-lg px-2 py-1.5 text-sm"
                 value={selectedOrgId}
@@ -410,7 +410,7 @@ export function AdminChatMonitor() {
           )}
 
           <div className="relative mb-2">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#64748d]" />
             <input
               type="text"
               placeholder="Search users..."
@@ -419,7 +419,7 @@ export function AdminChatMonitor() {
               className="w-full border rounded-lg pl-8 pr-3 py-1.5 text-sm"
             />
             {userSearch && (
-              <button onClick={() => setUserSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF]">
+              <button onClick={() => setUserSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#64748d]">
                 <X size={12} />
               </button>
             )}
@@ -432,7 +432,7 @@ export function AdminChatMonitor() {
                 setAiUserFilter('')
               }}
               className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                !selectedUserId && !aiUserFilter ? 'bg-[#EDE9FD] text-[#6C5CE7]' : 'hover:bg-[#F3F4F6] text-[#374151]'
+                !selectedUserId && !aiUserFilter ? 'bg-[#EDE9FD] text-[#533afd]' : 'hover:bg-[#f6f9fc] text-[#273951]'
               }`}
             >
               All users
@@ -451,19 +451,19 @@ export function AdminChatMonitor() {
                 }}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                   (selectedUserId === u.id || aiUserFilter === u.id)
-                    ? 'bg-[#EDE9FD] text-[#6C5CE7]'
-                    : 'hover:bg-[#F3F4F6] text-[#374151]'
+                    ? 'bg-[#EDE9FD] text-[#533afd]'
+                    : 'hover:bg-[#f6f9fc] text-[#273951]'
                 }`}
               >
                 <p className="font-medium truncate">{u.name}</p>
-                <p className="text-xs text-[#9CA3AF] truncate capitalize">{u.role?.replace('_', ' ')}</p>
+                <p className="text-xs text-[#64748d] truncate capitalize">{u.role?.replace('_', ' ')}</p>
               </button>
             ))}
           </div>
         </div>
 
         {/* Right: messages panel */}
-        <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden min-h-[400px]">
+        <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden min-h-[400px]">
           {/* Founders */}
           {tab === 'founders' && (
             <ChatMessages fetchFn={fetchFounderMsgs} selectedUserId={selectedUserId} channel={`founders-${selectedUserId}`} />
@@ -477,7 +477,7 @@ export function AdminChatMonitor() {
           {/* Org Chat */}
           {tab === 'org' && (
             !selectedOrgId
-              ? <p className="p-6 text-center text-sm text-[#9CA3AF]">Select an organization to view its team chat.</p>
+              ? <p className="p-6 text-center text-sm text-[#64748d]">Select an organization to view its team chat.</p>
               : <ChatMessages fetchFn={fetchOrgMsgs} selectedUserId={selectedUserId} channel={`org-${selectedOrgId}-${selectedUserId}`} />
           )}
 

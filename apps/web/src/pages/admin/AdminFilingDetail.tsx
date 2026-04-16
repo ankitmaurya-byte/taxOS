@@ -7,12 +7,12 @@ import { Pencil, Check, X, Plus, Trash2, ChevronDown, ChevronRight } from 'lucid
 const FILING_STATUSES = ['intake', 'ai_prep', 'cpa_review', 'founder_approval', 'submitted', 'archived']
 
 const STATUS_STYLES: Record<string, string> = {
-  intake: 'bg-[#F3F4F6] text-[#374151]',
+  intake: 'bg-[#f6f9fc] text-[#273951]',
   ai_prep: 'bg-[#DBEAFE] text-[#1E40AF]',
   cpa_review: 'bg-[#FEF3C7] text-[#92400E]',
   founder_approval: 'bg-[#FDE68A] text-[#78350F]',
   submitted: 'bg-[#DCFCE7] text-[#166534]',
-  archived: 'bg-[#E5E7EB] text-[#6B7280]',
+  archived: 'bg-[#e5edf5] text-[#64748d]',
 }
 
 function formatDate(iso: string | null | undefined) {
@@ -54,7 +54,7 @@ export function AdminFilingDetail() {
   // Conversations expand
   const [expandedConvo, setExpandedConvo] = useState<string | null>(null)
 
-  if (isLoading) return <div className="p-6 text-[#6B7280]">Loading filing...</div>
+  if (isLoading) return <div className="p-6 text-[#64748d]">Loading filing...</div>
   if (!filing) return <div className="p-6 text-red-500">Filing not found</div>
 
   function startEditData() {
@@ -83,17 +83,17 @@ export function AdminFilingDetail() {
   return (
     <div className="space-y-6 p-6 max-w-5xl mx-auto">
       {/* Breadcrumb */}
-      <div className="text-sm text-[#6B7280]">
-        <Link to="/admin/filings" className="text-[#6C5CE7] hover:underline">Admin Filings</Link>
+      <div className="text-sm text-[#64748d]">
+        <Link to="/admin/filings" className="text-[#533afd] hover:underline">Admin Filings</Link>
         <span className="mx-2">/</span>
-        <span className="text-[#111827]">{filing.formName} ({filing.formType})</span>
+        <span className="text-[#061b31]">{filing.formName} ({filing.formType})</span>
       </div>
 
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#111827]">{filing.formName}</h1>
-          <p className="text-sm text-[#6B7280] mt-1">Form {filing.formType} &bull; Tax Year: {filing.taxYear || '—'}</p>
+          <h1 className="text-2xl font-bold text-[#061b31]">{filing.formName}</h1>
+          <p className="text-sm text-[#64748d] mt-1">Form {filing.formType} &bull; Tax Year: {filing.taxYear || '—'}</p>
         </div>
         <div className="flex items-center gap-2">
           {editingStatus ? (
@@ -123,7 +123,7 @@ export function AdminFilingDetail() {
               </span>
               <button
                 onClick={() => { setNewStatus(filing.status); setEditingStatus(true) }}
-                className="flex items-center gap-1 px-3 py-1.5 border border-[#E5E7EB] bg-white rounded-lg text-sm hover:bg-gray-50"
+                className="flex items-center gap-1 px-3 py-1.5 border border-[#e5edf5] bg-white rounded-lg text-sm hover:bg-gray-50"
               >
                 <Pencil size={13} /> Edit Status
               </button>
@@ -144,32 +144,32 @@ export function AdminFilingDetail() {
           { label: 'Founder Approved', value: formatDate(filing.founderApprovedAt) },
           { label: 'Submitted', value: formatDate(filing.submittedAt) },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-white border border-[#E5E7EB] rounded-xl p-4">
-            <p className="text-xs text-[#6B7280] uppercase tracking-wide mb-1">{label}</p>
-            <p className="text-sm font-medium text-[#111827]">{value}</p>
+          <div key={label} className="bg-white border border-[#e5edf5] rounded-md p-4">
+            <p className="text-xs text-[#64748d] uppercase tracking-wide mb-1">{label}</p>
+            <p className="text-sm font-medium text-[#061b31]">{value}</p>
           </div>
         ))}
       </div>
 
       {/* AI Summary */}
       {filing.aiSummary && (
-        <div className="bg-[#F0F0FF] border border-[#C7D2FE] rounded-xl p-5">
+        <div className="bg-[#F0F0FF] border border-[#C7D2FE] rounded-md p-5">
           <h2 className="text-sm font-semibold text-[#4338CA] mb-2">AI Summary</h2>
-          <p className="text-sm text-[#374151] whitespace-pre-wrap">{filing.aiSummary}</p>
+          <p className="text-sm text-[#273951] whitespace-pre-wrap">{filing.aiSummary}</p>
           {filing.aiReasoning && (
-            <p className="mt-3 text-xs text-[#6B7280] italic whitespace-pre-wrap">{filing.aiReasoning}</p>
+            <p className="mt-3 text-xs text-[#64748d] italic whitespace-pre-wrap">{filing.aiReasoning}</p>
           )}
         </div>
       )}
 
       {/* Filing Data */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
+      <div className="bg-white border border-[#e5edf5] rounded-md p-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-[#111827]">Filing Data</h2>
+          <h2 className="text-lg font-semibold text-[#061b31]">Filing Data</h2>
           {!editingData && (
             <button
               onClick={startEditData}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-[#E5E7EB] rounded-lg text-sm hover:bg-gray-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-[#e5edf5] rounded-lg text-sm hover:bg-gray-50"
             >
               <Pencil size={13} /> Edit Fields
             </button>
@@ -181,7 +181,7 @@ export function AdminFilingDetail() {
             <div className="space-y-2">
               {Object.entries(dataFields).map(([k, v]) => (
                 <div key={k} className="flex items-center gap-2">
-                  <span className="w-48 text-sm font-mono text-[#374151] bg-[#F3F4F6] px-3 py-1.5 rounded-lg">{k}</span>
+                  <span className="w-48 text-sm font-mono text-[#273951] bg-[#f6f9fc] px-3 py-1.5 rounded-lg">{k}</span>
                   <input
                     className="flex-1 border rounded-lg px-3 py-1.5 text-sm"
                     value={v}
@@ -194,7 +194,7 @@ export function AdminFilingDetail() {
               ))}
             </div>
             {/* Add new field */}
-            <div className="flex items-center gap-2 pt-2 border-t border-[#F3F4F6]">
+            <div className="flex items-center gap-2 pt-2 border-t border-[#f6f9fc]">
               <input
                 className="w-48 border rounded-lg px-3 py-1.5 text-sm font-mono"
                 placeholder="field name"
@@ -207,7 +207,7 @@ export function AdminFilingDetail() {
                 value={newVal}
                 onChange={e => setNewVal(e.target.value)}
               />
-              <button onClick={addField} className="flex items-center gap-1 px-3 py-1.5 bg-[#6C5CE7] text-white rounded-lg text-sm hover:bg-[#5B4BD5]">
+              <button onClick={addField} className="flex items-center gap-1 px-3 py-1.5 bg-[#533afd] text-white rounded-lg text-sm hover:bg-[#4434d4]">
                 <Plus size={13} /> Add
               </button>
             </div>
@@ -216,7 +216,7 @@ export function AdminFilingDetail() {
               <button
                 onClick={saveData}
                 disabled={updateDataMutation.isPending}
-                className="px-4 py-1.5 bg-[#6C5CE7] text-white rounded-lg text-sm hover:bg-[#5B4BD5] disabled:opacity-50"
+                className="px-4 py-1.5 bg-[#533afd] text-white rounded-lg text-sm hover:bg-[#4434d4] disabled:opacity-50"
               >
                 {updateDataMutation.isPending ? 'Saving...' : 'Save Filing Data'}
               </button>
@@ -225,13 +225,13 @@ export function AdminFilingDetail() {
         ) : (
           <div>
             {!filing.filingData || Object.keys(filing.filingData).length === 0 ? (
-              <p className="text-sm text-[#9CA3AF] italic">No filing data fields yet.</p>
+              <p className="text-sm text-[#64748d] italic">No filing data fields yet.</p>
             ) : (
-              <div className="divide-y divide-[#F3F4F6]">
+              <div className="divide-y divide-[#f6f9fc]">
                 {Object.entries(filing.filingData).map(([k, v]) => (
                   <div key={k} className="flex py-2.5 gap-4">
-                    <span className="w-56 text-sm font-mono text-[#6B7280] shrink-0">{k}</span>
-                    <span className="text-sm text-[#111827] break-all">{String(v)}</span>
+                    <span className="w-56 text-sm font-mono text-[#64748d] shrink-0">{k}</span>
+                    <span className="text-sm text-[#061b31] break-all">{String(v)}</span>
                   </div>
                 ))}
               </div>
@@ -242,21 +242,21 @@ export function AdminFilingDetail() {
 
       {/* Agent Conversations */}
       {filing.conversations?.length > 0 && (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#111827] mb-4">AI Conversations ({filing.conversations.length})</h2>
+        <div className="bg-white border border-[#e5edf5] rounded-md p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#061b31] mb-4">AI Conversations ({filing.conversations.length})</h2>
           <div className="space-y-3">
             {filing.conversations.map((conv: any) => (
-              <div key={conv.id} className="border border-[#E5E7EB] rounded-lg overflow-hidden">
+              <div key={conv.id} className="border border-[#e5edf5] rounded-lg overflow-hidden">
                 <button
                   onClick={() => setExpandedConvo(expandedConvo === conv.id ? null : conv.id)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-[#F9FAFB] hover:bg-[#F3F4F6] text-sm"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-[#f6f9fc] hover:bg-[#f6f9fc] text-sm"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="font-medium text-[#111827]">{conv.agentType}</span>
+                    <span className="font-medium text-[#061b31]">{conv.agentType}</span>
                     <span className={`text-xs px-2 py-0.5 rounded ${conv.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                       {conv.status}
                     </span>
-                    <span className="text-[#6B7280]">{conv.messages?.length || 0} messages</span>
+                    <span className="text-[#64748d]">{conv.messages?.length || 0} messages</span>
                   </div>
                   {expandedConvo === conv.id ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </button>
@@ -264,10 +264,10 @@ export function AdminFilingDetail() {
                   <div className="p-4 space-y-3 max-h-80 overflow-y-auto">
                     {(conv.messages || []).map((msg: any, i: number) => (
                       <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] rounded-xl px-4 py-2.5 text-sm ${
+                        <div className={`max-w-[80%] rounded-md px-4 py-2.5 text-sm ${
                           msg.role === 'user'
-                            ? 'bg-[#6C5CE7] text-white'
-                            : 'bg-[#F3F4F6] text-[#374151]'
+                            ? 'bg-[#533afd] text-white'
+                            : 'bg-[#f6f9fc] text-[#273951]'
                         }`}>
                           <p className="whitespace-pre-wrap">{msg.content}</p>
                           {msg.timestamp && <p className="text-xs opacity-60 mt-1">{msg.timestamp}</p>}
@@ -284,14 +284,14 @@ export function AdminFilingDetail() {
 
       {/* Documents */}
       {filing.documents?.length > 0 && (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#111827] mb-4">Documents ({filing.documents.length})</h2>
+        <div className="bg-white border border-[#e5edf5] rounded-md p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#061b31] mb-4">Documents ({filing.documents.length})</h2>
           <div className="space-y-2">
             {filing.documents.map((doc: any) => (
-              <div key={doc.id} className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg">
+              <div key={doc.id} className="flex items-center justify-between p-3 bg-[#f6f9fc] rounded-lg">
                 <div>
-                  <p className="text-sm font-medium text-[#111827]">{doc.fileName}</p>
-                  <p className="text-xs text-[#6B7280]">{doc.mimeType} &bull; {formatDate(doc.createdAt)}</p>
+                  <p className="text-sm font-medium text-[#061b31]">{doc.fileName}</p>
+                  <p className="text-xs text-[#64748d]">{doc.mimeType} &bull; {formatDate(doc.createdAt)}</p>
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded ${doc.reviewedByHuman ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                   {doc.reviewedByHuman ? 'Reviewed' : 'Pending Review'}

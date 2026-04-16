@@ -49,17 +49,17 @@ export function AddressBookPage() {
   if (!searchParams.get('view')) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-[#111827] mb-6">Address Book</h1>
+        <h1 className="text-2xl font-semibold text-[#061b31] mb-6">Address Book</h1>
         <div className="grid grid-cols-3 gap-4">
           {VIEW_TABS.map((tab) => (
             <button
               key={tab.key}
               // Navigates to → /entities/address-book?view=<key> (same page, sub-view)
               onClick={() => setView(tab.key)}
-              className="bg-white border border-[#E5E7EB] rounded-xl py-8 px-5 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#F9FAFB] hover:border-[#6C5CE7] transition-colors"
+              className="bg-white border border-[#e5edf5] rounded-md py-8 px-5 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#f6f9fc] hover:border-[#533afd] transition-colors"
             >
-              <tab.icon size={28} className="text-[#6C5CE7] mb-3" />
-              <span className="text-sm font-medium text-[#6C5CE7]">{tab.label}</span>
+              <tab.icon size={28} className="text-[#533afd] mb-3" />
+              <span className="text-sm font-medium text-[#533afd]">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -80,16 +80,16 @@ export function AddressBookPage() {
       <div className="flex items-center gap-2 mb-2 text-sm">
         <button
           onClick={() => setSearchParams({})}
-          className="text-[#6C5CE7] hover:underline"
+          className="text-[#533afd] hover:underline"
         >
           Address Book
         </button>
-        <ChevronRight size={14} className="text-[#9CA3AF]" />
+        <ChevronRight size={14} className="text-[#64748d]" />
       </div>
 
       {/* Header with entity selector */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-[#111827]">{viewLabel}</h1>
+        <h1 className="text-2xl font-semibold text-[#061b31]">{viewLabel}</h1>
         <div className="flex items-center gap-3">
           {/* Entity selector dropdown */}
           <EntitySelector
@@ -105,15 +105,15 @@ export function AddressBookPage() {
       </div>
 
       {/* Sub-view tabs */}
-      <div className="flex items-center gap-4 border-b border-[#E5E7EB] mb-6">
+      <div className="flex items-center gap-4 border-b border-[#e5edf5] mb-6">
         {VIEW_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setView(tab.key)}
             className={`flex items-center gap-1.5 pb-3 text-sm font-medium transition-colors ${
               activeView === tab.key
-                ? 'text-[#6C5CE7] border-b-2 border-[#6C5CE7]'
-                : 'text-[#6B7280] hover:text-[#374151]'
+                ? 'text-[#533afd] border-b-2 border-[#533afd]'
+                : 'text-[#64748d] hover:text-[#273951]'
             }`}
           >
             <tab.icon size={14} />
@@ -157,22 +157,22 @@ function EntitySelector({
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm hover:border-[#6C5CE7] min-w-[200px]"
+        className="flex items-center gap-2 px-3 py-2 border border-[#e5edf5] rounded-lg text-sm hover:border-[#533afd] min-w-[200px]"
       >
         {selected ? (
           <>
             <span>{COUNTRY_FLAGS[selected.country] || '🏳️'}</span>
-            <span className="truncate max-w-[150px] text-[#111827]">
+            <span className="truncate max-w-[150px] text-[#061b31]">
               {selected.legalName}
             </span>
           </>
         ) : (
-          <span className="text-[#6B7280]">Select entity...</span>
+          <span className="text-[#64748d]">Select entity...</span>
         )}
-        <ChevronDown size={14} className="text-[#9CA3AF] ml-auto" />
+        <ChevronDown size={14} className="text-[#64748d] ml-auto" />
       </button>
       {open && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-[#E5E7EB] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-10 mt-1 w-full bg-white border border-[#e5edf5] rounded-lg shadow-lg max-h-48 overflow-y-auto">
           {entities.map((entity: any) => (
             <button
               key={entity.id}
@@ -180,8 +180,8 @@ function EntitySelector({
                 onSelect(entity.id)
                 setOpen(false)
               }}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] flex items-center gap-2 ${
-                selectedEntity === entity.id ? 'bg-[#F3F0FF] text-[#6C5CE7]' : 'text-[#111827]'
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-[#f6f9fc] flex items-center gap-2 ${
+                selectedEntity === entity.id ? 'bg-[#f6f9fc] text-[#533afd]' : 'text-[#061b31]'
               }`}
             >
               <span>{COUNTRY_FLAGS[entity.country] || '🏳️'}</span>
@@ -204,7 +204,7 @@ function AddButton({ label, view }: { label: string; view: ViewType }) {
         // Dispatch a custom event so the view component can open its form
         window.dispatchEvent(new CustomEvent('addressbook-add', { detail: view }))
       }}
-      className="flex items-center gap-1.5 h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] transition-colors"
+      className="flex items-center gap-1.5 h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] transition-colors"
     >
       <Plus size={14} />
       {label}
@@ -259,13 +259,13 @@ function AddressesView() {
     <div>
       {/* Add/Edit Form */}
       {showForm && (
-        <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4 mb-4">
-          <h3 className="text-sm font-semibold text-[#111827] mb-3">
+        <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
+          <h3 className="text-sm font-semibold text-[#061b31] mb-3">
             {editIndex !== null ? 'Edit Address' : 'New Address'}
           </h3>
           <div className="grid grid-cols-2 gap-4 mb-3">
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Street</label>
+              <label className="block text-xs text-[#64748d] mb-1">Street</label>
               <Input
                 value={form.street}
                 onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))}
@@ -273,7 +273,7 @@ function AddressesView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">City</label>
+              <label className="block text-xs text-[#64748d] mb-1">City</label>
               <Input
                 value={form.city}
                 onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
@@ -281,7 +281,7 @@ function AddressesView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">State</label>
+              <label className="block text-xs text-[#64748d] mb-1">State</label>
               <Input
                 value={form.state}
                 onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
@@ -289,7 +289,7 @@ function AddressesView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">ZIP Code</label>
+              <label className="block text-xs text-[#64748d] mb-1">ZIP Code</label>
               <Input
                 value={form.zip}
                 onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))}
@@ -297,7 +297,7 @@ function AddressesView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Country</label>
+              <label className="block text-xs text-[#64748d] mb-1">Country</label>
               <Input
                 value={form.country}
                 onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
@@ -308,7 +308,7 @@ function AddressesView() {
           <div className="flex gap-2">
             <button
               onClick={saveAddress}
-              className="h-8 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5]"
+              className="h-8 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4]"
             >
               Save
             </button>
@@ -318,7 +318,7 @@ function AddressesView() {
                 setEditIndex(null)
                 setForm({ street: '', city: '', state: '', zip: '', country: 'India' })
               }}
-              className="h-8 px-4 border border-[#E5E7EB] rounded-lg text-sm font-medium text-[#6B7280] hover:bg-gray-50"
+              className="h-8 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#64748d] hover:bg-gray-50"
             >
               Cancel
             </button>
@@ -327,28 +327,28 @@ function AddressesView() {
       )}
 
       {/* Table */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-[#F9FAFB]">
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+            <tr className="bg-[#f6f9fc]">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Title
               </th>
-              <th className="text-right text-xs font-medium text-[#6B7280] uppercase px-4 py-3 w-24">
+              <th className="text-right text-xs font-medium text-[#64748d] uppercase px-4 py-3 w-24">
               </th>
             </tr>
           </thead>
           <tbody>
             {addresses.length === 0 ? (
               <tr>
-                <td colSpan={2} className="px-4 py-8 text-center text-sm text-[#6B7280]">
+                <td colSpan={2} className="px-4 py-8 text-center text-sm text-[#64748d]">
                   No addresses added yet.
                 </td>
               </tr>
             ) : (
               addresses.map((addr, i) => (
-                <tr key={addr.id} className="border-t border-[#E5E7EB]">
-                  <td className="px-4 py-3 text-sm text-[#111827]">{addr.title}</td>
+                <tr key={addr.id} className="border-t border-[#e5edf5]">
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{addr.title}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
@@ -364,13 +364,13 @@ function AddressesView() {
                           setEditIndex(i)
                           setShowForm(true)
                         }}
-                        className="w-8 h-8 flex items-center justify-center border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#111827] hover:bg-gray-50"
+                        className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-[#061b31] hover:bg-gray-50"
                       >
                         <Pencil size={14} />
                       </button>
                       <button
                         onClick={() => setAddresses((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="w-8 h-8 flex items-center justify-center border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-red-500 hover:bg-gray-50"
+                        className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-red-500 hover:bg-gray-50"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -409,11 +409,11 @@ function BankAccountsView() {
     <div>
       {/* Add Form */}
       {showForm && (
-        <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4 mb-4">
-          <h3 className="text-sm font-semibold text-[#111827] mb-3">New Bank Account</h3>
+        <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
+          <h3 className="text-sm font-semibold text-[#061b31] mb-3">New Bank Account</h3>
           <div className="grid grid-cols-2 gap-4 mb-3">
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Bank Name</label>
+              <label className="block text-xs text-[#64748d] mb-1">Bank Name</label>
               <Input
                 value={form.bankName}
                 onChange={(e) => setForm((f) => ({ ...f, bankName: e.target.value }))}
@@ -421,7 +421,7 @@ function BankAccountsView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Account Number</label>
+              <label className="block text-xs text-[#64748d] mb-1">Account Number</label>
               <Input
                 value={form.accountNumber}
                 onChange={(e) => setForm((f) => ({ ...f, accountNumber: e.target.value }))}
@@ -429,7 +429,7 @@ function BankAccountsView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Routing Number</label>
+              <label className="block text-xs text-[#64748d] mb-1">Routing Number</label>
               <Input
                 value={form.routingNumber}
                 onChange={(e) => setForm((f) => ({ ...f, routingNumber: e.target.value }))}
@@ -437,9 +437,9 @@ function BankAccountsView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Account Type</label>
+              <label className="block text-xs text-[#64748d] mb-1">Account Type</label>
               <select
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]"
+                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
                 value={form.accountType}
                 onChange={(e) => setForm((f) => ({ ...f, accountType: e.target.value }))}
               >
@@ -452,13 +452,13 @@ function BankAccountsView() {
             <button
               onClick={addAccount}
               disabled={!form.bankName}
-              className="h-8 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] disabled:opacity-50"
+              className="h-8 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] disabled:opacity-50"
             >
               Save
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="h-8 px-4 border border-[#E5E7EB] rounded-lg text-sm font-medium text-[#6B7280] hover:bg-gray-50"
+              className="h-8 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#64748d] hover:bg-gray-50"
             >
               Cancel
             </button>
@@ -469,27 +469,27 @@ function BankAccountsView() {
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="mb-4 flex items-center gap-1.5 h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] transition-colors"
+          className="mb-4 flex items-center gap-1.5 h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] transition-colors"
         >
           <Plus size={14} />
           Add Bank Account
         </button>
       )}
 
-      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-[#F9FAFB]">
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+            <tr className="bg-[#f6f9fc]">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Bank Name
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Account Number
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Routing Number
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Type
               </th>
               <th className="text-right px-4 py-3 w-24"></th>
@@ -498,23 +498,23 @@ function BankAccountsView() {
           <tbody>
             {accounts.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#6B7280]">
+                <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748d]">
                   No bank accounts added yet.
                 </td>
               </tr>
             ) : (
               accounts.map((acc, i) => (
-                <tr key={acc.id} className="border-t border-[#E5E7EB]">
-                  <td className="px-4 py-3 text-sm text-[#111827]">{acc.bankName}</td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">
+                <tr key={acc.id} className="border-t border-[#e5edf5]">
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{acc.bankName}</td>
+                  <td className="px-4 py-3 text-sm text-[#061b31]">
                     {'****' + (acc.accountNumber?.slice(-4) || '')}
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">{acc.routingNumber || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">{acc.accountType}</td>
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{acc.routingNumber || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{acc.accountType}</td>
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => setAccounts((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="w-8 h-8 flex items-center justify-center border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-red-500 hover:bg-gray-50"
+                      className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-red-500 hover:bg-gray-50"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -552,11 +552,11 @@ function AuthorizedPersonsView() {
     <div>
       {/* Add Form */}
       {showForm && (
-        <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4 mb-4">
-          <h3 className="text-sm font-semibold text-[#111827] mb-3">New Authorized Person</h3>
+        <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
+          <h3 className="text-sm font-semibold text-[#061b31] mb-3">New Authorized Person</h3>
           <div className="grid grid-cols-2 gap-4 mb-3">
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Name</label>
+              <label className="block text-xs text-[#64748d] mb-1">Name</label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -564,7 +564,7 @@ function AuthorizedPersonsView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Role</label>
+              <label className="block text-xs text-[#64748d] mb-1">Role</label>
               <Input
                 value={form.role}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
@@ -572,7 +572,7 @@ function AuthorizedPersonsView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Email</label>
+              <label className="block text-xs text-[#64748d] mb-1">Email</label>
               <Input
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
@@ -580,7 +580,7 @@ function AuthorizedPersonsView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Phone</label>
+              <label className="block text-xs text-[#64748d] mb-1">Phone</label>
               <Input
                 value={form.phone}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -592,13 +592,13 @@ function AuthorizedPersonsView() {
             <button
               onClick={addPerson}
               disabled={!form.name}
-              className="h-8 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] disabled:opacity-50"
+              className="h-8 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] disabled:opacity-50"
             >
               Save
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="h-8 px-4 border border-[#E5E7EB] rounded-lg text-sm font-medium text-[#6B7280] hover:bg-gray-50"
+              className="h-8 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#64748d] hover:bg-gray-50"
             >
               Cancel
             </button>
@@ -609,27 +609,27 @@ function AuthorizedPersonsView() {
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="mb-4 flex items-center gap-1.5 h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] transition-colors"
+          className="mb-4 flex items-center gap-1.5 h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] transition-colors"
         >
           <Plus size={14} />
           Add Person
         </button>
       )}
 
-      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-[#F9FAFB]">
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+            <tr className="bg-[#f6f9fc]">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Name
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Role
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Email
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Phone
               </th>
               <th className="text-right px-4 py-3 w-24"></th>
@@ -638,21 +638,21 @@ function AuthorizedPersonsView() {
           <tbody>
             {persons.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#6B7280]">
+                <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748d]">
                   No authorized persons added yet.
                 </td>
               </tr>
             ) : (
               persons.map((person, i) => (
-                <tr key={person.id} className="border-t border-[#E5E7EB]">
-                  <td className="px-4 py-3 text-sm text-[#111827]">{person.name}</td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">{person.role || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">{person.email || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">{person.phone || '—'}</td>
+                <tr key={person.id} className="border-t border-[#e5edf5]">
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{person.name}</td>
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{person.role || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{person.email || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{person.phone || '—'}</td>
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => setPersons((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="w-8 h-8 flex items-center justify-center border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-red-500 hover:bg-gray-50"
+                      className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-red-500 hover:bg-gray-50"
                     >
                       <Trash2 size={14} />
                     </button>

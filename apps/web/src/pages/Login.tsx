@@ -19,12 +19,12 @@ function MarketingPanel() {
         </p>
       </div>
       <div className="relative mx-auto mb-8 mt-6 h-[320px] w-[90%] rounded-2xl border border-white/15 bg-white/95 p-5 shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
-        <div className="text-xl font-semibold text-[#1E174A]">
+        <div className="text-xl font-semibold text-[#061b31]">
           Business Insights
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-[1.3fr_1fr]">
           <div className="rounded-xl border border-[#ECE7FB] bg-[#FBFAFF] p-4">
-            <div className="text-xs font-medium text-[#1E174A]">Cash Flow</div>
+            <div className="text-xs font-medium text-[#061b31]">Cash Flow</div>
             <div className="mt-3 grid grid-cols-3 gap-3 text-[#4E476F]">
               {["Revenue", "Expense", "Profit"].map((label, index) => (
                 <div key={label}>
@@ -51,7 +51,7 @@ function MarketingPanel() {
             </div>
           </div>
           <div className="rounded-xl border border-[#ECE7FB] bg-white p-4">
-            <div className="text-xs font-medium text-[#1E174A]">
+            <div className="text-xs font-medium text-[#061b31]">
               Financial Health
             </div>
             <div className="mt-4 space-y-5 text-[#4E476F]">
@@ -76,7 +76,7 @@ function MarketingPanel() {
 
 const DEMO_ACCOUNTS = [
   { key: 'admin', label: 'Admin', email: 'superadmin@taxos.ai', password: 'admin1234', icon: Shield, color: 'text-[#991B1B]', bg: 'bg-[#FEF2F2]', border: 'border-[#FECACA]', hover: 'hover:bg-[#FEE2E2]' },
-  { key: 'founder', label: 'Founder', email: 'founder@demo.taxos.ai', password: 'password123', icon: Briefcase, color: 'text-[#6C5CE7]', bg: 'bg-[#F5F3FF]', border: 'border-[#DDD6FE]', hover: 'hover:bg-[#EDE9FE]' },
+  { key: 'founder', label: 'Founder', email: 'founder@demo.taxos.ai', password: 'password123', icon: Briefcase, color: 'text-[#533afd]', bg: 'bg-[#F5F3FF]', border: 'border-[#DDD6FE]', hover: 'hover:bg-[#EDE9FE]' },
   { key: 'team', label: 'Team Member', email: 'team@demo.taxos.ai', password: 'password123', icon: Users, color: 'text-[#0369A1]', bg: 'bg-[#F0F9FF]', border: 'border-[#BAE6FD]', hover: 'hover:bg-[#E0F2FE]' },
   { key: 'cpa', label: 'CPA', email: 'cpa@demo.taxos.ai', password: 'password123', icon: UserCheck, color: 'text-[#166534]', bg: 'bg-[#F0FDF4]', border: 'border-[#BBF7D0]', hover: 'hover:bg-[#DCFCE7]' },
 ] as const;
@@ -129,31 +129,31 @@ export function LoginPage() {
     <div className="grid min-h-screen bg-[#FCFBFF] lg:grid-cols-[1.08fr_0.92fr]">
       <div className="flex min-h-screen flex-col px-6 py-6 lg:px-16 lg:py-10">
         <div className="flex items-center justify-between">
-          <div className="text-3xl font-semibold tracking-[-0.03em] text-[#5B2FFF]">
+          <div className="text-3xl font-semibold tracking-[-0.03em] text-[#533afd]">
             inkle
           </div>
-          <button className="flex items-center gap-1.5 text-sm text-[#6F6A8B]">
+          <button className="flex items-center gap-1.5 text-sm text-[#64748d]">
             <HelpCircle size={15} /> Help
           </button>
         </div>
 
         <div className="flex flex-1 items-center">
           <div className="w-full max-w-md">
-            <h1 className="text-3xl font-semibold tracking-[-0.02em] text-[#1E174A]">
+            <h1 className="text-3xl font-semibold tracking-[-0.02em] text-[#061b31]">
               Sign in
             </h1>
-            <p className="mt-2 text-sm text-[#6F6A8B]">
+            <p className="mt-2 text-sm text-[#64748d]">
               Don&apos;t have an account?{" "}
               <Link
                 to="/onboarding/start"
-                className="font-medium text-[#5B2FFF]"
+                className="font-medium text-[#533afd]"
               >
                 Sign up <ChevronRight className="inline" size={14} />
               </Link>
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8">
-              <label className="mb-1.5 block text-sm font-medium text-[#4E4970]">
+              <label className="mb-1.5 block text-sm font-medium text-[#273951]">
                 Work email address
               </label>
               <input
@@ -162,10 +162,10 @@ export function LoginPage() {
                 type="email"
                 required
                 placeholder="Email address"
-                className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+                className="h-10 w-full rounded-lg border border-[#e5edf5] bg-white px-3.5 text-sm text-[#061b31] outline-none placeholder:text-[#64748d] focus:ring-2 focus:ring-[#533afd] focus:border-transparent"
               />
 
-              <label className="mb-1.5 mt-4 block text-sm font-medium text-[#4E4970]">
+              <label className="mb-1.5 mt-4 block text-sm font-medium text-[#273951]">
                 Password
               </label>
               <input
@@ -174,7 +174,7 @@ export function LoginPage() {
                 type="password"
                 required
                 placeholder="Password"
-                className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+                className="h-10 w-full rounded-lg border border-[#e5edf5] bg-white px-3.5 text-sm text-[#061b31] outline-none placeholder:text-[#64748d] focus:ring-2 focus:ring-[#533afd] focus:border-transparent"
               />
 
               {error && <p className="mt-3 text-sm text-[#D94A5B]">{error}</p>}
@@ -186,7 +186,7 @@ export function LoginPage() {
                 {loading ? "Signing in..." : "Sign in"}
               </button>
               <div className="mt-6 rounded-xl border border-[#E4E0F5] bg-[#F8F7FF] p-4">
-                <p className="text-sm font-medium text-[#4E4970] mb-3">
+                <p className="text-sm font-medium text-[#273951] mb-3">
                   Quick Login
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -206,7 +206,7 @@ export function LoginPage() {
                           <p className={`text-xs font-semibold ${account.color}`}>
                             {isLoading ? 'Signing in...' : `Login as ${account.label}`}
                           </p>
-                          <p className="text-[11px] text-[#8B84A8] truncate">{account.email}</p>
+                          <p className="text-[11px] text-[#64748d] truncate">{account.email}</p>
                         </div>
                       </button>
                     );

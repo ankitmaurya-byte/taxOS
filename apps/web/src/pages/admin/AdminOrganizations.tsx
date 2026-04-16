@@ -52,24 +52,24 @@ export function AdminOrganizations() {
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold text-[#111827]">Organizations</h1>
-          <p className="mt-1 text-sm text-[#6B7280]">Manage multitenant organizations.</p>
+          <h1 className="text-2xl font-semibold text-[#061b31]">Organizations</h1>
+          <p className="mt-1 text-sm text-[#64748d]">Manage multitenant organizations.</p>
         </div>
       </div>
 
       {/* Search + Sort toolbar */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d]" />
           <input
             type="text"
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search organizations..."
-            className="h-9 w-full rounded-lg border border-[#E5E7EB] bg-white pl-9 pr-8 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+            className="h-9 w-full rounded-lg border border-[#e5edf5] bg-white pl-9 pr-8 text-sm text-[#061b31] placeholder:text-[#64748d] outline-none focus:ring-2 focus:ring-[#533afd] focus:border-transparent"
           />
           {search && (
-            <button onClick={() => handleSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#374151]">
+            <button onClick={() => handleSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#64748d] hover:text-[#273951]">
               <X size={14} />
             </button>
           )}
@@ -81,8 +81,8 @@ export function AdminOrganizations() {
               onClick={() => handleSort(key)}
               className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
                 sortBy === key
-                  ? 'bg-[#111827] text-white'
-                  : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F9FAFB]'
+                  ? 'bg-[#061b31] text-white'
+                  : 'bg-white text-[#273951] border border-[#e5edf5] hover:bg-[#f6f9fc]'
               }`}
             >
               {label}
@@ -91,9 +91,9 @@ export function AdminOrganizations() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
-        <table className="w-full text-left text-sm text-[#374151]">
-          <thead className="bg-[#F9FAFB] text-xs uppercase text-[#6B7280] border-b border-[#E5E7EB]">
+      <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden shadow-sm">
+        <table className="w-full text-left text-sm text-[#273951]">
+          <thead className="bg-[#f6f9fc] text-xs uppercase text-[#64748d] border-b border-[#e5edf5]">
             <tr>
               <th className="px-6 py-4 font-medium">Name</th>
               <th className="px-6 py-4 font-medium">Founders</th>
@@ -103,11 +103,11 @@ export function AdminOrganizations() {
               <th className="px-6 py-4 font-medium text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#E5E7EB]">
+          <tbody className="divide-y divide-[#e5edf5]">
             {paginated.map((org: any) => (
-              <tr key={org.id} className="hover:bg-[#F9FAFB]/50 transition-colors">
-                <td className="px-6 py-4 font-medium text-[#111827]">
-                  <Link to={`/admin/organizations/${org.id}`} className="text-[#6C5CE7] hover:underline">
+              <tr key={org.id} className="hover:bg-[#f6f9fc]/50 transition-colors">
+                <td className="px-6 py-4 font-medium text-[#061b31]">
+                  <Link to={`/admin/organizations/${org.id}`} className="text-[#533afd] hover:underline">
                     {org.name}
                   </Link>
                 </td>
@@ -126,7 +126,7 @@ export function AdminOrganizations() {
               </tr>
             ))}
             {paginated.length === 0 && (
-              <tr><td colSpan={6} className="px-6 py-8 text-center text-[#6B7280]">{search ? 'No organizations match your search.' : 'No organizations found.'}</td></tr>
+              <tr><td colSpan={6} className="px-6 py-8 text-center text-[#64748d]">{search ? 'No organizations match your search.' : 'No organizations found.'}</td></tr>
             )}
           </tbody>
         </table>

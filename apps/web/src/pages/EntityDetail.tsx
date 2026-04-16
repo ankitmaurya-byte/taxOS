@@ -101,7 +101,7 @@ export function EntityDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-[#6B7280]">
+      <div className="flex items-center justify-center h-64 text-[#64748d]">
         Loading entity...
       </div>
     )
@@ -109,7 +109,7 @@ export function EntityDetailPage() {
 
   if (!entity) {
     return (
-      <div className="flex items-center justify-center h-64 text-[#6B7280]">
+      <div className="flex items-center justify-center h-64 text-[#64748d]">
         Entity not found.
       </div>
     )
@@ -121,15 +121,15 @@ export function EntityDetailPage() {
       <div className="flex items-center gap-2 mb-2 text-sm">
         <button
           onClick={() => navigate(fromAdmin ? '/admin/entities' : '/entities/overview')}
-          className="text-[#6C5CE7] hover:underline"
+          className="text-[#533afd] hover:underline"
         >
           {fromAdmin ? 'Admin: Entities' : 'My Entities'}
         </button>
-        <ChevronRight size={14} className="text-[#9CA3AF]" />
+        <ChevronRight size={14} className="text-[#64748d]" />
       </div>
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-[#111827] uppercase">{entity.legalName}</h1>
+        <h1 className="text-2xl font-bold text-[#061b31] uppercase">{entity.legalName}</h1>
         {entity.status !== 'dissolved' && (
           <button
             onClick={async () => {
@@ -148,15 +148,15 @@ export function EntityDetailPage() {
       </div>
 
       {/* Tabs — switches between tab views within this page */}
-      <div className="flex items-center gap-6 border-b border-[#E5E7EB] mb-6">
+      <div className="flex items-center gap-6 border-b border-[#e5edf5] mb-6">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setTab(tab.key)}
             className={`pb-3 text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? 'text-[#6C5CE7] border-b-2 border-[#6C5CE7]'
-                : 'text-[#6B7280] hover:text-[#374151]'
+                ? 'text-[#533afd] border-b-2 border-[#533afd]'
+                : 'text-[#64748d] hover:text-[#273951]'
             }`}
           >
             {tab.label}
@@ -194,20 +194,20 @@ export function EntityDetailPage() {
         {/* Supporting docs sidebar - only on overview */}
         {activeTab === 'overview' && (
           <div className="w-64 flex-shrink-0">
-            <div className="border border-[#E5E7EB] rounded-xl bg-white p-4">
+            <div className="border border-[#e5edf5] rounded-md bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-[#111827]">Supporting Docs</h3>
-                  <p className="mt-1 text-xs text-[#6B7280]">Documents linked through this entity's filings.</p>
+                  <h3 className="text-sm font-semibold text-[#061b31]">Supporting Docs</h3>
+                  <p className="mt-1 text-xs text-[#64748d]">Documents linked through this entity's filings.</p>
                 </div>
-                <span className="rounded-full bg-[#F3F0FF] px-2.5 py-1 text-xs font-medium text-[#6C5CE7]">
+                <span className="rounded-full bg-[#f6f9fc] px-2.5 py-1 text-xs font-medium text-[#533afd]">
                   {supportingDocs.length}
                 </span>
               </div>
 
               <div className="mt-4 space-y-3">
                 {supportingDocs.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-[#E5E7EB] bg-[#FCFCFD] p-3 text-sm text-[#6B7280]">
+                  <div className="rounded-lg border border-dashed border-[#e5edf5] bg-[#FCFCFD] p-3 text-sm text-[#64748d]">
                     No supporting documents linked yet.
                   </div>
                 ) : (
@@ -217,12 +217,12 @@ export function EntityDetailPage() {
                       href={resolveStorageUrl(doc.storageUrl)}
                       target="_blank"
                       rel="noreferrer"
-                      className="block rounded-lg border border-[#E5E7EB] p-3 transition-colors hover:border-[#D8D1F7] hover:bg-[#FAFAFF]"
+                      className="block rounded-lg border border-[#e5edf5] p-3 transition-colors hover:border-[#D8D1F7] hover:bg-[#FAFAFF]"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-[#111827]">{doc.fileName}</p>
-                          <p className="mt-1 text-xs text-[#6B7280]">
+                          <p className="truncate text-sm font-medium text-[#061b31]">{doc.fileName}</p>
+                          <p className="mt-1 text-xs text-[#64748d]">
                             {new Date(doc.createdAt).toLocaleDateString('en-US', {
                               year: 'numeric',
                               month: 'short',
@@ -230,10 +230,10 @@ export function EntityDetailPage() {
                             })}
                           </p>
                         </div>
-                        <ExternalLink size={14} className="mt-0.5 flex-shrink-0 text-[#9CA3AF]" />
+                        <ExternalLink size={14} className="mt-0.5 flex-shrink-0 text-[#64748d]" />
                       </div>
                       <div className="mt-2 flex items-center justify-between text-xs">
-                        <span className="text-[#6B7280]">
+                        <span className="text-[#64748d]">
                           {doc.mimeType?.includes('pdf') ? 'PDF' : doc.mimeType?.includes('sheet') || doc.mimeType?.includes('csv') ? 'Spreadsheet' : 'Document'}
                         </span>
                         {doc.reviewedByHuman ? (
@@ -277,23 +277,23 @@ function OverviewTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
   return (
     <div className="space-y-4">
       {/* Top info row */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-5">
+      <div className="bg-white border border-[#e5edf5] rounded-md p-5">
         <div className="grid grid-cols-3 gap-6 mb-5">
           <div>
-            <p className="text-xs text-[#6B7280] mb-1">Business name</p>
-            <p className="text-sm font-semibold text-[#111827] uppercase">
+            <p className="text-xs text-[#64748d] mb-1">Business name</p>
+            <p className="text-sm font-semibold text-[#061b31] uppercase">
               {entity.legalName}
             </p>
           </div>
           <div>
-            <p className="text-xs text-[#6B7280] mb-1">Entity type</p>
-            <p className="text-sm font-semibold text-[#111827]">
+            <p className="text-xs text-[#64748d] mb-1">Entity type</p>
+            <p className="text-sm font-semibold text-[#061b31]">
               {ENTITY_TYPE_LABELS[entity.entityType] || entity.entityType}
             </p>
           </div>
           <div>
-            <p className="text-xs text-[#6B7280] mb-1">Country</p>
-            <p className="text-sm font-semibold text-[#111827]">
+            <p className="text-xs text-[#64748d] mb-1">Country</p>
+            <p className="text-sm font-semibold text-[#061b31]">
               {COUNTRY_LABELS[entity.country] || entity.country}
             </p>
           </div>
@@ -301,9 +301,9 @@ function OverviewTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
 
         {/* Date of incorporation */}
         <div className="mb-5">
-          <p className="text-xs text-[#6B7280] mb-1">Date of incorporation</p>
-          <div className="flex items-center justify-between border border-[#E5E7EB] rounded-lg px-3 py-2">
-            <span className="text-sm text-[#111827]">
+          <p className="text-xs text-[#64748d] mb-1">Date of incorporation</p>
+          <div className="flex items-center justify-between border border-[#e5edf5] rounded-lg px-3 py-2">
+            <span className="text-sm text-[#061b31]">
               {entity.createdAt
                 ? new Date(entity.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -312,34 +312,34 @@ function OverviewTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
                   })
                 : '—'}
             </span>
-            <span className="text-[#9CA3AF]">&#128197;</span>
+            <span className="text-[#64748d]">&#128197;</span>
           </div>
         </div>
 
         {/* Entity Status — functional dropdown */}
         <div className="mb-5 relative">
-          <p className="text-xs text-[#6B7280] mb-1">Entity Status</p>
+          <p className="text-xs text-[#64748d] mb-1">Entity Status</p>
           <div
-            className="flex items-center justify-between border border-[#E5E7EB] rounded-lg px-3 py-2 cursor-pointer hover:border-[#6C5CE7]"
+            className="flex items-center justify-between border border-[#e5edf5] rounded-lg px-3 py-2 cursor-pointer hover:border-[#533afd]"
             onClick={() => setShowStatusDropdown(!showStatusDropdown)}
           >
-            <span className="text-sm text-[#111827] capitalize">{entity.status || 'Active'}</span>
+            <span className="text-sm text-[#061b31] capitalize">{entity.status || 'Active'}</span>
             <div className="flex items-center gap-1">
               {entity.status && entity.status !== 'active' && (
                 <X
                   size={14}
-                  className="text-[#9CA3AF] hover:text-[#111827] cursor-pointer"
+                  className="text-[#64748d] hover:text-[#061b31] cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     onUpdate({ status: 'active' })
                   }}
                 />
               )}
-              <ChevronDown size={14} className="text-[#9CA3AF]" />
+              <ChevronDown size={14} className="text-[#64748d]" />
             </div>
           </div>
           {showStatusDropdown && (
-            <div className="absolute z-10 mt-1 w-full bg-white border border-[#E5E7EB] rounded-lg shadow-lg">
+            <div className="absolute z-10 mt-1 w-full bg-white border border-[#e5edf5] rounded-lg shadow-lg">
               {STATUSES.map((status) => (
                 <button
                   key={status}
@@ -347,8 +347,8 @@ function OverviewTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
                     onUpdate({ status })
                     setShowStatusDropdown(false)
                   }}
-                  className={`w-full text-left px-3 py-2 text-sm capitalize hover:bg-[#F3F0FF] ${
-                    entity.status === status ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'
+                  className={`w-full text-left px-3 py-2 text-sm capitalize hover:bg-[#f6f9fc] ${
+                    entity.status === status ? 'text-[#533afd] font-medium' : 'text-[#061b31]'
                   }`}
                 >
                   {status}
@@ -361,32 +361,32 @@ function OverviewTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
         {/* Major business activity — functional dropdown */}
         <div className="relative">
           <div className="flex items-center gap-1 mb-1">
-            <p className="text-xs text-[#6B7280]">Major business activity</p>
-            <Info size={12} className="text-[#9CA3AF]" />
+            <p className="text-xs text-[#64748d]">Major business activity</p>
+            <Info size={12} className="text-[#64748d]" />
           </div>
           <div
-            className="flex items-center justify-between border border-[#E5E7EB] rounded-lg px-3 py-2 cursor-pointer hover:border-[#6C5CE7]"
+            className="flex items-center justify-between border border-[#e5edf5] rounded-lg px-3 py-2 cursor-pointer hover:border-[#533afd]"
             onClick={() => setShowActivityDropdown(!showActivityDropdown)}
           >
-            <span className="text-sm text-[#111827]">
+            <span className="text-sm text-[#061b31]">
               {entity.majorBusinessActivity || '—'}
             </span>
             <div className="flex items-center gap-1">
               {entity.majorBusinessActivity && (
                 <X
                   size={14}
-                  className="text-[#9CA3AF] hover:text-[#111827] cursor-pointer"
+                  className="text-[#64748d] hover:text-[#061b31] cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
                     onUpdate({ majorBusinessActivity: null })
                   }}
                 />
               )}
-              <ChevronDown size={14} className="text-[#9CA3AF]" />
+              <ChevronDown size={14} className="text-[#64748d]" />
             </div>
           </div>
           {showActivityDropdown && (
-            <div className="absolute z-10 mt-1 w-full bg-white border border-[#E5E7EB] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+            <div className="absolute z-10 mt-1 w-full bg-white border border-[#e5edf5] rounded-lg shadow-lg max-h-48 overflow-y-auto">
               {ACTIVITIES.map((activity) => (
                 <button
                   key={activity}
@@ -394,7 +394,7 @@ function OverviewTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
                     onUpdate({ majorBusinessActivity: activity })
                     setShowActivityDropdown(false)
                   }}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] text-[#111827]"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-[#f6f9fc] text-[#061b31]"
                 >
                   {activity}
                 </button>
@@ -406,12 +406,12 @@ function OverviewTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
 
       {/* Collapsible sections */}
       <CollapsibleSection
-        icon={<Phone size={20} className="text-[#6C5CE7]" />}
+        icon={<Phone size={20} className="text-[#533afd]" />}
         title="Contact and Addresses"
         description="Official contact information and addresses for business correspondence"
       />
       <CollapsibleSection
-        icon={<Shield size={20} className="text-[#6C5CE7]" />}
+        icon={<Shield size={20} className="text-[#533afd]" />}
         title="Tax and Compliance Information"
         description="Key tax and regulatory details for federal compliance and classification"
       />
@@ -433,27 +433,27 @@ function CollapsibleSection({
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-xl p-5">
+    <div className="bg-white border border-[#e5edf5] rounded-md p-5">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#F3F0FF] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-[#f6f9fc] flex items-center justify-center">
             {icon}
           </div>
           <div className="text-left">
-            <h3 className="text-sm font-semibold text-[#111827]">{title}</h3>
-            <p className="text-xs text-[#6B7280]">{description}</p>
+            <h3 className="text-sm font-semibold text-[#061b31]">{title}</h3>
+            <p className="text-xs text-[#64748d]">{description}</p>
           </div>
         </div>
         <ChevronDown
           size={16}
-          className={`text-[#9CA3AF] transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`text-[#64748d] transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
       {open && (
-        <div className="mt-4 pt-4 border-t border-[#E5E7EB] text-sm text-[#6B7280]">
+        <div className="mt-4 pt-4 border-t border-[#e5edf5] text-sm text-[#64748d]">
           No information added yet.
         </div>
       )}
@@ -504,10 +504,10 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
       {/* Directors */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-[#111827]">Directors</h2>
+          <h2 className="text-lg font-bold text-[#061b31]">Directors</h2>
           <button
             onClick={() => setShowDirectorForm(!showDirectorForm)}
-            className="px-4 py-2 border border-[#E5E7EB] rounded-lg text-sm font-medium text-[#111827] hover:bg-gray-50"
+            className="px-4 py-2 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#061b31] hover:bg-gray-50"
           >
             {showDirectorForm ? 'Cancel' : 'Add director'}
           </button>
@@ -515,10 +515,10 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
 
         {/* Add Director Form */}
         {showDirectorForm && (
-          <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4 mb-4">
+          <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
             <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
-                <label className="block text-xs text-[#6B7280] mb-1">Name</label>
+                <label className="block text-xs text-[#64748d] mb-1">Name</label>
                 <Input
                   value={directorForm.name}
                   onChange={(e) => setDirectorForm((f) => ({ ...f, name: e.target.value }))}
@@ -526,38 +526,38 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
                 />
               </div>
               <div>
-                <label className="block text-xs text-[#6B7280] mb-1">Date Appointed</label>
+                <label className="block text-xs text-[#64748d] mb-1">Date Appointed</label>
                 <input
                   type="date"
                   value={directorForm.dateAppointed}
                   onChange={(e) =>
                     setDirectorForm((f) => ({ ...f, dateAppointed: e.target.value }))
                   }
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]"
+                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
                 />
               </div>
             </div>
             <button
               onClick={addDirector}
               disabled={!directorForm.name}
-              className="h-8 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-8 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Save Director
             </button>
           </div>
         )}
 
-        <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+        <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-[#F9FAFB]">
-                <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <tr className="bg-[#f6f9fc]">
+                <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                   Name
                 </th>
-                <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+                <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                   Date Appointed
                 </th>
-                <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+                <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                   Status
                 </th>
               </tr>
@@ -565,15 +565,15 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
             <tbody>
               {directors.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-sm text-[#6B7280]">
+                  <td colSpan={3} className="px-4 py-6 text-center text-sm text-[#64748d]">
                     No directors added yet.
                   </td>
                 </tr>
               ) : (
                 directors.map((d: any, i: number) => (
-                  <tr key={i} className="border-t border-[#E5E7EB]">
-                    <td className="px-4 py-3 text-sm text-[#111827]">{d.name}</td>
-                    <td className="px-4 py-3 text-sm text-[#111827]">
+                  <tr key={i} className="border-t border-[#e5edf5]">
+                    <td className="px-4 py-3 text-sm text-[#061b31]">{d.name}</td>
+                    <td className="px-4 py-3 text-sm text-[#061b31]">
                       {d.dateAppointed
                         ? new Date(d.dateAppointed).toLocaleDateString('en-US', {
                             year: 'numeric',
@@ -592,7 +592,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
               )}
             </tbody>
           </table>
-          <div className="flex items-center justify-end px-4 py-2 text-xs text-[#6B7280] border-t border-[#E5E7EB]">
+          <div className="flex items-center justify-end px-4 py-2 text-xs text-[#64748d] border-t border-[#e5edf5]">
             {directors.length > 0
               ? `1 – ${directors.length} of ${directors.length}`
               : '0 of 0'}
@@ -603,10 +603,10 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
       {/* Officers */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-[#111827]">Officers</h2>
+          <h2 className="text-lg font-bold text-[#061b31]">Officers</h2>
           <button
             onClick={() => setShowOfficerForm(!showOfficerForm)}
-            className="px-4 py-2 border border-[#E5E7EB] rounded-lg text-sm font-medium text-[#111827] hover:bg-gray-50"
+            className="px-4 py-2 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#061b31] hover:bg-gray-50"
           >
             {showOfficerForm ? 'Cancel' : 'Add officer'}
           </button>
@@ -614,10 +614,10 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
 
         {/* Add Officer Form */}
         {showOfficerForm && (
-          <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4 mb-4">
+          <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
             <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
-                <label className="block text-xs text-[#6B7280] mb-1">Name</label>
+                <label className="block text-xs text-[#64748d] mb-1">Name</label>
                 <Input
                   value={officerForm.name}
                   onChange={(e) => setOfficerForm((f) => ({ ...f, name: e.target.value }))}
@@ -625,7 +625,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
                 />
               </div>
               <div>
-                <label className="block text-xs text-[#6B7280] mb-1">Role</label>
+                <label className="block text-xs text-[#64748d] mb-1">Role</label>
                 <Input
                   value={officerForm.role}
                   onChange={(e) => setOfficerForm((f) => ({ ...f, role: e.target.value }))}
@@ -633,14 +633,14 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
                 />
               </div>
               <div>
-                <label className="block text-xs text-[#6B7280] mb-1">Date Appointed</label>
+                <label className="block text-xs text-[#64748d] mb-1">Date Appointed</label>
                 <input
                   type="date"
                   value={officerForm.dateAppointed}
                   onChange={(e) =>
                     setOfficerForm((f) => ({ ...f, dateAppointed: e.target.value }))
                   }
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]"
+                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
                 />
               </div>
               <div className="flex items-center gap-2 pt-5">
@@ -653,7 +653,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
                   }
                   className="rounded border-gray-300"
                 />
-                <label htmlFor="authorisedSignatory" className="text-sm text-[#111827]">
+                <label htmlFor="authorisedSignatory" className="text-sm text-[#061b31]">
                   Authorised Signatory
                 </label>
               </div>
@@ -661,30 +661,30 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
             <button
               onClick={addOfficer}
               disabled={!officerForm.name}
-              className="h-8 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-8 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Save Officer
             </button>
           </div>
         )}
 
-        <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+        <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-[#F9FAFB]">
-                <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <tr className="bg-[#f6f9fc]">
+                <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                   Name
                 </th>
-                <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+                <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                   Role
                 </th>
-                <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+                <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                   Date Appointed
                 </th>
-                <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+                <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                   Authorised Signatory
                 </th>
-                <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+                <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                   Status
                 </th>
               </tr>
@@ -692,16 +692,16 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
             <tbody>
               {officers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-[#6B7280]">
+                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-[#64748d]">
                     No officers added yet.
                   </td>
                 </tr>
               ) : (
                 officers.map((o: any, i: number) => (
-                  <tr key={i} className="border-t border-[#E5E7EB]">
-                    <td className="px-4 py-3 text-sm text-[#111827]">{o.name}</td>
-                    <td className="px-4 py-3 text-sm text-[#111827]">{o.role || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-[#111827]">
+                  <tr key={i} className="border-t border-[#e5edf5]">
+                    <td className="px-4 py-3 text-sm text-[#061b31]">{o.name}</td>
+                    <td className="px-4 py-3 text-sm text-[#061b31]">{o.role || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-[#061b31]">
                       {o.dateAppointed
                         ? new Date(o.dateAppointed).toLocaleDateString('en-US', {
                             year: 'numeric',
@@ -710,7 +710,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
                           })
                         : '—'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-[#111827]">
+                    <td className="px-4 py-3 text-sm text-[#061b31]">
                       {o.authorisedSignatory ? 'Yes' : 'No'}
                     </td>
                     <td className="px-4 py-3">
@@ -723,7 +723,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
               )}
             </tbody>
           </table>
-          <div className="flex items-center justify-end px-4 py-2 text-xs text-[#6B7280] border-t border-[#E5E7EB]">
+          <div className="flex items-center justify-end px-4 py-2 text-xs text-[#64748d] border-t border-[#e5edf5]">
             {officers.length > 0
               ? `1 – ${officers.length} of ${officers.length}`
               : '0 of 0'}
@@ -763,10 +763,10 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-[#111827]">Shareholders</h2>
+        <h2 className="text-lg font-bold text-[#061b31]">Shareholders</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-1.5 px-4 py-2 border border-[#E5E7EB] rounded-lg text-sm font-medium text-[#111827] hover:bg-gray-50"
+          className="flex items-center gap-1.5 px-4 py-2 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#061b31] hover:bg-gray-50"
         >
           <Plus size={14} />
           {showForm ? 'Cancel' : 'Add shareholder'}
@@ -775,10 +775,10 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
 
       {/* Add Shareholder Form */}
       {showForm && (
-        <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4 mb-4">
+        <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
           <div className="grid grid-cols-2 gap-4 mb-3">
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Name</label>
+              <label className="block text-xs text-[#64748d] mb-1">Name</label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -786,7 +786,7 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Ownership %</label>
+              <label className="block text-xs text-[#64748d] mb-1">Ownership %</label>
               <Input
                 value={form.ownership}
                 onChange={(e) => setForm((f) => ({ ...f, ownership: e.target.value }))}
@@ -794,7 +794,7 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">TIN</label>
+              <label className="block text-xs text-[#64748d] mb-1">TIN</label>
               <Input
                 value={form.tin}
                 onChange={(e) => setForm((f) => ({ ...f, tin: e.target.value }))}
@@ -802,7 +802,7 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Country</label>
+              <label className="block text-xs text-[#64748d] mb-1">Country</label>
               <Input
                 value={form.country}
                 onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
@@ -810,7 +810,7 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs text-[#6B7280] mb-1">Address</label>
+              <label className="block text-xs text-[#64748d] mb-1">Address</label>
               <Input
                 value={form.address}
                 onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
@@ -821,30 +821,30 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
           <button
             onClick={addShareholder}
             disabled={!form.name}
-            className="h-8 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save Shareholder
           </button>
         </div>
       )}
 
-      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-[#F9FAFB]">
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+            <tr className="bg-[#f6f9fc]">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Name
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Ownership
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 TIN
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Country
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Address
               </th>
               <th className="px-4 py-3"></th>
@@ -853,32 +853,32 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
           <tbody>
             {shareholders.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-sm text-[#6B7280]">
+                <td colSpan={6} className="px-4 py-6 text-center text-sm text-[#64748d]">
                   No shareholders added yet.
                 </td>
               </tr>
             ) : (
               shareholders.map((s: any, i: number) => (
-                <tr key={i} className="border-t border-[#E5E7EB]">
-                  <td className="px-4 py-3 text-sm text-[#111827]">{s.name}</td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">{s.ownership || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">
+                <tr key={i} className="border-t border-[#e5edf5]">
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{s.name}</td>
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{s.ownership || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-[#061b31]">
                     <span className="flex items-center gap-1">
                       {'******'}
                       <Copy
                         size={12}
-                        className="text-[#6C5CE7] cursor-pointer"
+                        className="text-[#533afd] cursor-pointer"
                         onClick={() => {
                           if (s.tin) navigator.clipboard.writeText(s.tin)
                         }}
                       />
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">
+                  <td className="px-4 py-3 text-sm text-[#061b31]">
                     {COUNTRY_LABELS[s.country] || s.country || '—'}
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">{s.address || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-[#6B7280]">
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{s.address || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-[#64748d]">
                     <button
                       onClick={() =>
                         (async () => {
@@ -939,8 +939,8 @@ function CapTableTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-[#111827]">Cap Table</h2>
-        <label className="flex items-center gap-1.5 h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] cursor-pointer">
+        <h2 className="text-lg font-bold text-[#061b31]">Cap Table</h2>
+        <label className="flex items-center gap-1.5 h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] cursor-pointer">
           Upload
           <input type="file" className="hidden" accept=".xls,.xlsx,.csv" onChange={handleUpload} />
         </label>
@@ -949,36 +949,36 @@ function CapTableTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
       {/* Search and pagination */}
       <div className="flex items-center justify-between mb-4">
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d]" />
           <input
             type="text"
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-3 py-2 border border-[#E5E7EB] rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]"
+            className="pl-9 pr-3 py-2 border border-[#e5edf5] rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-[#533afd]"
           />
         </div>
-        <span className="text-xs text-[#6B7280]">
+        <span className="text-xs text-[#64748d]">
           {filteredEntries.length > 0
             ? `1 – ${filteredEntries.length} of ${filteredEntries.length}`
             : '0 of 0'}
         </span>
       </div>
 
-      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-[#F9FAFB]">
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+            <tr className="bg-[#f6f9fc]">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 As On
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Note
               </th>
-              <th className="text-right text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-right text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 File
               </th>
-              <th className="text-right text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-right text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Actions
               </th>
             </tr>
@@ -986,14 +986,14 @@ function CapTableTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
           <tbody>
             {filteredEntries.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-sm text-[#6B7280]">
+                <td colSpan={4} className="px-4 py-6 text-center text-sm text-[#64748d]">
                   No cap table entries yet. Upload your first cap table.
                 </td>
               </tr>
             ) : (
               filteredEntries.map((entry: any, i: number) => (
-                <tr key={i} className="border-t border-[#E5E7EB]">
-                  <td className="px-4 py-3 text-sm text-[#111827]">
+                <tr key={i} className="border-t border-[#e5edf5]">
+                  <td className="px-4 py-3 text-sm text-[#061b31]">
                     {entry.date
                       ? new Date(entry.date).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -1002,20 +1002,20 @@ function CapTableTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
                         })
                       : '—'}
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#111827]">{entry.note || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-[#061b31]">{entry.note || '-'}</td>
                   <td className="px-4 py-3 text-right">
                     <FileSpreadsheet size={20} className="inline text-[#10B981]" />
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        className="text-[#6B7280] hover:text-[#111827]"
+                        className="text-[#64748d] hover:text-[#061b31]"
                         title="Download"
                       >
                         <Download size={16} />
                       </button>
                       <button
-                        className="text-[#6B7280] hover:text-red-500"
+                        className="text-[#64748d] hover:text-red-500"
                         title="Delete"
                         onClick={() =>
                           (async () => {
@@ -1062,10 +1062,10 @@ function SensitiveDataTab({ entity, onUpdate }: { entity: any; onUpdate: (data: 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-[#111827]">Sensitive Data</h2>
+        <h2 className="text-lg font-bold text-[#061b31]">Sensitive Data</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-1.5 h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5]"
+          className="flex items-center gap-1.5 h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4]"
         >
           <Plus size={14} />
           {showForm ? 'Cancel' : 'Add Sensitive Data'}
@@ -1074,10 +1074,10 @@ function SensitiveDataTab({ entity, onUpdate }: { entity: any; onUpdate: (data: 
 
       {/* Add Sensitive Data Form */}
       {showForm && (
-        <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4 mb-4">
+        <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
           <div className="grid grid-cols-2 gap-4 mb-3">
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Name</label>
+              <label className="block text-xs text-[#64748d] mb-1">Name</label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -1085,7 +1085,7 @@ function SensitiveDataTab({ entity, onUpdate }: { entity: any; onUpdate: (data: 
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Description</label>
+              <label className="block text-xs text-[#64748d] mb-1">Description</label>
               <Input
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
@@ -1096,21 +1096,21 @@ function SensitiveDataTab({ entity, onUpdate }: { entity: any; onUpdate: (data: 
           <button
             onClick={addSensitiveData}
             disabled={!form.name}
-            className="h-8 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save
           </button>
         </div>
       )}
 
-      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+      <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-[#F9FAFB]">
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+            <tr className="bg-[#f6f9fc]">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Name
               </th>
-              <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-3">
+              <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
                 Description
               </th>
               <th className="px-4 py-3"></th>
@@ -1119,21 +1119,21 @@ function SensitiveDataTab({ entity, onUpdate }: { entity: any; onUpdate: (data: 
           <tbody>
             {sensitiveData.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-sm text-[#6B7280]">
+                <td colSpan={3} className="px-4 py-6 text-center text-sm text-[#64748d]">
                   No sensitive data added yet.
                 </td>
               </tr>
             ) : (
               sensitiveData.map((item: any, i: number) => (
-                <tr key={i} className="border-t border-[#E5E7EB]">
-                  <td className="px-4 py-3 text-sm text-[#111827]">
+                <tr key={i} className="border-t border-[#e5edf5]">
+                  <td className="px-4 py-3 text-sm text-[#061b31]">
                     <span className="flex items-center gap-2">
-                      <Lock size={14} className="text-[#6B7280]" />
+                      <Lock size={14} className="text-[#64748d]" />
                       {item.name}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#6B7280]">{item.description || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-[#6B7280]">
+                  <td className="px-4 py-3 text-sm text-[#64748d]">{item.description || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-[#64748d]">
                     <button
                       onClick={() =>
                         (async () => {

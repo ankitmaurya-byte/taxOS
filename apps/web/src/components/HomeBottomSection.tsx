@@ -51,42 +51,42 @@ function ReferralCard() {
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#F5F3FF] p-6 shadow-sm">
+    <div className="relative overflow-hidden rounded-lg bg-[#f6f9fc] p-6 shadow-sm">
       {/* Content */}
       <div className="relative z-10">
-        <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#6C5CE7] shadow-sm">
+        <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-[#533afd] shadow-sm">
           <Gift size={18} />
         </div>
-        <h3 className="text-lg font-semibold text-[#111827]">
+        <h3 className="text-lg font-semibold text-[#061b31]">
           Invite a founder, earn $100 each
         </h3>
-        <p className="mt-1 text-sm text-[#6B7280]">
+        <p className="mt-1 text-sm text-[#64748d]">
           Refer someone to Inkle. When they join, you both receive $100 in Inkle
           credits.
         </p>
 
         {/* Referral link box */}
         <div className="mt-4 flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5">
-          <span className="min-w-0 truncate text-sm text-[#374151]">
+          <span className="min-w-0 truncate text-sm text-[#273951]">
             {referralLink}
           </span>
           <button
             onClick={handleCopy}
-            className="flex-shrink-0 rounded-md p-1.5 text-[#9CA3AF] transition-colors hover:bg-[#F3F0FF] hover:text-[#6C5CE7]"
+            className="flex-shrink-0 rounded-md p-1.5 text-[#64748d] transition-colors hover:bg-[#f6f9fc] hover:text-[#533afd]"
             aria-label="Copy referral link"
           >
             <Copy size={16} />
           </button>
         </div>
         {copied && (
-          <span className="mt-2 inline-block rounded-full bg-[#EDE9FD] px-2.5 py-1 text-xs font-medium text-[#6C5CE7]">
+          <span className="mt-2 inline-block rounded-full bg-[#EDE9FD] px-2.5 py-1 text-xs font-medium text-[#533afd]">
             Copied to clipboard!
           </span>
         )}
 
         {/* Share icons */}
         <div className="mt-4">
-          <p className="text-sm text-[#6B7280]">Share via</p>
+          <p className="text-sm text-[#64748d]">Share via</p>
           <div className="mt-2 flex items-center gap-3">
             {shareLinks.map((link) => (
               <a
@@ -94,7 +94,7 @@ function ReferralCard() {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#6B7280] transition-colors hover:bg-white hover:text-[#6C5CE7] hover:shadow-sm"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#64748d] transition-colors hover:bg-white hover:text-[#533afd] hover:shadow-sm"
                 aria-label={`Share via ${link.label}`}
                 title={link.label}
               >
@@ -107,7 +107,7 @@ function ReferralCard() {
 
       {/* Background decoration */}
       <div className="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-[#E9E4FF] opacity-50" />
-      <div className="absolute -right-2 -bottom-2 h-20 w-20 rounded-2xl bg-[#DDD6FE] opacity-30 rotate-12" />
+      <div className="absolute -right-2 -bottom-2 h-20 w-20 rounded-lg bg-[#DDD6FE] opacity-30 rotate-12" />
     </div>
   );
 }
@@ -142,7 +142,7 @@ function PromoCard() {
       subtitle:
         "Get access to 50+ perks from top brands to maximize your company benefits",
       cta: "View perks",
-      bg: "bg-[#F3F4F6]",
+      bg: "bg-[#f6f9fc]",
     },
   ];
 
@@ -160,7 +160,7 @@ function PromoCard() {
   }, []);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl shadow-sm h-full">
+    <div className="relative overflow-hidden rounded-lg shadow-sm h-full">
       {/* TRACK */}
       <div
         className="flex h-full transition-transform duration-500 ease-in-out"
@@ -174,12 +174,12 @@ function PromoCard() {
             className={`min-w-full h-full p-6 ${slide.bg} flex flex-col justify-between relative`}
           >
             <div>
-              <h3 className="text-lg font-semibold text-[#111827]">
+              <h3 className="text-lg font-semibold text-[#061b31]">
                 {slide.title}
               </h3>
 
               {slide.points ? (
-                <div className="mt-3 space-y-1 text-sm text-[#6B7280]">
+                <div className="mt-3 space-y-1 text-sm text-[#64748d]">
                   {slide.points.map((p, idx) => (
                     <div key={idx} className="flex gap-2">
                       ✔ <span>{p}</span>
@@ -187,7 +187,7 @@ function PromoCard() {
                   ))}
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-[#6B7280]">
+                <p className="mt-2 text-sm text-[#64748d]">
                   {slide.subtitle}
                 </p>
               )}
@@ -210,7 +210,7 @@ function PromoCard() {
             key={i}
             onClick={() => setActiveSlide(i)}
             className={`h-2 rounded-full ${
-              i === activeSlide % 3 ? "w-6 bg-[#374151]" : "w-2 bg-[#D1D5DB]"
+              i === activeSlide % 3 ? "w-6 bg-[#273951]" : "w-2 bg-[#e5edf5]"
             }`}
           />
         ))}

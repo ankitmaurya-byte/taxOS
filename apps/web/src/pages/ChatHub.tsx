@@ -35,18 +35,18 @@ export function ChatHubPage() {
 
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col gap-0">
-      <h1 className="text-xl font-bold text-[#111827] mb-4">Chat</h1>
+      <h1 className="text-xl font-bold text-[#061b31] mb-4">Chat</h1>
 
       {/* Tab bar */}
-      <div className="flex gap-1 mb-4 bg-[#F3F4F6] p-1 rounded-xl w-fit">
+      <div className="flex gap-1 mb-4 bg-[#f6f9fc] p-1 rounded-md w-fit">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               tab === t.id
-                ? 'bg-white text-[#6C5CE7] shadow-sm'
-                : 'text-[#6B7280] hover:text-[#374151]'
+                ? 'bg-white text-[#533afd] shadow-sm'
+                : 'text-[#64748d] hover:text-[#273951]'
             }`}
           >
             {t.icon}

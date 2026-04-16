@@ -71,15 +71,15 @@ export function CreateFilingModal({ open, onClose }: CreateFilingModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      <div className="relative w-full max-w-xl rounded-xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
+      <div className="relative w-full max-w-xl rounded-md bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[#e5edf5] px-6 py-4">
           <div>
-            <h2 className="text-lg font-semibold text-[#111827]">Create filing</h2>
-            <p className="mt-0.5 text-sm text-[#6B7280]">Start a new filing from an existing entity.</p>
+            <h2 className="text-lg font-semibold text-[#061b31]">Create filing</h2>
+            <p className="mt-0.5 text-sm text-[#64748d]">Start a new filing from an existing entity.</p>
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9CA3AF] hover:bg-[#F3F4F6] hover:text-[#374151]"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#64748d] hover:bg-[#f6f9fc] hover:text-[#273951]"
           >
             <X size={18} />
           </button>
@@ -87,9 +87,9 @@ export function CreateFilingModal({ open, onClose }: CreateFilingModalProps) {
 
         <div className="space-y-4 px-6 py-5">
           <div>
-            <label className="mb-1 block text-xs text-[#6B7280]">Entity</label>
+            <label className="mb-1 block text-xs text-[#64748d]">Entity</label>
             <select
-              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]"
+              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
               value={form.entityId}
               onChange={(e) => setForm((current) => ({ ...current, entityId: e.target.value }))}
               disabled={entities.length === 0}
@@ -111,7 +111,7 @@ export function CreateFilingModal({ open, onClose }: CreateFilingModalProps) {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs text-[#6B7280]">Form type</label>
+              <label className="mb-1 block text-xs text-[#64748d]">Form type</label>
               <Input
                 value={form.formType}
                 onChange={(e) => setForm((current) => ({ ...current, formType: e.target.value }))}
@@ -119,7 +119,7 @@ export function CreateFilingModal({ open, onClose }: CreateFilingModalProps) {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[#6B7280]">Tax year</label>
+              <label className="mb-1 block text-xs text-[#64748d]">Tax year</label>
               <Input
                 type="number"
                 min="2000"
@@ -132,7 +132,7 @@ export function CreateFilingModal({ open, onClose }: CreateFilingModalProps) {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-[#6B7280]">Form name</label>
+            <label className="mb-1 block text-xs text-[#64748d]">Form name</label>
             <Input
               value={form.formName}
               onChange={(e) => setForm((current) => ({ ...current, formName: e.target.value }))}
@@ -147,7 +147,7 @@ export function CreateFilingModal({ open, onClose }: CreateFilingModalProps) {
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-[#E5E7EB] px-6 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-[#e5edf5] px-6 py-4">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>

@@ -125,30 +125,30 @@ export function ChatRoom({ channel, orgId, title }: ChatRoomProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-md border border-[#e5edf5] overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
-        <h2 className="text-sm font-semibold text-[#111827]">{title}</h2>
-        <p className="text-xs text-[#6B7280]">{messages.length} messages</p>
+      <div className="px-5 py-3 border-b border-[#e5edf5] bg-[#f6f9fc]">
+        <h2 className="text-sm font-semibold text-[#061b31]">{title}</h2>
+        <p className="text-xs text-[#64748d]">{messages.length} messages</p>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
         {loading ? (
-          <p className="text-center text-xs text-[#9CA3AF] pt-8">Loading messages…</p>
+          <p className="text-center text-xs text-[#64748d] pt-8">Loading messages…</p>
         ) : messages.length === 0 ? (
-          <p className="text-center text-xs text-[#9CA3AF] pt-8">No messages yet. Start the conversation!</p>
+          <p className="text-center text-xs text-[#64748d] pt-8">No messages yet. Start the conversation!</p>
         ) : (
           messages.map(msg => {
             const isMe = msg.sender.name === user?.name
             return (
               <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${isMe ? 'bg-[#6C5CE7] text-white' : 'bg-[#F3F4F6] text-[#111827]'}`}>
+                <div className={`max-w-[75%] rounded-lg px-4 py-2 text-sm ${isMe ? 'bg-[#533afd] text-white' : 'bg-[#f6f9fc] text-[#061b31]'}`}>
                   {!isMe && (
                     <p className="text-[10px] font-semibold mb-1 opacity-70">{msg.sender.name}</p>
                   )}
                   <p>{msg.message}</p>
-                  <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70' : 'text-[#9CA3AF]'} text-right`}>
+                  <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70' : 'text-[#64748d]'} text-right`}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -160,19 +160,19 @@ export function ChatRoom({ channel, orgId, title }: ChatRoomProps) {
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 border-t border-[#E5E7EB] flex items-center gap-2">
+      <div className="px-4 py-3 border-t border-[#e5edf5] flex items-center gap-2">
         <input
           type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
           placeholder="Type a message…"
-          className="flex-1 text-sm border border-[#E5E7EB] rounded-lg px-3 py-2 outline-none focus:border-[#6C5CE7] transition-colors"
+          className="flex-1 text-sm border border-[#e5edf5] rounded-lg px-3 py-2 outline-none focus:border-[#533afd] transition-colors"
         />
         <button
           onClick={handleSend}
           disabled={!input.trim() || sending}
-          className="h-9 w-9 flex items-center justify-center rounded-lg bg-[#6C5CE7] text-white hover:bg-[#5B4BD5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+          className="h-9 w-9 flex items-center justify-center rounded-lg bg-[#533afd] text-white hover:bg-[#4434d4] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
         >
           <Send size={16} />
         </button>

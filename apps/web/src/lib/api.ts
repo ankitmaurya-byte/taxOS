@@ -343,6 +343,9 @@ const uploadDocument = async (file: File, filingId?: string) => {
 const markDocumentReviewed = (id: string) =>
   request<{ message: string }>(`/documents/${id}/review`, { method: 'PUT' }, { successMessage: 'Document marked as reviewed.' })
 
+const deleteDocumentApi = (id: string) =>
+  request<{ message: string }>(`/documents/${id}`, { method: 'DELETE' }, { successMessage: 'Document deleted.' })
+
 // ─── Vaults ──────────────────────────────────────────────────────────────────
 
 const getVaults = () =>
@@ -625,6 +628,7 @@ export const api = {
   getDocument,
   uploadDocument,
   markDocumentReviewed,
+  deleteDocumentApi,
 
   // Vaults
   getVaults,
@@ -754,6 +758,7 @@ export const api = {
     get: getDocument,
     upload: uploadDocument,
     markReviewed: markDocumentReviewed,
+    delete: deleteDocumentApi,
   },
   vaults: {
     getAll: getVaults,

@@ -24,12 +24,12 @@ export function UpgradePlanModal({ onClose }: UpgradePlanModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/35" onClick={onClose} />
 
-      <div className="relative w-full max-w-[850px] overflow-hidden rounded-[18px] border border-[#E5E7EB] bg-white shadow-[0_24px_80px_rgba(17,24,39,0.16)]">
-        <div className="flex items-center justify-between border-b border-[#E5E7EB] px-10 py-4.5">
+      <div className="relative w-full max-w-[850px] overflow-hidden rounded-[18px] border border-[#e5edf5] bg-white shadow-[0_24px_80px_rgba(17,24,39,0.16)]">
+        <div className="flex items-center justify-between border-b border-[#e5edf5] px-10 py-4.5">
           <h2 className="text-[20px] font-semibold text-[#211B4E]">Upgrade Your Plan</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[#8C88A8] transition-colors hover:bg-[#F5F3FF] hover:text-[#5B4BD5]"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#8C88A8] transition-colors hover:bg-[#f6f9fc] hover:text-[#4434d4]"
             aria-label="Close upgrade modal"
           >
             <X size={18} />
@@ -102,7 +102,7 @@ function PlanCard({
         <Button
           variant={isFree ? 'outline' : 'default'}
           disabled={disabled}
-          className={`mt-4 h-10 w-full rounded-[10px] text-[13px] ${isFree ? 'border-[#E5E7EB] text-[#D1D5DB] hover:bg-white' : 'border border-[#6C5CE7] bg-white text-[#5B4BD5] hover:bg-[#F7F4FF]'}`}
+          className={`mt-4 h-10 w-full rounded-[10px] text-[13px] ${isFree ? 'border-[#e5edf5] text-[#e5edf5] hover:bg-white' : 'border border-[#533afd] bg-white text-[#4434d4] hover:bg-[#F7F4FF]'}`}
         >
           {cta}
         </Button>

@@ -33,20 +33,19 @@ export function Layout() {
   }, [handleKeyDown])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F9FAFB]">
+    <div className="flex h-screen overflow-hidden bg-white">
       <Sidebar collapsed={sidebarCollapsed} />
 
       <div className="flex-1 flex flex-col min-w-0 relative">
         {/* Top bar row */}
-        <div className="flex items-center justify-between h-14 px-8 bg-white border-b border-[#E5E7EB] relative">
+        <div className="flex items-center justify-between h-14 px-8 bg-white border-b border-border relative">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="flex items-center justify-center w-7 h-7 rounded border border-[#E5E7EB] bg-white hover:bg-[#F3F4F6] text-[#9CA3AF] hover:text-[#374151] transition-colors"
+            className="flex items-center justify-center w-7 h-7 rounded-sm border border-border bg-white hover:bg-[#f6f9fc] text-body hover:text-heading transition-colors"
           >
             <PanelLeft size={14} />
           </button>
           <div className="relative">
-            {/* TopBar — passes callbacks to open Get Help and Inkle AI panels */}
             <TopBar
               onUpgradeClick={() => {
                 setShowUpgradeModal(true)
@@ -70,14 +69,13 @@ export function Layout() {
                 setShowInkleAI(false)
               }}
             />
-            {/* Get Help popup — positioned relative to TopBar */}
             {showGetHelp && <GetHelpPanel onClose={() => setShowGetHelp(false)} />}
             {showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} />}
           </div>
         </div>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-8 bg-[#f6f9fc]">
           <Outlet />
         </main>
       </div>

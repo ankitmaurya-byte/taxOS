@@ -73,17 +73,17 @@ export function AdminOrganizationDetails() {
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <Link to="/admin/organizations" className="text-sm text-[#6C5CE7] hover:underline mb-2 inline-block">
+        <Link to="/admin/organizations" className="text-sm text-[#533afd] hover:underline mb-2 inline-block">
           &larr; Back to Organizations
         </Link>
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-[#111827]">{org.name}</h1>
-            <p className="mt-1 text-sm text-[#6B7280]">Legal: {org.legalName || 'N/A'} &bull; Plan: {org.plan}</p>
+            <h1 className="text-3xl font-bold text-[#061b31]">{org.name}</h1>
+            <p className="mt-1 text-sm text-[#64748d]">Legal: {org.legalName || 'N/A'} &bull; Plan: {org.plan}</p>
           </div>
           <button
             onClick={startEditOrg}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-[#E5E7EB] rounded-lg bg-white hover:bg-gray-50 text-sm font-medium"
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-[#e5edf5] rounded-lg bg-white hover:bg-gray-50 text-sm font-medium"
           >
             <Pencil size={13} /> Edit Org
           </button>
@@ -92,11 +92,11 @@ export function AdminOrganizationDetails() {
 
       {/* Org edit form */}
       {isEditingOrg && (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 space-y-3 shadow-sm">
-          <h2 className="text-sm font-semibold text-[#111827]">Edit Organization</h2>
+        <div className="bg-white border border-[#e5edf5] rounded-md p-5 space-y-3 shadow-sm">
+          <h2 className="text-sm font-semibold text-[#061b31]">Edit Organization</h2>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Display Name</label>
+              <label className="block text-xs text-[#64748d] mb-1">Display Name</label>
               <input
                 className="border rounded-lg px-3 py-1.5 text-sm w-full"
                 value={orgForm.name}
@@ -104,7 +104,7 @@ export function AdminOrganizationDetails() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Legal Name</label>
+              <label className="block text-xs text-[#64748d] mb-1">Legal Name</label>
               <input
                 className="border rounded-lg px-3 py-1.5 text-sm w-full"
                 value={orgForm.legalName}
@@ -112,7 +112,7 @@ export function AdminOrganizationDetails() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Plan</label>
+              <label className="block text-xs text-[#64748d] mb-1">Plan</label>
               <select
                 className="border rounded-lg px-3 py-1.5 text-sm w-full"
                 value={orgForm.plan}
@@ -129,7 +129,7 @@ export function AdminOrganizationDetails() {
             <button
               onClick={() => updateOrgMutation.mutate(orgForm)}
               disabled={updateOrgMutation.isPending}
-              className="px-3 py-1.5 bg-[#6C5CE7] text-white rounded-lg text-xs hover:bg-[#5B4BD5] disabled:opacity-50"
+              className="px-3 py-1.5 bg-[#533afd] text-white rounded-lg text-xs hover:bg-[#4434d4] disabled:opacity-50"
             >
               Save Changes
             </button>
@@ -139,25 +139,25 @@ export function AdminOrganizationDetails() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Users */}
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-[#111827]">Associated Users</h2>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4 text-[#061b31]">Associated Users</h2>
           <div className="space-y-3">
             {org.users?.map((u: any) => (
-              <div key={u.id} className="flex justify-between items-center p-3 bg-[#F9FAFB] rounded-lg">
+              <div key={u.id} className="flex justify-between items-center p-3 bg-[#f6f9fc] rounded-lg">
                 <div>
-                  <Link to={`/admin/users/${u.id}`} className="font-medium text-[#6C5CE7] hover:underline">{u.name}</Link>
-                  <p className="text-xs text-[#6B7280]">{u.email}</p>
+                  <Link to={`/admin/users/${u.id}`} className="font-medium text-[#533afd] hover:underline">{u.name}</Link>
+                  <p className="text-xs text-[#64748d]">{u.email}</p>
                 </div>
                 <span className="px-2 py-1 text-xs font-medium bg-[#E0E7FF] text-[#4338CA] rounded">{u.role}</span>
               </div>
             ))}
-            {org.users?.length === 0 && <p className="text-sm text-[#6B7280]">No users found.</p>}
+            {org.users?.length === 0 && <p className="text-sm text-[#64748d]">No users found.</p>}
           </div>
         </div>
 
         {/* Entities */}
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-[#111827]">Entities</h2>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4 text-[#061b31]">Entities</h2>
           <div className="space-y-3">
             {org.entities?.map((e: any) => (
               <div key={e.id} className="p-3 bg-[#F0FDF4] rounded-lg border border-[#BBF7D0]">
@@ -215,7 +215,7 @@ export function AdminOrganizationDetails() {
                     <div className="flex gap-1">
                       <button
                         onClick={() => startEditEntity(e)}
-                        className="p-1 text-[#6C5CE7] hover:bg-[#EEF2FF] rounded"
+                        className="p-1 text-[#533afd] hover:bg-[#EEF2FF] rounded"
                         title="Edit entity"
                       >
                         <Pencil size={12} />
@@ -234,20 +234,20 @@ export function AdminOrganizationDetails() {
                 )}
               </div>
             ))}
-            {org.entities?.length === 0 && <p className="text-xs text-[#6B7280]">No entities.</p>}
+            {org.entities?.length === 0 && <p className="text-xs text-[#64748d]">No entities.</p>}
           </div>
         </div>
       </div>
 
       {/* Filings */}
-      <div className="rounded-xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold mb-4 text-[#111827]">Filings</h2>
+      <div className="rounded-md border border-[#e5edf5] bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold mb-4 text-[#061b31]">Filings</h2>
         {org.filings?.length === 0
-          ? <p className="text-sm text-[#6B7280]">No filings.</p>
+          ? <p className="text-sm text-[#64748d]">No filings.</p>
           : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-[#374151]">
-                <thead className="text-xs uppercase text-[#6B7280] border-b border-[#E5E7EB]">
+              <table className="w-full text-sm text-left text-[#273951]">
+                <thead className="text-xs uppercase text-[#64748d] border-b border-[#e5edf5]">
                   <tr>
                     <th className="py-2 pr-4">Form</th>
                     <th className="py-2 pr-4">Status</th>
@@ -255,7 +255,7 @@ export function AdminOrganizationDetails() {
                     <th className="py-2 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F3F4F6]">
+                <tbody className="divide-y divide-[#f6f9fc]">
                   {org.filings?.map((f: any) => (
                     <tr key={f.id}>
                       <td className="py-2 pr-4 font-medium text-[#92400E]">{f.formName} <span className="text-xs text-[#B45309]">({f.formType})</span></td>
@@ -286,12 +286,12 @@ export function AdminOrganizationDetails() {
                           </span>
                         )}
                       </td>
-                      <td className="py-2 pr-4 text-[#6B7280]">{f.taxYear || '—'}</td>
+                      <td className="py-2 pr-4 text-[#64748d]">{f.taxYear || '—'}</td>
                       <td className="py-2 text-right">
                         {editingFilingId !== f.id && (
                           <button
                             onClick={() => { setEditingFilingId(f.id); setFilingStatus(f.status) }}
-                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#6C5CE7] bg-[#EEF2FF] hover:bg-[#E0E7FF] rounded ml-auto"
+                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#533afd] bg-[#EEF2FF] hover:bg-[#E0E7FF] rounded ml-auto"
                           >
                             <Pencil size={11} /> Edit Status
                           </button>

@@ -396,6 +396,7 @@ interface AuthState {
   escalateApproval: (id: string) => Promise<void>
   uploadDocument: (file: File, filingId?: string) => Promise<void>
   markDocumentReviewed: (id: string) => Promise<void>
+  deleteDocument: (id: string) => Promise<void>
   createCpa: (data: { email: string }) => Promise<void>
   assignCpaOrganization: (id: string, organizationId: string) => Promise<void>
   createTemplate: (data: { name: string; scope: string; permissions: Record<string, boolean> }) => Promise<void>
@@ -792,6 +793,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   markDocumentReviewed: async (id) => {
     await api.documents.markReviewed(id)
+    await get().fetchDocuments()
+  },
+
+  deleteDocument: async (id) => {
+    await api.documents.delete(id)
     await get().fetchDocuments()
   },
 

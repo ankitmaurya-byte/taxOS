@@ -29,29 +29,29 @@ const FAQ_ITEMS = [
 export function IncorporationPage() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#111827] mb-6">Incorporation</h1>
+      <h1 className="text-2xl font-bold text-[#061b31] mb-6">Incorporation</h1>
 
       {/* Hero Card */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-8 mb-6 flex items-center gap-8">
+      <div className="bg-white border border-[#e5edf5] rounded-md p-8 mb-6 flex items-center gap-8">
         <div className="flex-1">
-          <h2 className="text-xl font-bold text-[#111827] mb-2">Assisted Incorporation</h2>
-          <p className="text-sm font-semibold text-[#6C5CE7] mb-3">$999/per incorporation</p>
-          <p className="text-sm text-[#6B7280] leading-relaxed mb-5 max-w-lg">
+          <h2 className="text-xl font-bold text-[#061b31] mb-2">Assisted Incorporation</h2>
+          <p className="text-sm font-semibold text-[#533afd] mb-3">$999/per incorporation</p>
+          <p className="text-sm text-[#64748d] leading-relaxed mb-5 max-w-lg">
             Inkle helps startup founders, both in the US and abroad (including specialized support
             for India), to compliantly establish a US Delaware C-Corp through Stripe Atlas or
             Clerky, with options for parent or subsidiary entities.
           </p>
           <div className="flex items-center gap-4">
-            <button className="h-10 px-6 bg-[#6C5CE7] text-white rounded-lg text-sm font-semibold hover:bg-[#5B4BD5] transition-colors">
+            <button className="h-10 px-6 bg-[#533afd] text-white rounded-lg text-sm font-semibold hover:bg-[#4434d4] transition-colors">
               Get Started
             </button>
-            <button className="text-sm font-medium text-[#6C5CE7] hover:underline">
+            <button className="text-sm font-medium text-[#533afd] hover:underline">
               Unsure of your structure? Book a call
             </button>
           </div>
         </div>
         {/* Decorative illustration placeholder */}
-        <div className="w-64 h-40 bg-gradient-to-br from-[#F3F0FF] to-[#EDE9FD] rounded-xl flex items-center justify-center flex-shrink-0">
+        <div className="w-64 h-40 bg-gradient-to-br from-[#f6f9fc] to-[#EDE9FD] rounded-md flex items-center justify-center flex-shrink-0">
           <svg
             width="80"
             height="80"
@@ -82,11 +82,11 @@ export function IncorporationPage() {
       </div>
 
       {/* FAQ Section */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-8">
+      <div className="bg-white border border-[#e5edf5] rounded-md p-8">
         <div className="flex gap-8">
           <div className="w-56 flex-shrink-0">
-            <h2 className="text-lg font-bold text-[#111827] mb-3">Frequently Asked Questions</h2>
-            <button className="px-4 py-2 border border-[#E5E7EB] rounded-lg text-sm font-medium text-[#111827] hover:bg-gray-50">
+            <h2 className="text-lg font-bold text-[#061b31] mb-3">Frequently Asked Questions</h2>
+            <button className="px-4 py-2 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#061b31] hover:bg-gray-50">
               Know more
             </button>
           </div>
@@ -106,19 +106,19 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="border-b border-[#E5E7EB] last:border-b-0">
+    <div className="border-b border-[#e5edf5] last:border-b-0">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-3 py-4 text-left"
       >
         <ChevronRight
           size={16}
-          className={`text-[#9CA3AF] transition-transform flex-shrink-0 ${open ? 'rotate-90' : ''}`}
+          className={`text-[#64748d] transition-transform flex-shrink-0 ${open ? 'rotate-90' : ''}`}
         />
-        <span className="text-sm font-medium text-[#111827]">{question}</span>
+        <span className="text-sm font-medium text-[#061b31]">{question}</span>
       </button>
       {open && (
-        <div className="pl-7 pb-4 text-sm text-[#6B7280] leading-relaxed">{answer}</div>
+        <div className="pl-7 pb-4 text-sm text-[#64748d] leading-relaxed">{answer}</div>
       )}
     </div>
   )

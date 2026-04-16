@@ -41,7 +41,7 @@ export function ActionCentrePage() {
 
   return (
     <div className="relative min-h-[calc(100vh-7rem)]">
-      <h1 className="text-xl font-bold text-[#111827] mb-5">Action Centre</h1>
+      <h1 className="text-xl font-bold text-[#061b31] mb-5">Action Centre</h1>
 
       {/* Content */}
       {items.length === 0 ? (
@@ -54,7 +54,7 @@ export function ActionCentrePage() {
                   {[...Array(3)].map((_, j) => (
                     <div
                       key={j}
-                      className="h-2.5 rounded-full bg-[#E5E7EB]"
+                      className="h-2.5 rounded-full bg-[#e5edf5]"
                       style={{ width: Math.max(20, width / 3 - j * 10) }}
                     />
                   ))}
@@ -63,7 +63,7 @@ export function ActionCentrePage() {
               </div>
             ))}
           </div>
-          <p className="text-sm text-[#6B7280]">Hooray! You're all done here! 🥳</p>
+          <p className="text-sm text-[#64748d]">Hooray! You're all done here! 🥳</p>
         </div>
       ) : (
         /* Action items list */
@@ -71,7 +71,7 @@ export function ActionCentrePage() {
           {items.map((item) => (
             <div
               key={item.id}
-              className="bg-white border border-[#E5E7EB] rounded-xl px-5 py-4 flex items-center justify-between hover:border-[#D1D5DB] cursor-pointer transition-colors"
+              className="bg-white border border-[#e5edf5] rounded-md px-5 py-4 flex items-center justify-between hover:border-[#e5edf5] cursor-pointer transition-colors"
               onClick={() =>
                 navigate(item.type === 'approval' && item.filingId ? `/filings/${item.filingId}` : item.type === 'approval' ? '/approvals' : '/filings')
               }
@@ -79,13 +79,13 @@ export function ActionCentrePage() {
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 <span className="w-2 h-2 rounded-full mt-1.5 bg-[#EF4444] flex-shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-[#111827] truncate">{item.title}</p>
-                  <p className="text-xs text-[#6B7280] mt-0.5 truncate">{item.description}</p>
+                  <p className="text-sm font-medium text-[#061b31] truncate">{item.title}</p>
+                  <p className="text-xs text-[#64748d] mt-0.5 truncate">{item.description}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                <span className="text-xs text-[#9CA3AF]">{formatDate(item.date)}</span>
-                <span className="h-8 px-3 text-[13px] font-medium text-[#6C5CE7] border border-[#6C5CE7] rounded-lg hover:bg-[#EDE9FD] transition-colors inline-flex items-center">
+                <span className="text-xs text-[#64748d]">{formatDate(item.date)}</span>
+                <span className="h-8 px-3 text-[13px] font-medium text-[#533afd] border border-[#533afd] rounded-lg hover:bg-[#EDE9FD] transition-colors inline-flex items-center">
                   {item.type === 'approval' ? 'Review' : 'View'}
                 </span>
               </div>
@@ -98,7 +98,7 @@ export function ActionCentrePage() {
       {user?.role !== 'team_member' && (
         <button
           onClick={() => navigate('/chat')}
-          className="fixed bottom-8 right-8 w-14 h-14 bg-[#6C5CE7] text-white rounded-full shadow-lg hover:bg-[#5B4BD5] transition-colors flex items-center justify-center"
+          className="fixed bottom-8 right-8 w-14 h-14 bg-[#533afd] text-white rounded-full shadow-lg hover:bg-[#4434d4] transition-colors flex items-center justify-center"
         >
           <MessageCircle size={24} />
         </button>

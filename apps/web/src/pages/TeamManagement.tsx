@@ -25,11 +25,11 @@ function ConfirmDiscard({ label, onDiscard, onCancel }: { label: string; onDisca
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-xs rounded-xl bg-white p-5 shadow-xl">
-        <p className="text-sm font-medium text-[#111827]">Discard {label}?</p>
-        <p className="mt-1 text-xs text-[#6B7280]">Your unsaved changes will be lost.</p>
+      <div className="w-full max-w-xs rounded-md bg-white p-5 shadow-xl">
+        <p className="text-sm font-medium text-[#061b31]">Discard {label}?</p>
+        <p className="mt-1 text-xs text-[#64748d]">Your unsaved changes will be lost.</p>
         <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onCancel} className="h-8 px-3 rounded-lg text-xs font-medium text-[#374151] hover:bg-[#F3F4F6] transition-colors">Cancel</button>
+          <button onClick={onCancel} className="h-8 px-3 rounded-lg text-xs font-medium text-[#273951] hover:bg-[#f6f9fc] transition-colors">Cancel</button>
           <button onClick={onDiscard} className="h-8 px-3 rounded-lg bg-[#B91C1C] text-xs font-medium text-white hover:bg-[#991B1B] transition-colors">Discard</button>
         </div>
       </div>
@@ -131,22 +131,22 @@ export function TeamManagementPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#111827]">Team Management</h1>
-          <p className="mt-1 text-sm text-[#6B7280]">
+          <h1 className="text-2xl font-semibold text-[#061b31]">Team Management</h1>
+          <p className="mt-1 text-sm text-[#64748d]">
             Invite members, manage permissions, and configure role templates.
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setShowTemplateModal(true)}
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F3F4F6] transition-colors"
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-[#e5edf5] px-4 text-sm font-medium text-[#273951] hover:bg-[#f6f9fc] transition-colors"
           >
             <Shield size={15} />
             Templates
           </button>
           <button
             onClick={() => setShowInviteModal(true)}
-            className="flex h-9 items-center gap-1.5 rounded-lg bg-[#6C5CE7] px-4 text-sm font-medium text-white hover:bg-[#5B4BD5] transition-colors"
+            className="flex h-9 items-center gap-1.5 rounded-lg bg-[#533afd] px-4 text-sm font-medium text-white hover:bg-[#4434d4] transition-colors"
           >
             <UserPlus size={15} />
             Invite Member
@@ -156,20 +156,20 @@ export function TeamManagementPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
-          <p className="text-xs text-[#6B7280]">Total members</p>
-          <p className="mt-1 text-2xl font-semibold text-[#111827]">{members.length - 1}</p>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-4">
+          <p className="text-xs text-[#64748d]">Total members</p>
+          <p className="mt-1 text-2xl font-semibold text-[#061b31]">{members.length - 1}</p>
         </div>
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
-          <p className="text-xs text-[#6B7280]">Active</p>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-4">
+          <p className="text-xs text-[#64748d]">Active</p>
           <p className="mt-1 text-2xl font-semibold text-[#15803D]">{activeCount}</p>
         </div>
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
-          <p className="text-xs text-[#6B7280]">Team members</p>
-          <p className="mt-1 text-2xl font-semibold text-[#111827]">{teamMembers.length}</p>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-4">
+          <p className="text-xs text-[#64748d]">Team members</p>
+          <p className="mt-1 text-2xl font-semibold text-[#061b31]">{teamMembers.length}</p>
         </div>
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
-          <p className="text-xs text-[#6B7280]">Pending invites</p>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-4">
+          <p className="text-xs text-[#64748d]">Pending invites</p>
           <p className="mt-1 text-2xl font-semibold text-[#F59E0B]">{pendingCount}</p>
         </div>
       </div>
@@ -177,16 +177,16 @@ export function TeamManagementPage() {
       {/* Search + Filter */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email..."
-            className="h-9 w-full rounded-lg border border-[#E5E7EB] bg-white pl-9 pr-8 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+            className="h-9 w-full rounded-lg border border-[#e5edf5] bg-white pl-9 pr-8 text-sm text-[#061b31] placeholder:text-[#64748d] outline-none focus:ring-2 focus:ring-[#533afd] focus:border-transparent"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#374151]">
+            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#64748d] hover:text-[#273951]">
               <X size={14} />
             </button>
           )}
@@ -198,8 +198,8 @@ export function TeamManagementPage() {
               onClick={() => setRoleFilter(role)}
               className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
                 roleFilter === role
-                  ? 'bg-[#111827] text-white'
-                  : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F9FAFB]'
+                  ? 'bg-[#061b31] text-white'
+                  : 'bg-white text-[#273951] border border-[#e5edf5] hover:bg-[#f6f9fc]'
               }`}
             >
               {role === 'all' ? 'All' : role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -210,11 +210,11 @@ export function TeamManagementPage() {
 
       {/* Members list */}
       {membersLoading ? (
-        <p className="text-sm text-[#6B7280]">Loading team members...</p>
+        <p className="text-sm text-[#64748d]">Loading team members...</p>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center rounded-xl border border-[#E5E7EB] bg-white">
-          <UserPlus size={32} className="text-[#D1D5DB] mb-3" />
-          <p className="text-sm text-[#6B7280]">{search || roleFilter !== 'all' ? 'No members match your filters.' : 'No team members yet. Invite someone to get started.'}</p>
+        <div className="flex flex-col items-center justify-center py-16 text-center rounded-md border border-[#e5edf5] bg-white">
+          <UserPlus size={32} className="text-[#e5edf5] mb-3" />
+          <p className="text-sm text-[#64748d]">{search || roleFilter !== 'all' ? 'No members match your filters.' : 'No team members yet. Invite someone to get started.'}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -325,43 +325,43 @@ function MemberCard({
   const enabledCount = Object.values(perms).filter(Boolean).length
 
   return (
-    <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden">
+    <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden">
       {/* Header row */}
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-[#F9FAFB] transition-colors"
+        className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-[#f6f9fc] transition-colors"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDE9FD] text-xs font-semibold text-[#6C5CE7] flex-shrink-0">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDE9FD] text-xs font-semibold text-[#533afd] flex-shrink-0">
           {member.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '??'}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-[#111827] truncate">{member.name}</p>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${STATUS_STYLES[member.status] || 'bg-[#F3F4F6] text-[#374151]'}`}>
+            <p className="text-sm font-medium text-[#061b31] truncate">{member.name}</p>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${STATUS_STYLES[member.status] || 'bg-[#f6f9fc] text-[#273951]'}`}>
               {member.status?.replace(/_/g, ' ')}
             </span>
           </div>
-          <p className="text-xs text-[#6B7280] truncate">{member.email}</p>
+          <p className="text-xs text-[#64748d] truncate">{member.email}</p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#E0E7FF] text-[#4338CA] capitalize">
             {member.role?.replace('_', ' ')}
           </span>
           {template && (
-            <span className="text-xs text-[#6B7280]">{template.name}</span>
+            <span className="text-xs text-[#64748d]">{template.name}</span>
           )}
-          <span className="text-xs text-[#9CA3AF]">{enabledCount}/{PERMISSION_KEYS.length} perms</span>
-          <ChevronDown size={16} className={`text-[#9CA3AF] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          <span className="text-xs text-[#64748d]">{enabledCount}/{PERMISSION_KEYS.length} perms</span>
+          <ChevronDown size={16} className={`text-[#64748d] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
         </div>
       </button>
 
       {/* Expanded permissions editor */}
       {isExpanded && canEdit && member.role === 'team_member' && (
-        <div className="border-t border-[#E5E7EB] px-5 py-4 bg-[#FAFAFA]">
+        <div className="border-t border-[#e5edf5] px-5 py-4 bg-[#FAFAFA]">
           {/* Template selector */}
           <div className="mb-4">
-            <label className="mb-1.5 block text-xs font-medium text-[#6B7280] uppercase tracking-wide">Apply Template</label>
+            <label className="mb-1.5 block text-xs font-medium text-[#64748d] uppercase tracking-wide">Apply Template</label>
             <div className="flex gap-2 flex-wrap">
               {templates.map((t: any) => (
                 <button
@@ -369,8 +369,8 @@ function MemberCard({
                   onClick={() => handleApplyTemplate(t.id)}
                   className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
                     displayTemplateId === t.id
-                      ? 'bg-[#6C5CE7] text-white'
-                      : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F3F4F6]'
+                      ? 'bg-[#533afd] text-white'
+                      : 'bg-white text-[#273951] border border-[#e5edf5] hover:bg-[#f6f9fc]'
                   }`}
                 >
                   {t.name}
@@ -381,7 +381,7 @@ function MemberCard({
                 className={`h-8 px-3 rounded-lg text-xs font-medium flex items-center ${
                   !displayTemplateId
                     ? 'bg-[#F59E0B] text-white'
-                    : 'bg-white text-[#9CA3AF] border border-[#E5E7EB]'
+                    : 'bg-white text-[#64748d] border border-[#e5edf5]'
                 }`}
               >
                 Custom
@@ -400,7 +400,7 @@ function MemberCard({
                 key={key}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors ${
                   isLockedOn ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
-                } ${isChecked ? 'bg-[#EDE9FD]' : 'bg-white border border-[#E5E7EB]'}`}
+                } ${isChecked ? 'bg-[#EDE9FD]' : 'bg-white border border-[#e5edf5]'}`}
                 title={isLockedOn ? 'Minimum 2 permissions required' : undefined}
               >
                 <input
@@ -412,12 +412,12 @@ function MemberCard({
                 />
                 <div className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
                   isChecked
-                    ? isLockedOn ? 'bg-[#A5A0D6] border-[#A5A0D6] text-white' : 'bg-[#6C5CE7] border-[#6C5CE7] text-white'
-                    : 'border-[#D1D5DB] bg-white'
+                    ? isLockedOn ? 'bg-[#A5A0D6] border-[#A5A0D6] text-white' : 'bg-[#533afd] border-[#533afd] text-white'
+                    : 'border-[#e5edf5] bg-white'
                 }`}>
                   {isChecked && <Check size={12} />}
                 </div>
-                <span className={`text-sm ${isChecked ? 'text-[#111827] font-medium' : 'text-[#6B7280]'}`}>
+                <span className={`text-sm ${isChecked ? 'text-[#061b31] font-medium' : 'text-[#64748d]'}`}>
                   {PERMISSION_LABELS[key]}
                 </span>
               </label>
@@ -428,14 +428,14 @@ function MemberCard({
           <div className="mt-4 flex items-center justify-end gap-3">
             <button
               onClick={onToggle}
-              className="h-9 px-4 rounded-lg text-sm font-medium text-[#374151] hover:bg-[#F3F4F6] transition-colors"
+              className="h-9 px-4 rounded-lg text-sm font-medium text-[#273951] hover:bg-[#f6f9fc] transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="h-9 px-4 rounded-lg bg-[#6C5CE7] text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50 transition-colors"
+              className="h-9 px-4 rounded-lg bg-[#533afd] text-sm font-medium text-white hover:bg-[#4434d4] disabled:opacity-50 transition-colors"
             >
               {saving ? 'Saving...' : 'Save Permissions'}
             </button>
@@ -445,24 +445,24 @@ function MemberCard({
 
       {/* Read-only permissions for non-editable cases */}
       {isExpanded && (!canEdit || member.role !== 'team_member') && (
-        <div className="border-t border-[#E5E7EB] px-5 py-4 bg-[#FAFAFA]">
-          <p className="mb-3 text-xs font-medium text-[#6B7280] uppercase tracking-wide">Permissions (role-based, read-only)</p>
+        <div className="border-t border-[#e5edf5] px-5 py-4 bg-[#FAFAFA]">
+          <p className="mb-3 text-xs font-medium text-[#64748d] uppercase tracking-wide">Permissions (role-based, read-only)</p>
           <div className="grid grid-cols-2 gap-2">
             {PERMISSION_KEYS.map((key) => (
               <div
                 key={key}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 ${
-                  perms[key] ? 'bg-[#EDE9FD]' : 'bg-white border border-[#E5E7EB]'
+                  perms[key] ? 'bg-[#EDE9FD]' : 'bg-white border border-[#e5edf5]'
                 }`}
               >
                 <div className={`flex h-5 w-5 items-center justify-center rounded border ${
                   perms[key]
-                    ? 'bg-[#6C5CE7] border-[#6C5CE7] text-white'
-                    : 'border-[#D1D5DB] bg-white'
+                    ? 'bg-[#533afd] border-[#533afd] text-white'
+                    : 'border-[#e5edf5] bg-white'
                 }`}>
                   {perms[key] && <Check size={12} />}
                 </div>
-                <span className={`text-sm ${perms[key] ? 'text-[#111827] font-medium' : 'text-[#6B7280]'}`}>
+                <span className={`text-sm ${perms[key] ? 'text-[#061b31] font-medium' : 'text-[#64748d]'}`}>
                   {PERMISSION_LABELS[key]}
                 </span>
               </div>
@@ -551,43 +551,43 @@ function InviteModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
+        <div className="w-full max-w-lg rounded-lg bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-[#e5edf5] px-6 py-4">
             <div>
-              <h2 className="text-lg font-semibold text-[#111827]">Invite Team Member</h2>
-              <p className="text-xs text-[#6B7280]">They must accept within 24 hours.</p>
+              <h2 className="text-lg font-semibold text-[#061b31]">Invite Team Member</h2>
+              <p className="text-xs text-[#64748d]">They must accept within 24 hours.</p>
             </div>
-            <button onClick={requestClose} className="p-1 text-[#9CA3AF] hover:text-[#374151]"><X size={18} /></button>
+            <button onClick={requestClose} className="p-1 text-[#64748d] hover:text-[#273951]"><X size={18} /></button>
           </div>
 
           <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
             {/* Email */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#374151]">Email address</label>
-              <div className="flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3 h-10 focus-within:ring-2 focus-within:ring-[#6C5CE7]">
-                <Mail size={16} className="text-[#9CA3AF]" />
+              <label className="mb-1.5 block text-sm font-medium text-[#273951]">Email address</label>
+              <div className="flex items-center gap-2 rounded-lg border border-[#e5edf5] bg-white px-3 h-10 focus-within:ring-2 focus-within:ring-[#533afd]">
+                <Mail size={16} className="text-[#64748d]" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="colleague@company.com"
-                  className="flex-1 bg-transparent text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none"
+                  className="flex-1 bg-transparent text-sm text-[#061b31] placeholder:text-[#64748d] outline-none"
                 />
               </div>
             </div>
 
             {/* Use case with AI suggestion */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#374151]">Role / use case</label>
+              <label className="mb-1.5 block text-sm font-medium text-[#273951]">Role / use case</label>
               <input
                 type="text"
                 value={useCase}
                 onChange={(e) => { setUseCase(e.target.value); fetchAiSuggestion(e.target.value) }}
                 placeholder="e.g. Finance manager, Operations lead..."
-                className="h-10 w-full rounded-lg border border-[#E5E7EB] px-3 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7]"
+                className="h-10 w-full rounded-lg border border-[#e5edf5] px-3 text-sm text-[#061b31] placeholder:text-[#64748d] outline-none focus:ring-2 focus:ring-[#533afd]"
               />
               {aiLoading && (
-                <p className="mt-1.5 text-xs text-[#9CA3AF] flex items-center gap-1"><Sparkles size={12} className="animate-pulse" /> Finding best template...</p>
+                <p className="mt-1.5 text-xs text-[#64748d] flex items-center gap-1"><Sparkles size={12} className="animate-pulse" /> Finding best template...</p>
               )}
               {aiSuggestion && !aiLoading && (
                 <button
@@ -595,7 +595,7 @@ function InviteModal({
                   onClick={() => handleApplyTemplate(aiSuggestion.templateId)}
                   className={`mt-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors w-full text-left ${
                     selectedTemplateId === aiSuggestion.templateId
-                      ? 'border-[#6C5CE7] bg-[#EDE9FD] text-[#6C5CE7]'
+                      ? 'border-[#533afd] bg-[#EDE9FD] text-[#533afd]'
                       : 'border-[#E0E7FF] bg-[#F0F9FF] text-[#0369A1] hover:bg-[#E0F2FE]'
                   }`}
                 >
@@ -607,12 +607,12 @@ function InviteModal({
 
             {/* Permission mode */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#374151]">Permissions</label>
+              <label className="mb-1.5 block text-sm font-medium text-[#273951]">Permissions</label>
               <div className="flex gap-2 mb-3">
                 <button
                   onClick={() => setPermMode('template')}
                   className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-                    permMode === 'template' ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB]'
+                    permMode === 'template' ? 'bg-[#061b31] text-white' : 'bg-white text-[#273951] border border-[#e5edf5]'
                   }`}
                 >
                   Use Template
@@ -620,7 +620,7 @@ function InviteModal({
                 <button
                   onClick={() => setPermMode('custom')}
                   className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-                    permMode === 'custom' ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB]'
+                    permMode === 'custom' ? 'bg-[#061b31] text-white' : 'bg-white text-[#273951] border border-[#e5edf5]'
                   }`}
                 >
                   Custom
@@ -635,8 +635,8 @@ function InviteModal({
                       onClick={() => handleApplyTemplate(t.id)}
                       className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
                         selectedTemplateId === t.id
-                          ? 'bg-[#6C5CE7] text-white'
-                          : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F3F4F6]'
+                          ? 'bg-[#533afd] text-white'
+                          : 'bg-white text-[#273951] border border-[#e5edf5] hover:bg-[#f6f9fc]'
                       }`}
                     >
                       {t.name}
@@ -651,7 +651,7 @@ function InviteModal({
                     <label
                       key={key}
                       className={`flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer text-sm transition-colors ${
-                        customPerms[key] ? 'bg-[#EDE9FD] text-[#111827]' : 'bg-[#F9FAFB] text-[#6B7280]'
+                        customPerms[key] ? 'bg-[#EDE9FD] text-[#061b31]' : 'bg-[#f6f9fc] text-[#64748d]'
                       }`}
                     >
                       <input
@@ -661,7 +661,7 @@ function InviteModal({
                         className="sr-only"
                       />
                       <div className={`flex h-4 w-4 items-center justify-center rounded border ${
-                        customPerms[key] ? 'bg-[#6C5CE7] border-[#6C5CE7] text-white' : 'border-[#D1D5DB]'
+                        customPerms[key] ? 'bg-[#533afd] border-[#533afd] text-white' : 'border-[#e5edf5]'
                       }`}>
                         {customPerms[key] && <Check size={10} />}
                       </div>
@@ -684,14 +684,14 @@ function InviteModal({
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-[#E5E7EB] px-6 py-4">
-            <button onClick={requestClose} className="h-9 px-4 rounded-lg text-sm font-medium text-[#374151] hover:bg-[#F3F4F6]">
+          <div className="flex items-center justify-end gap-3 border-t border-[#e5edf5] px-6 py-4">
+            <button onClick={requestClose} className="h-9 px-4 rounded-lg text-sm font-medium text-[#273951] hover:bg-[#f6f9fc]">
               Cancel
             </button>
             <button
               onClick={handleSend}
               disabled={sending || success}
-              className="h-9 px-4 rounded-lg bg-[#6C5CE7] text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50"
+              className="h-9 px-4 rounded-lg bg-[#533afd] text-sm font-medium text-white hover:bg-[#4434d4] disabled:opacity-50"
             >
               {sending ? 'Sending...' : 'Send Invite'}
             </button>
@@ -739,34 +739,34 @@ function TemplateModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
-            <h2 className="text-lg font-semibold text-[#111827]">Role Templates</h2>
-            <button onClick={requestClose} className="p-1 text-[#9CA3AF] hover:text-[#374151]"><X size={18} /></button>
+        <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-[#e5edf5] px-6 py-4">
+            <h2 className="text-lg font-semibold text-[#061b31]">Role Templates</h2>
+            <button onClick={requestClose} className="p-1 text-[#64748d] hover:text-[#273951]"><X size={18} /></button>
           </div>
 
           <div className="px-6 py-5 max-h-[70vh] overflow-y-auto space-y-4">
             {/* Existing templates */}
             {templates.map((t: any) => (
-              <div key={t.id} className="rounded-xl border border-[#E5E7EB] p-4">
+              <div key={t.id} className="rounded-md border border-[#e5edf5] p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Shield size={16} className="text-[#6C5CE7]" />
-                    <span className="text-sm font-medium text-[#111827]">{t.name}</span>
+                    <Shield size={16} className="text-[#533afd]" />
+                    <span className="text-sm font-medium text-[#061b31]">{t.name}</span>
                     {t.isSystemTemplate && (
-                      <span className="rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[10px] text-[#6B7280]">System</span>
+                      <span className="rounded-full bg-[#f6f9fc] px-2 py-0.5 text-[10px] text-[#64748d]">System</span>
                     )}
                   </div>
-                  <span className="text-[10px] uppercase tracking-wide text-[#9CA3AF]">{t.scope}</span>
+                  <span className="text-[10px] uppercase tracking-wide text-[#64748d]">{t.scope}</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {PERMISSION_KEYS.filter(k => t.permissions?.[k]).map(k => (
-                    <span key={k} className="rounded-full bg-[#EDE9FD] px-2 py-0.5 text-[10px] font-medium text-[#6C5CE7]">
+                    <span key={k} className="rounded-full bg-[#EDE9FD] px-2 py-0.5 text-[10px] font-medium text-[#533afd]">
                       {PERMISSION_LABELS[k]}
                     </span>
                   ))}
                   {PERMISSION_KEYS.filter(k => t.permissions?.[k]).length === 0 && (
-                    <span className="text-xs text-[#9CA3AF]">No permissions</span>
+                    <span className="text-xs text-[#64748d]">No permissions</span>
                   )}
                 </div>
               </div>
@@ -774,30 +774,30 @@ function TemplateModal({
 
             {/* Create new template form */}
             {showCreateForm ? (
-              <div className="rounded-xl border-2 border-dashed border-[#6C5CE7] bg-[#FAFAFF] p-4 space-y-3">
+              <div className="rounded-md border-2 border-dashed border-[#533afd] bg-[#FAFAFF] p-4 space-y-3">
                 <input
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="Template name (e.g. Ops Manager)"
-                  className="h-9 w-full rounded-lg border border-[#E5E7EB] px-3 text-sm outline-none focus:ring-2 focus:ring-[#6C5CE7]"
+                  className="h-9 w-full rounded-lg border border-[#e5edf5] px-3 text-sm outline-none focus:ring-2 focus:ring-[#533afd]"
                 />
                 <div className="grid grid-cols-2 gap-2">
                   {PERMISSION_KEYS.map((key) => (
-                    <label key={key} className="flex items-center gap-2 text-sm text-[#374151] cursor-pointer">
+                    <label key={key} className="flex items-center gap-2 text-sm text-[#273951] cursor-pointer">
                       <input
                         type="checkbox"
                         checked={newPerms[key] || false}
                         onChange={(e) => setNewPerms({ ...newPerms, [key]: e.target.checked })}
-                        className="h-4 w-4 rounded border-gray-300 text-[#6C5CE7] focus:ring-[#6C5CE7]"
+                        className="h-4 w-4 rounded border-gray-300 text-[#533afd] focus:ring-[#533afd]"
                       />
                       {PERMISSION_LABELS[key]}
                     </label>
                   ))}
                 </div>
                 <div className="flex gap-2 justify-end">
-                  <button onClick={() => setShowCreateForm(false)} className="h-8 px-3 rounded-lg text-xs text-[#374151] hover:bg-[#F3F4F6]">Cancel</button>
-                  <button onClick={handleCreate} disabled={!newName.trim() || creating} className="h-8 px-3 rounded-lg bg-[#6C5CE7] text-xs font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50">
+                  <button onClick={() => setShowCreateForm(false)} className="h-8 px-3 rounded-lg text-xs text-[#273951] hover:bg-[#f6f9fc]">Cancel</button>
+                  <button onClick={handleCreate} disabled={!newName.trim() || creating} className="h-8 px-3 rounded-lg bg-[#533afd] text-xs font-medium text-white hover:bg-[#4434d4] disabled:opacity-50">
                     {creating ? 'Creating...' : 'Create Template'}
                   </button>
                 </div>
@@ -805,15 +805,15 @@ function TemplateModal({
             ) : (
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#E5E7EB] py-4 text-sm text-[#6B7280] hover:border-[#6C5CE7] hover:text-[#6C5CE7] transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-md border-2 border-dashed border-[#e5edf5] py-4 text-sm text-[#64748d] hover:border-[#533afd] hover:text-[#533afd] transition-colors"
               >
                 <Plus size={16} /> Create new template
               </button>
             )}
           </div>
 
-          <div className="flex justify-end border-t border-[#E5E7EB] px-6 py-4">
-            <button onClick={requestClose} className="h-9 px-4 rounded-lg bg-[#6C5CE7] text-sm font-medium text-white hover:bg-[#5B4BD5]">
+          <div className="flex justify-end border-t border-[#e5edf5] px-6 py-4">
+            <button onClick={requestClose} className="h-9 px-4 rounded-lg bg-[#533afd] text-sm font-medium text-white hover:bg-[#4434d4]">
               Done
             </button>
           </div>

@@ -14,6 +14,7 @@ import {
   listDocuments,
   uploadDocument,
   getDocument,
+  deleteDocument,
   markAsReviewed,
   getDocumentContext,
 } from '../controllers/documents.controller'
@@ -27,6 +28,7 @@ router.get('/', requirePermission('canViewDocuments'), listDocuments)
 router.post('/upload', requirePermission('canEditDocuments'), upload.single('file'), uploadDocument)
 router.get('/:id', requirePermission('canViewDocuments'), getDocument)
 router.put('/:id/review', requirePermission('canEditDocuments'), markAsReviewed)
+router.delete('/:id', requirePermission('canEditDocuments'), deleteDocument)
 router.get('/:id/context', requirePermission('canViewDocuments'), getDocumentContext)
 router.put('/:id/move', requirePermission('canEditDocuments'), moveDocument)
 

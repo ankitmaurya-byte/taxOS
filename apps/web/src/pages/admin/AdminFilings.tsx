@@ -8,12 +8,12 @@ import { Pagination } from '@/components/Pagination'
 const FILING_STATUSES = ['intake', 'ai_prep', 'cpa_review', 'founder_approval', 'submitted', 'archived']
 
 const STATUS_STYLES: Record<string, string> = {
-  intake: 'bg-[#F3F4F6] text-[#374151]',
+  intake: 'bg-[#f6f9fc] text-[#273951]',
   ai_prep: 'bg-[#DBEAFE] text-[#1E40AF]',
   cpa_review: 'bg-[#FEF3C7] text-[#92400E]',
   founder_approval: 'bg-[#FDE68A] text-[#78350F]',
   submitted: 'bg-[#DCFCE7] text-[#166534]',
-  archived: 'bg-[#E5E7EB] text-[#6B7280]',
+  archived: 'bg-[#e5edf5] text-[#64748d]',
 }
 
 const PAGE_SIZE = 15
@@ -49,7 +49,7 @@ export function AdminFilings() {
     },
   })
 
-  if (isLoading) return <div className="p-6 text-sm text-[#6B7280]">Loading global filings...</div>
+  if (isLoading) return <div className="p-6 text-sm text-[#64748d]">Loading global filings...</div>
 
   let filtered = (filings || []) as any[]
 
@@ -121,8 +121,8 @@ export function AdminFilings() {
   return (
     <div className="space-y-5 p-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-semibold text-[#111827]">Global Filings</h1>
-        <p className="mt-1 text-sm text-[#6B7280]">View all IRS filings securely mapped across the entire system.</p>
+        <h1 className="text-2xl font-semibold text-[#061b31]">Global Filings</h1>
+        <p className="mt-1 text-sm text-[#64748d]">View all IRS filings securely mapped across the entire system.</p>
       </div>
 
       {/* Toolbar */}
@@ -131,16 +131,16 @@ export function AdminFilings() {
         <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
           <div className="relative w-64">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d]" />
             <input
               type="text"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search filings, org, entity, CPA..."
-              className="h-9 w-full rounded-lg border border-[#E5E7EB] bg-white pl-9 pr-8 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+              className="h-9 w-full rounded-lg border border-[#e5edf5] bg-white pl-9 pr-8 text-sm text-[#061b31] placeholder:text-[#64748d] outline-none focus:ring-2 focus:ring-[#533afd] focus:border-transparent"
             />
             {search && (
-              <button onClick={() => handleSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#374151]">
+              <button onClick={() => handleSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#64748d] hover:text-[#273951]">
                 <X size={13} />
               </button>
             )}
@@ -148,22 +148,22 @@ export function AdminFilings() {
 
           {/* Date from */}
           <div className="relative">
-            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d] pointer-events-none" />
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => handleDateFrom(e.target.value)}
-              className="h-9 rounded-lg border border-[#E5E7EB] bg-white pl-9 pr-3 text-sm text-[#374151] outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+              className="h-9 rounded-lg border border-[#e5edf5] bg-white pl-9 pr-3 text-sm text-[#273951] outline-none focus:ring-2 focus:ring-[#533afd] focus:border-transparent"
             />
           </div>
-          <span className="text-xs text-[#9CA3AF]">to</span>
+          <span className="text-xs text-[#64748d]">to</span>
           <div className="relative">
-            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d] pointer-events-none" />
             <input
               type="date"
               value={dateTo}
               onChange={(e) => handleDateTo(e.target.value)}
-              className="h-9 rounded-lg border border-[#E5E7EB] bg-white pl-9 pr-3 text-sm text-[#374151] outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+              className="h-9 rounded-lg border border-[#e5edf5] bg-white pl-9 pr-3 text-sm text-[#273951] outline-none focus:ring-2 focus:ring-[#533afd] focus:border-transparent"
             />
           </div>
 
@@ -182,7 +182,7 @@ export function AdminFilings() {
           <button
             onClick={() => handleStatusFilter(null)}
             className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-              !statusFilter ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F9FAFB]'
+              !statusFilter ? 'bg-[#061b31] text-white' : 'bg-white text-[#273951] border border-[#e5edf5] hover:bg-[#f6f9fc]'
             }`}
           >
             All
@@ -193,8 +193,8 @@ export function AdminFilings() {
               onClick={() => handleStatusFilter(status)}
               className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
                 statusFilter === status
-                  ? 'bg-[#111827] text-white'
-                  : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F9FAFB]'
+                  ? 'bg-[#061b31] text-white'
+                  : 'bg-white text-[#273951] border border-[#e5edf5] hover:bg-[#f6f9fc]'
               }`}
             >
               {status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -204,9 +204,9 @@ export function AdminFilings() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
-        <table className="w-full text-left text-sm text-[#374151]">
-          <thead className="bg-[#F9FAFB] text-xs uppercase text-[#6B7280] border-b border-[#E5E7EB]">
+      <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden shadow-sm">
+        <table className="w-full text-left text-sm text-[#273951]">
+          <thead className="bg-[#f6f9fc] text-xs uppercase text-[#64748d] border-b border-[#e5edf5]">
             <tr>
               <th className="px-5 py-3.5">Filing</th>
               <th className="px-5 py-3.5">Status</th>
@@ -217,11 +217,11 @@ export function AdminFilings() {
               <th className="px-5 py-3.5 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#E5E7EB]">
+          <tbody className="divide-y divide-[#e5edf5]">
             {paginated.map((f: any) => (
-              <tr key={f.id} className="hover:bg-[#F9FAFB]/50">
-                <td className="px-5 py-3.5 font-medium text-[#111827]">
-                  <Link to={`/admin/filings/${f.id}`} className="text-[#6C5CE7] hover:underline">
+              <tr key={f.id} className="hover:bg-[#f6f9fc]/50">
+                <td className="px-5 py-3.5 font-medium text-[#061b31]">
+                  <Link to={`/admin/filings/${f.id}`} className="text-[#533afd] hover:underline">
                     {f.formName} ({f.formType})
                   </Link>
                 </td>
@@ -254,19 +254,19 @@ export function AdminFilings() {
                     </span>
                   )}
                 </td>
-                <td className="px-5 py-3.5 text-[#6C5CE7] hover:underline">
+                <td className="px-5 py-3.5 text-[#533afd] hover:underline">
                   <Link to={`/admin/organizations/${f.orgId}`}>{f.orgName}</Link>
                 </td>
-                <td className="px-5 py-3.5 italic text-[#374151]">{f.legalName}</td>
-                <td className={`px-5 py-3.5 ${f.cpaAssignedId ? 'text-[#111827]' : 'text-[#9CA3AF]'}`}>
+                <td className="px-5 py-3.5 italic text-[#273951]">{f.legalName}</td>
+                <td className={`px-5 py-3.5 ${f.cpaAssignedId ? 'text-[#061b31]' : 'text-[#64748d]'}`}>
                   {f.cpaName || 'Unassigned'}
                 </td>
-                <td className="px-5 py-3.5 text-[#6B7280] whitespace-nowrap">{formatDate(f.createdAt)}</td>
+                <td className="px-5 py-3.5 text-[#64748d] whitespace-nowrap">{formatDate(f.createdAt)}</td>
                 <td className="px-5 py-3.5 text-right">
                   {editingId !== f.id && (
                     <button
                       onClick={() => { setEditingId(f.id); setEditStatus(f.status) }}
-                      className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#6C5CE7] bg-[#EEF2FF] hover:bg-[#E0E7FF] rounded ml-auto"
+                      className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#533afd] bg-[#EEF2FF] hover:bg-[#E0E7FF] rounded ml-auto"
                     >
                       <Pencil size={11} /> Edit
                     </button>
@@ -276,7 +276,7 @@ export function AdminFilings() {
             ))}
             {paginated.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-10 text-center text-[#6B7280]">
+                <td colSpan={6} className="px-6 py-10 text-center text-[#64748d]">
                   {hasFilters ? 'No filings match your filters.' : 'No filings found.'}
                 </td>
               </tr>

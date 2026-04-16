@@ -26,9 +26,9 @@ function EditableField({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-medium text-[#374151]">{label}</label>
-      <div className="flex h-11 items-center justify-between rounded-lg border border-gray-200 bg-[#F9FAFB] px-3">
-        <div className="flex items-center gap-2 text-sm text-[#111827] min-w-0">
+      <label className="mb-1.5 block text-sm font-medium text-[#273951]">{label}</label>
+      <div className="flex h-11 items-center justify-between rounded-lg border border-gray-200 bg-[#f6f9fc] px-3">
+        <div className="flex items-center gap-2 text-sm text-[#061b31] min-w-0">
           {icon}
           <span className="truncate">{value}</span>
         </div>
@@ -36,7 +36,7 @@ function EditableField({
           <button
             type="button"
             onClick={onEdit}
-            className="flex-shrink-0 p-1 text-gray-400 hover:text-[#6C5CE7] transition-colors"
+            className="flex-shrink-0 p-1 text-gray-400 hover:text-[#533afd] transition-colors"
             aria-label={`Edit ${label}`}
           >
             <Pencil size={14} />
@@ -68,7 +68,7 @@ function FormInput({
 }) {
   return (
     <div>
-      <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-[#374151]">
+      <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-[#273951]">
         {label}
         {infoTooltip && (
           <span title={infoTooltip} className="cursor-help">
@@ -76,9 +76,9 @@ function FormInput({
           </span>
         )}
       </label>
-      <div className="flex h-11 items-center rounded-lg border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-[#6C5CE7] focus-within:border-transparent transition-shadow">
+      <div className="flex h-11 items-center rounded-lg border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-[#533afd] focus-within:border-transparent transition-shadow">
         {prefix && (
-          <div className="flex items-center gap-1 border-r border-gray-200 px-3 text-sm text-[#6B7280]">
+          <div className="flex items-center gap-1 border-r border-gray-200 px-3 text-sm text-[#64748d]">
             {prefix}
           </div>
         )}
@@ -88,7 +88,7 @@ function FormInput({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className="h-full flex-1 rounded-lg bg-transparent px-3 text-sm text-[#111827] placeholder:text-gray-400 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-full flex-1 rounded-lg bg-transparent px-3 text-sm text-[#061b31] placeholder:text-gray-400 outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
     </div>
@@ -139,11 +139,11 @@ export function ProfilePage() {
   }
 
   if (profileLoading) {
-    return <div className="p-6 text-sm text-[#6B7280]">Loading profile...</div>
+    return <div className="p-6 text-sm text-[#64748d]">Loading profile...</div>
   }
 
   if (!profile) {
-    return <div className="p-6 text-sm text-[#6B7280]">Profile not available.</div>
+    return <div className="p-6 text-sm text-[#64748d]">Profile not available.</div>
   }
 
   const initials = profile.name
@@ -154,21 +154,21 @@ export function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-[900px] px-6 py-8">
-      <h1 className="mb-6 text-2xl font-semibold text-[#111827]">Profile Settings</h1>
+      <h1 className="mb-6 text-2xl font-semibold text-[#061b31]">Profile Settings</h1>
 
       {/* Profile header */}
       <div className="mb-6 flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EDE9FD] text-lg font-semibold text-[#6C5CE7]">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EDE9FD] text-lg font-semibold text-[#533afd]">
           {initials}
         </div>
         <div>
-          <p className="text-lg font-medium text-[#111827]">{profile.name}</p>
-          <p className="text-sm text-[#6B7280]">{profile.email}</p>
+          <p className="text-lg font-medium text-[#061b31]">{profile.name}</p>
+          <p className="text-sm text-[#64748d]">{profile.email}</p>
         </div>
       </div>
 
       {/* Form card */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {/* First name */}
           <FormInput
@@ -234,12 +234,12 @@ export function ProfilePage() {
 
           {/* Time zone */}
           <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-medium text-[#374151]">Time zone</label>
+            <label className="mb-1.5 block text-sm font-medium text-[#273951]">Time zone</label>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowTimezoneDropdown(!showTimezoneDropdown)}
-                className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm text-[#111827] hover:border-gray-300 transition-colors"
+                className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm text-[#061b31] hover:border-gray-300 transition-colors"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <Globe size={14} className="flex-shrink-0 text-gray-400" />
@@ -266,7 +266,7 @@ export function ProfilePage() {
               {showTimezoneDropdown && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowTimezoneDropdown(false)} />
-                  <div className="absolute left-0 top-full z-20 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg">
+                  <div className="absolute left-0 top-full z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
                     {TIMEZONES.map((tz) => (
                       <button
                         key={tz.value}
@@ -275,8 +275,8 @@ export function ProfilePage() {
                           setTimezone(tz.value)
                           setShowTimezoneDropdown(false)
                         }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-[#F3F0FF] transition-colors ${
-                          timezone === tz.value ? 'bg-[#EDE9FD] text-[#6C5CE7] font-medium' : 'text-[#111827]'
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-[#f6f9fc] transition-colors ${
+                          timezone === tz.value ? 'bg-[#EDE9FD] text-[#533afd] font-medium' : 'text-[#061b31]'
                         }`}
                       >
                         {tz.label}
@@ -293,16 +293,16 @@ export function ProfilePage() {
         <div className="mt-6 border-t border-gray-100 pt-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-[#6B7280]">Role</p>
-              <p className="mt-1 text-sm capitalize text-[#111827]">{profile.role?.replace('_', ' ')}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-[#64748d]">Role</p>
+              <p className="mt-1 text-sm capitalize text-[#061b31]">{profile.role?.replace('_', ' ')}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-[#6B7280]">Organization</p>
-              <p className="mt-1 text-sm text-[#111827]">{profile.organization?.name || 'Not assigned'}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-[#64748d]">Organization</p>
+              <p className="mt-1 text-sm text-[#061b31]">{profile.organization?.name || 'Not assigned'}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-[#6B7280]">Status</p>
-              <p className="mt-1 text-sm capitalize text-[#111827]">{profile.status?.replace('_', ' ')}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-[#64748d]">Status</p>
+              <p className="mt-1 text-sm capitalize text-[#061b31]">{profile.status?.replace('_', ' ')}</p>
             </div>
           </div>
         </div>
@@ -315,7 +315,7 @@ export function ProfilePage() {
           <button
             type="button"
             onClick={handleSave}
-            className="h-10 rounded-lg bg-[#6C5CE7] px-6 text-sm font-medium text-white hover:bg-[#5B4BD5] transition-colors"
+            className="h-10 rounded-lg bg-[#533afd] px-6 text-sm font-medium text-white hover:bg-[#4434d4] transition-colors"
           >
             Save changes
           </button>

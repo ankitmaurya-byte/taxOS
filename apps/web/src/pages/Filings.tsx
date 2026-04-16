@@ -116,7 +116,7 @@ export function FilingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-[#111827] mb-5">Filings</h1>
+      <h1 className="text-2xl font-light tracking-tight text-[#061b31] mb-5">Filings</h1>
 
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-5">
@@ -130,25 +130,25 @@ export function FilingsPage() {
               }}
               className={`flex items-center gap-1.5 h-9 px-3 border rounded-lg text-sm transition-colors ${
                 selectedYear !== null
-                  ? 'border-[#6C5CE7] text-[#6C5CE7] bg-[#EDE9FD]'
-                  : 'border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6]'
+                  ? 'border-[#533afd] text-[#533afd] bg-[#EDE9FD]'
+                  : 'border-[#e5edf5] text-[#273951] hover:bg-[#f6f9fc]'
               }`}
             >
-              <Calendar size={14} className={selectedYear !== null ? 'text-[#6C5CE7]' : 'text-[#9CA3AF]'} />
+              <Calendar size={14} className={selectedYear !== null ? 'text-[#533afd]' : 'text-[#64748d]'} />
               <span>{selectedYear ?? 'All years'}</span>
-              <ChevronDown size={12} className={selectedYear !== null ? 'text-[#6C5CE7]' : 'text-[#9CA3AF]'} />
+              <ChevronDown size={12} className={selectedYear !== null ? 'text-[#533afd]' : 'text-[#64748d]'} />
             </button>
             {showYearDropdown && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowYearDropdown(false)} />
-                <div className="absolute left-0 top-full mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-20 min-w-[120px]">
+                <div className="absolute left-0 top-full mt-1 bg-white border border-[#e5edf5] rounded-lg shadow-lg z-20 min-w-[120px]">
                   <button
                     onClick={() => {
                       setSelectedYear(null)
                       setShowYearDropdown(false)
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${
-                      selectedYear === null ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-[#f6f9fc] ${
+                      selectedYear === null ? 'text-[#533afd] font-medium' : 'text-[#061b31]'
                     }`}
                   >
                     All years
@@ -160,8 +160,8 @@ export function FilingsPage() {
                         setSelectedYear(year)
                         setShowYearDropdown(false)
                       }}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${
-                        selectedYear === year ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-[#f6f9fc] ${
+                        selectedYear === year ? 'text-[#533afd] font-medium' : 'text-[#061b31]'
                       }`}
                     >
                       {year}
@@ -176,14 +176,14 @@ export function FilingsPage() {
           {showSearch ? (
             <div className="flex items-center gap-1">
               <div className="relative">
-                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#64748d]" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search filings..."
                   autoFocus
-                  className="h-9 pl-8 pr-3 border border-[#E5E7EB] rounded-lg text-sm w-48 focus:outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+                  className="h-9 pl-8 pr-3 border border-[#e5edf5] rounded-lg text-sm w-48 focus:outline-none focus:ring-2 focus:ring-[#533afd] focus:border-transparent"
                 />
               </div>
               <button
@@ -191,7 +191,7 @@ export function FilingsPage() {
                   setShowSearch(false)
                   setSearchQuery('')
                 }}
-                className="flex items-center justify-center w-9 h-9 text-[#9CA3AF] hover:text-[#374151] transition-colors"
+                className="flex items-center justify-center w-9 h-9 text-[#64748d] hover:text-[#273951] transition-colors"
               >
                 &times;
               </button>
@@ -202,7 +202,7 @@ export function FilingsPage() {
                 setShowSearch(true)
                 setShowStatusFilter(false)
               }}
-              className="flex items-center justify-center w-9 h-9 border border-[#E5E7EB] rounded-lg text-[#9CA3AF] hover:bg-[#F3F4F6] hover:text-[#374151] transition-colors"
+              className="flex items-center justify-center w-9 h-9 border border-[#e5edf5] rounded-lg text-[#64748d] hover:bg-[#f6f9fc] hover:text-[#273951] transition-colors"
             >
               <Search size={16} />
             </button>
@@ -217,8 +217,8 @@ export function FilingsPage() {
               }}
               className={`flex items-center justify-center w-9 h-9 border rounded-lg transition-colors ${
                 statusFilter
-                  ? 'border-[#6C5CE7] text-[#6C5CE7] bg-[#EDE9FD]'
-                  : 'border-[#E5E7EB] text-[#9CA3AF] hover:bg-[#F3F4F6] hover:text-[#374151]'
+                  ? 'border-[#533afd] text-[#533afd] bg-[#EDE9FD]'
+                  : 'border-[#e5edf5] text-[#64748d] hover:bg-[#f6f9fc] hover:text-[#273951]'
               }`}
             >
               <Filter size={16} />
@@ -226,14 +226,14 @@ export function FilingsPage() {
             {showStatusFilter && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowStatusFilter(false)} />
-                <div className="absolute left-0 top-full mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-20 min-w-[160px]">
+                <div className="absolute left-0 top-full mt-1 bg-white border border-[#e5edf5] rounded-lg shadow-lg z-20 min-w-[160px]">
                   <button
                     onClick={() => {
                       setStatusFilter(null)
                       setShowStatusFilter(false)
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${
-                      statusFilter === null ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-[#f6f9fc] ${
+                      statusFilter === null ? 'text-[#533afd] font-medium' : 'text-[#061b31]'
                     }`}
                   >
                     All statuses
@@ -245,8 +245,8 @@ export function FilingsPage() {
                         setStatusFilter(opt.key)
                         setShowStatusFilter(false)
                       }}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${
-                        statusFilter === opt.key ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-[#f6f9fc] ${
+                        statusFilter === opt.key ? 'text-[#533afd] font-medium' : 'text-[#061b31]'
                       }`}
                     >
                       {opt.label}
@@ -262,7 +262,7 @@ export function FilingsPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/filings/room')}
-            className="flex items-center gap-1.5 h-9 px-4 border border-[#E5E7EB] text-[#374151] rounded-lg text-sm font-medium hover:bg-[#F3F4F6] transition-colors"
+            className="flex items-center gap-1.5 h-9 px-4 border border-[#e5edf5] text-[#273951] rounded-lg text-sm font-medium hover:bg-[#f6f9fc] transition-colors"
           >
             Workflow View
           </button>
@@ -270,19 +270,19 @@ export function FilingsPage() {
             onClick={() => setPendingOnMe(!pendingOnMe)}
             className={`flex items-center gap-2 h-9 px-4 rounded-full text-sm font-medium border transition-colors ${
               pendingOnMe
-                ? 'bg-[#EDE9FD] text-[#6C5CE7] border-[#6C5CE7]'
-                : 'bg-[#F3F4F6] text-[#374151] border-[#E5E7EB]'
+                ? 'bg-[#EDE9FD] text-[#533afd] border-[#533afd]'
+                : 'bg-[#f6f9fc] text-[#273951] border-[#e5edf5]'
             }`}
           >
             <span
-              className={`w-1.5 h-1.5 rounded-full ${pendingOnMe ? 'bg-[#6C5CE7]' : 'bg-[#9CA3AF]'}`}
+              className={`w-1.5 h-1.5 rounded-full ${pendingOnMe ? 'bg-[#533afd]' : 'bg-[#64748d]'}`}
             />
             Pending on me
           </button>
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] transition-colors"
+            className="flex items-center gap-1.5 h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] transition-colors"
           >
             <Plus size={16} />
             Create filing
@@ -298,27 +298,27 @@ export function FilingsPage() {
             onClick={() => setActiveFilter(stat.key)}
             className={`text-left bg-white border rounded-[10px] px-5 py-4 transition-colors ${
               activeFilter === stat.key
-                ? 'border-2 border-[#6C5CE7] bg-[#FAFAFA]'
-                : 'border-[#E5E7EB] hover:border-[#D1D5DB]'
+                ? 'border-2 border-[#533afd] bg-[#FAFAFA]'
+                : 'border-[#e5edf5] hover:border-[#e5edf5]'
             }`}
           >
-            <p className="text-xs font-medium text-[#6B7280] mb-1">{stat.label}</p>
-            <p className="text-2xl font-bold text-[#111827]">{stat.count}</p>
+            <p className="text-xs font-medium text-[#64748d] mb-1">{stat.label}</p>
+            <p className="text-2xl font-bold text-[#061b31]">{stat.count}</p>
           </button>
         ))}
       </div>
 
       {/* Filing Table */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl">
+      <div className="bg-white border border-[#e5edf5] rounded-md">
         {/* Header */}
-        <div className="flex items-center px-4 py-2.5 border-b border-[#E5E7EB]">
-          <div className="flex-1 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+        <div className="flex items-center px-4 py-2.5 border-b border-[#e5edf5]">
+          <div className="flex-1 text-[11px] font-semibold text-[#64748d] uppercase tracking-wider">
             Filing
           </div>
-          <div className="w-40 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+          <div className="w-40 text-[11px] font-semibold text-[#64748d] uppercase tracking-wider">
             Deadline
           </div>
-          <div className="w-60 text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider text-right">
+          <div className="w-60 text-[11px] font-semibold text-[#64748d] uppercase tracking-wider text-right">
             Status
           </div>
         </div>
@@ -329,12 +329,12 @@ export function FilingsPage() {
             {/* Year separator */}
             <button
               onClick={() => toggleYear(year)}
-              className="flex items-center gap-2 w-full px-4 py-2.5 text-[13px] font-semibold text-[#111827] hover:bg-[#F9FAFB] transition-colors"
+              className="flex items-center gap-2 w-full px-4 py-2.5 text-[13px] font-semibold text-[#061b31] hover:bg-[#f6f9fc] transition-colors"
             >
               {expandedYears[year] ? (
-                <ChevronDown size={14} className="text-[#9CA3AF]" />
+                <ChevronDown size={14} className="text-[#64748d]" />
               ) : (
-                <ChevronRight size={14} className="text-[#9CA3AF]" />
+                <ChevronRight size={14} className="text-[#64748d]" />
               )}
               Tax year {year}
             </button>
@@ -343,12 +343,12 @@ export function FilingsPage() {
               grouped[year].map((filing) => (
                 <div
                   key={filing.id}
-                  className="group flex items-center px-4 py-3 border-b border-[#F3F4F6] hover:bg-[#F9FAFB] cursor-pointer transition-colors"
+                  className="group flex items-center px-4 py-3 border-b border-[#f6f9fc] hover:bg-[#f6f9fc] cursor-pointer transition-colors"
                   onClick={() => navigate(`/filings/${filing.id}`)}
                 >
                   {/* Filing name */}
                   <div className="flex-1 flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-[#6C5CE7]">
+                    <span className="text-sm font-medium text-[#533afd]">
                       {filing.formType} — {filing.formName}
                     </span>
                     <div
@@ -357,13 +357,13 @@ export function FilingsPage() {
                     >
                       <Info
                         size={14}
-                        className="cursor-pointer text-[#9CA3AF] transition-colors group-hover/info:text-[#6C5CE7]"
+                        className="cursor-pointer text-[#64748d] transition-colors group-hover/info:text-[#533afd]"
                       />
                       {/* Tooltip */}
-                      <div className="pointer-events-none absolute left-0 bottom-full mb-3 z-50 w-72 rounded-xl border border-[#2D3748] bg-[#1A202C] shadow-2xl opacity-0 invisible -translate-y-1 group-hover/info:opacity-100 group-hover/info:visible group-hover/info:translate-y-0 transition-all duration-200 ease-out">
+                      <div className="pointer-events-none absolute left-0 bottom-full mb-3 z-50 w-72 rounded-md border border-[#2D3748] bg-[#1A202C] shadow-2xl opacity-0 invisible -translate-y-1 group-hover/info:opacity-100 group-hover/info:visible group-hover/info:translate-y-0 transition-all duration-200 ease-out">
                         {/* Header */}
                         <div className="flex items-center gap-2 border-b border-[#2D3748] px-3.5 py-2.5">
-                          <span className="inline-flex items-center rounded-md bg-[#6C5CE7]/20 px-2 py-0.5 text-[10px] font-bold tracking-widest text-[#A78BFA] uppercase">
+                          <span className="inline-flex items-center rounded-md bg-[#533afd]/20 px-2 py-0.5 text-[10px] font-bold tracking-widest text-[#A78BFA] uppercase">
                             {filing.formType}
                           </span>
                           {(filing as any).taxYear && (
@@ -384,8 +384,8 @@ export function FilingsPage() {
                   </div>
 
                   {/* Deadline */}
-                  <div className="w-40 flex items-center gap-1.5 text-[13px] text-[#111827]">
-                    <Calendar size={14} className="text-[#9CA3AF]" />
+                  <div className="w-40 flex items-center gap-1.5 text-[13px] text-[#061b31]">
+                    <Calendar size={14} className="text-[#64748d]" />
                     {filing.createdAt ? formatDate(filing.createdAt) : '—'}
                   </div>
 
@@ -395,21 +395,21 @@ export function FilingsPage() {
                       <button
                         title="View filing"
                         onClick={(e) => { e.stopPropagation(); navigate(`/filings/${filing.id}`) }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#6B7280] hover:text-[#6C5CE7] hover:bg-[#EDE9FD] transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#64748d] hover:text-[#533afd] hover:bg-[#EDE9FD] transition-colors"
                       >
                         <Eye size={13} /> View
                       </button>
                       <button
                         title="Upload document"
                         onClick={(e) => { e.stopPropagation(); navigate(`/documents`) }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#6B7280] hover:text-[#6C5CE7] hover:bg-[#EDE9FD] transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#64748d] hover:text-[#533afd] hover:bg-[#EDE9FD] transition-colors"
                       >
                         <Upload size={13} /> Upload
                       </button>
                       <button
                         title="Open filing room"
                         onClick={(e) => { e.stopPropagation(); navigate(`/filings/room/${filing.id}`) }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#6B7280] hover:text-[#6C5CE7] hover:bg-[#EDE9FD] transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#64748d] hover:text-[#533afd] hover:bg-[#EDE9FD] transition-colors"
                       >
                         <FolderOpen size={13} /> Room
                       </button>
@@ -423,8 +423,8 @@ export function FilingsPage() {
 
         {filteredFilings.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <FileText size={32} className="text-[#D1D5DB] mb-3" />
-            <p className="text-sm text-[#6B7280]">No filings found</p>
+            <FileText size={32} className="text-[#e5edf5] mb-3" />
+            <p className="text-sm text-[#64748d]">No filings found</p>
           </div>
         )}
       </div>

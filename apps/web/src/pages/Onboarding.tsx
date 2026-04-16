@@ -29,7 +29,7 @@ function Frame({ children, quote, author, role, bottomText }: { children: React.
 
         <div className="relative hidden overflow-hidden bg-[#2D116C] text-white lg:flex lg:flex-col lg:items-center lg:justify-between lg:px-10 lg:py-14">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(125,77,255,0.45),transparent_34%)]" />
-          <div className="relative mx-auto mt-4 w-full max-w-[280px] rounded-2xl bg-white px-8 py-10 text-center text-[#4A4566] shadow-[12px_12px_0_rgba(125,91,255,0.25),20px_20px_0_rgba(125,91,255,0.12)]">
+          <div className="relative mx-auto mt-4 w-full max-w-[280px] rounded-lg bg-white px-8 py-10 text-center text-[#4A4566] shadow-[12px_12px_0_rgba(125,91,255,0.25),20px_20px_0_rgba(125,91,255,0.12)]">
             <p className="text-base font-medium leading-[1.5]">"{quote}"</p>
             <div className="mx-auto mt-5 flex h-10 w-10 items-center justify-center rounded-full bg-[#7FD77F] text-white">
               <span className="text-xs font-semibold">{author.split(' ').map((part) => part[0]).join('').slice(0, 2)}</span>
@@ -53,7 +53,7 @@ function PendingReview({ organizationName }: { organizationName: string }) {
       bottomText="Used by 500+ US startups to stay compliant, including over 5% of YC companies."
     >
       <div className="mx-auto w-full max-w-lg">
-        <div className="rounded-xl border border-[#E1DDF0] bg-white px-6 py-8 shadow-sm">
+        <div className="rounded-md border border-[#E1DDF0] bg-white px-6 py-8 shadow-sm">
           <div className="text-2xl font-semibold tracking-[-0.02em] text-[#5B2FFF]">inkle</div>
           <h1 className="mt-8 text-2xl font-semibold leading-tight tracking-[-0.02em] text-[#1E174A]">Setting up your account</h1>
           <p className="mt-3 max-w-sm text-sm leading-6 text-[#716B8F]">
@@ -151,7 +151,7 @@ export function OnboardingPage() {
           {step === 1 && (
             <div className="space-y-3">
               {ENTITY_OPTIONS.map((option) => (
-                <button type="button" key={option.value} onClick={() => setEntityType(option.value)} className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors ${entityType === option.value ? 'border-[#7A5BFF] bg-[#F7F4FF]' : 'border-[#E4DFF1] bg-white hover:border-[#CFC5EC]'}`}>
+                <button type="button" key={option.value} onClick={() => setEntityType(option.value)} className={`flex w-full items-start gap-3 rounded-md border px-4 py-3.5 text-left transition-colors ${entityType === option.value ? 'border-[#7A5BFF] bg-[#F7F4FF]' : 'border-[#E4DFF1] bg-white hover:border-[#CFC5EC]'}`}>
                   <div className={`mt-0.5 h-4 w-4 rounded-full border flex-shrink-0 ${entityType === option.value ? 'border-[#7A5BFF] bg-[#7A5BFF] shadow-[inset_0_0_0_3px_white]' : 'border-[#D0CAE5] bg-white'}`} />
                   <div>
                     <div className="text-sm font-medium text-[#1E174A]">{option.title}</div>
@@ -174,7 +174,7 @@ export function OnboardingPage() {
           )}
 
           {step === 3 && (
-            <div className="rounded-xl border border-[#E4DFF1] bg-white p-5 shadow-sm">
+            <div className="rounded-md border border-[#E4DFF1] bg-white p-5 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F5F2FD] text-[#281A58]"><Building2 size={16} /></div>
                 <div className="text-sm font-semibold text-[#1E174A]">New entity</div>
@@ -183,22 +183,22 @@ export function OnboardingPage() {
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-[#6A6488]">Select country <span className="text-[#D94A5B]">*</span></label>
-                  <input value={country} onChange={(e) => setCountry(e.target.value)} className="h-10 w-full rounded-lg border border-[#DED8EB] px-3.5 text-sm text-[#2F2855] outline-none focus:ring-2 focus:ring-[#6C5CE7]" />
+                  <input value={country} onChange={(e) => setCountry(e.target.value)} className="h-10 w-full rounded-lg border border-[#DED8EB] px-3.5 text-sm text-[#2F2855] outline-none focus:ring-2 focus:ring-[#533afd]" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-[#6A6488]">Select state <span className="text-[#D94A5B]">*</span></label>
-                  <input value={String(parsed.stateOrJurisdiction || state)} onChange={(e) => setState(e.target.value)} className="h-10 w-full rounded-lg border border-[#DED8EB] px-3.5 text-sm text-[#2F2855] outline-none focus:ring-2 focus:ring-[#6C5CE7]" />
+                  <input value={String(parsed.stateOrJurisdiction || state)} onChange={(e) => setState(e.target.value)} className="h-10 w-full rounded-lg border border-[#DED8EB] px-3.5 text-sm text-[#2F2855] outline-none focus:ring-2 focus:ring-[#533afd]" />
                 </div>
               </div>
 
               <div className="mt-4">
                 <label className="mb-1.5 block text-xs font-medium text-[#6A6488]">Formation type <span className="text-[#D94A5B]">*</span></label>
-                <input value={String(parsed.entityType || entityType)} onChange={(e) => setEntityType(e.target.value)} className="h-10 w-full rounded-lg border border-[#DED8EB] px-3.5 text-sm text-[#2F2855] outline-none focus:ring-2 focus:ring-[#6C5CE7]" />
+                <input value={String(parsed.entityType || entityType)} onChange={(e) => setEntityType(e.target.value)} className="h-10 w-full rounded-lg border border-[#DED8EB] px-3.5 text-sm text-[#2F2855] outline-none focus:ring-2 focus:ring-[#533afd]" />
               </div>
 
               <div className="mt-4">
                 <label className="mb-1.5 block text-xs font-medium text-[#6A6488]">Entity name <span className="text-[#D94A5B]">*</span></label>
-                <input value={String(parsed.legalCompanyName || organizationName)} onChange={(e) => setOrganizationName(e.target.value)} className="h-10 w-full rounded-lg border border-[#DED8EB] px-3.5 text-sm text-[#2F2855] outline-none focus:ring-2 focus:ring-[#6C5CE7]" />
+                <input value={String(parsed.legalCompanyName || organizationName)} onChange={(e) => setOrganizationName(e.target.value)} className="h-10 w-full rounded-lg border border-[#DED8EB] px-3.5 text-sm text-[#2F2855] outline-none focus:ring-2 focus:ring-[#533afd]" />
               </div>
 
               <div className="mt-4">

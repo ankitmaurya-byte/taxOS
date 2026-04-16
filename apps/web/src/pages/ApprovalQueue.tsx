@@ -73,46 +73,46 @@ export function ApprovalQueue() {
       case 'approved': return 'bg-[#DCFCE7] text-[#166534]'
       case 'rejected': return 'bg-[#FEE2E2] text-[#991B1B]'
       case 'escalated': return 'bg-[#FEF3C7] text-[#92400E]'
-      default: return 'bg-[#F3F4F6] text-[#374151]'
+      default: return 'bg-[#f6f9fc] text-[#273951]'
     }
   }
 
   return (
     <div className="space-y-8 p-6 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-semibold text-[#111827]">Approval Queue</h1>
-        <p className="mt-1 text-sm text-[#6B7280]">Review and action pending filing approvals.</p>
+        <h1 className="text-2xl font-semibold text-[#061b31]">Approval Queue</h1>
+        <p className="mt-1 text-sm text-[#64748d]">Review and action pending filing approvals.</p>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
-          <p className="text-xs font-medium text-[#6B7280] uppercase tracking-wide">Pending</p>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-4">
+          <p className="text-xs font-medium text-[#64748d] uppercase tracking-wide">Pending</p>
           <p className="mt-1 text-2xl font-semibold text-[#92400E]">{pending.length}</p>
         </div>
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
-          <p className="text-xs font-medium text-[#6B7280] uppercase tracking-wide">Approved</p>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-4">
+          <p className="text-xs font-medium text-[#64748d] uppercase tracking-wide">Approved</p>
           <p className="mt-1 text-2xl font-semibold text-[#166534]">{resolved.filter(a => a.status === 'approved').length}</p>
         </div>
-        <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
-          <p className="text-xs font-medium text-[#6B7280] uppercase tracking-wide">Rejected</p>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-4">
+          <p className="text-xs font-medium text-[#64748d] uppercase tracking-wide">Rejected</p>
           <p className="mt-1 text-2xl font-semibold text-[#991B1B]">{resolved.filter(a => a.status === 'rejected').length}</p>
         </div>
       </div>
 
       {/* Pending section */}
       <div>
-        <h2 className="text-sm font-semibold text-[#374151] uppercase tracking-wide mb-3">Pending Review</h2>
+        <h2 className="text-sm font-semibold text-[#273951] uppercase tracking-wide mb-3">Pending Review</h2>
         {pending.length === 0 ? (
-          <div className="rounded-xl border border-[#E5E7EB] bg-white p-12 text-center">
+          <div className="rounded-md border border-[#e5edf5] bg-white p-12 text-center">
             <CheckCircle2 size={32} className="mx-auto text-[#10B981] mb-3" />
-            <p className="text-sm font-medium text-[#111827]">All caught up</p>
-            <p className="text-xs text-[#6B7280] mt-1">No pending approvals at this time.</p>
+            <p className="text-sm font-medium text-[#061b31]">All caught up</p>
+            <p className="text-xs text-[#64748d] mt-1">No pending approvals at this time.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {pendingPag.getPage(pendingPage).map(approval => (
-              <div key={approval.id} className="group rounded-xl border border-[#E5E7EB] bg-white transition-all hover:border-[#D1D5DB] hover:shadow-sm">
+              <div key={approval.id} className="group rounded-md border border-[#e5edf5] bg-white transition-all hover:border-[#e5edf5] hover:shadow-sm">
                 {/* Clickable row — navigates to filing */}
                 <div
                   onClick={() => approval.filingId && navigate(`/filings/${approval.filingId}`)}
@@ -120,12 +120,12 @@ export function ApprovalQueue() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ${approval.queueType === 'founder' ? 'bg-[#EDE9FD] text-[#6C5CE7]' : 'bg-[#DBEAFE] text-[#1D4ED8]'}`}>
+                      <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ${approval.queueType === 'founder' ? 'bg-[#EDE9FD] text-[#533afd]' : 'bg-[#DBEAFE] text-[#1D4ED8]'}`}>
                         {approval.queueType === 'founder' ? 'Founder Review' : 'CPA Review'}
                       </span>
                       <span className="rounded-md bg-[#FEF3C7] px-2 py-0.5 text-[11px] font-medium text-[#92400E]">Pending</span>
                     </div>
-                    <p className="text-sm text-[#111827] leading-relaxed">{approval.summary}</p>
+                    <p className="text-sm text-[#061b31] leading-relaxed">{approval.summary}</p>
                     {approval.aiRecommendation && (
                       <div className="mt-2 flex items-start gap-2 rounded-lg bg-[#F0F9FF] px-3 py-2">
                         <span className="text-[10px] font-semibold text-[#0369A1] uppercase tracking-wide mt-0.5 shrink-0">AI</span>
@@ -133,11 +133,11 @@ export function ApprovalQueue() {
                       </div>
                     )}
                   </div>
-                  <ChevronRight size={16} className="text-[#D1D5DB] group-hover:text-[#9CA3AF] shrink-0 transition-colors" />
+                  <ChevronRight size={16} className="text-[#e5edf5] group-hover:text-[#64748d] shrink-0 transition-colors" />
                 </div>
 
                 {/* Action bar */}
-                <div className="flex items-center gap-2 border-t border-[#F3F4F6] px-5 py-3">
+                <div className="flex items-center gap-2 border-t border-[#f6f9fc] px-5 py-3">
                   <button
                     disabled={resolveLoading[approval.id]}
                     onClick={async (e) => {
@@ -160,14 +160,14 @@ export function ApprovalQueue() {
                         try { await resolveApproval(approval.id, 'rejected', reason) } finally { setResolveLoading(prev => ({ ...prev, [approval.id]: false })) }
                       }
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#991B1B] bg-white border border-[#E5E7EB]  group-hover:opacity-100 hover:bg-[#FEF2F2] hover:border-[#FECACA] disabled:opacity-50 transition-all"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#991B1B] bg-white border border-[#e5edf5]  group-hover:opacity-100 hover:bg-[#FEF2F2] hover:border-[#FECACA] disabled:opacity-50 transition-all"
                   >
                     <XCircle size={13} />
                     Reject
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setExpandedChat(expandedChat === approval.id ? null : approval.id) }}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#273951] bg-white border border-[#e5edf5] hover:bg-[#f6f9fc] transition-colors"
                   >
                     <MessageSquare size={13} />
                     Ask AI
@@ -179,7 +179,7 @@ export function ApprovalQueue() {
                       setEscalateLoading(prev => ({ ...prev, [approval.id]: true }))
                       try { await escalateApproval(approval.id) } finally { setEscalateLoading(prev => ({ ...prev, [approval.id]: false })) }
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#273951] bg-white border border-[#e5edf5] hover:bg-[#f6f9fc] disabled:opacity-50 transition-colors"
                   >
                     <ArrowUpRight size={13} />
                     Escalate
@@ -188,10 +188,10 @@ export function ApprovalQueue() {
 
                 {/* AI chat panel */}
                 {expandedChat === approval.id && (
-                  <div className="border-t border-[#F3F4F6] px-5 py-4 bg-[#FAFAFA]">
+                  <div className="border-t border-[#f6f9fc] px-5 py-4 bg-[#FAFAFA]">
                     <div className="flex gap-2">
                       <input
-                        className="flex-1 h-9 rounded-lg border border-[#E5E7EB] bg-white px-3 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+                        className="flex-1 h-9 rounded-lg border border-[#e5edf5] bg-white px-3 text-sm text-[#061b31] placeholder:text-[#64748d] outline-none focus:ring-2 focus:ring-[#533afd] focus:border-transparent"
                         placeholder="Ask about this filing..."
                         value={chatInputs[approval.id] || ''}
                         onChange={(e) => setChatInputs((prev) => ({ ...prev, [approval.id]: e.target.value }))}
@@ -200,7 +200,7 @@ export function ApprovalQueue() {
                       <button
                         onClick={() => sendApprovalQuestion(approval)}
                         disabled={chatLoading[approval.id] || !chatInputs[approval.id]?.trim()}
-                        className="h-9 rounded-lg bg-[#6C5CE7] px-4 text-xs font-medium text-white hover:bg-[#5A4BD1] disabled:opacity-50 transition-colors"
+                        className="h-9 rounded-lg bg-[#533afd] px-4 text-xs font-medium text-white hover:bg-[#4434d4] disabled:opacity-50 transition-colors"
                       >
                         {chatLoading[approval.id] ? 'Sending...' : 'Send'}
                       </button>
@@ -210,8 +210,8 @@ export function ApprovalQueue() {
                     )}
                     {chatResponses[approval.id] && (
                       <div className="mt-3 rounded-lg border border-[#E0E7FF] bg-white p-3">
-                        <p className="mb-1 text-[10px] font-semibold text-[#6C5CE7] uppercase tracking-wide">AI Response</p>
-                        <p className="whitespace-pre-wrap text-sm text-[#374151] leading-relaxed">{chatResponses[approval.id]}</p>
+                        <p className="mb-1 text-[10px] font-semibold text-[#533afd] uppercase tracking-wide">AI Response</p>
+                        <p className="whitespace-pre-wrap text-sm text-[#273951] leading-relaxed">{chatResponses[approval.id]}</p>
                       </div>
                     )}
                   </div>
@@ -226,26 +226,26 @@ export function ApprovalQueue() {
       {/* Resolved section */}
       {resolved.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-[#374151] uppercase tracking-wide mb-3">Resolved</h2>
-          <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden">
+          <h2 className="text-sm font-semibold text-[#273951] uppercase tracking-wide mb-3">Resolved</h2>
+          <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+              <thead className="bg-[#f6f9fc] border-b border-[#e5edf5]">
                 <tr>
-                  <th className="px-5 py-3 text-xs font-medium text-[#6B7280] uppercase tracking-wide">Summary</th>
-                  <th className="px-5 py-3 text-xs font-medium text-[#6B7280] uppercase tracking-wide">Type</th>
-                  <th className="px-5 py-3 text-xs font-medium text-[#6B7280] uppercase tracking-wide text-right">Status</th>
+                  <th className="px-5 py-3 text-xs font-medium text-[#64748d] uppercase tracking-wide">Summary</th>
+                  <th className="px-5 py-3 text-xs font-medium text-[#64748d] uppercase tracking-wide">Type</th>
+                  <th className="px-5 py-3 text-xs font-medium text-[#64748d] uppercase tracking-wide text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F3F4F6]">
+              <tbody className="divide-y divide-[#f6f9fc]">
                 {resolvedPag.getPage(resolvedPage).map(approval => (
                   <tr
                     key={approval.id}
                     onClick={() => approval.filingId && navigate(`/filings/${approval.filingId}`)}
-                    className="hover:bg-[#F9FAFB] cursor-pointer transition-colors"
+                    className="hover:bg-[#f6f9fc] cursor-pointer transition-colors"
                   >
-                    <td className="px-5 py-3.5 text-[#374151]">{approval.summary}</td>
+                    <td className="px-5 py-3.5 text-[#273951]">{approval.summary}</td>
                     <td className="px-5 py-3.5">
-                      <span className="text-xs text-[#6B7280] capitalize">{approval.queueType}</span>
+                      <span className="text-xs text-[#64748d] capitalize">{approval.queueType}</span>
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <span className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium capitalize ${statusColor(approval.status)}`}>

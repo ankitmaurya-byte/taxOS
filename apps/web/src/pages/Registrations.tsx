@@ -10,13 +10,13 @@ function RegBadge({ label, status }: { label: string; status: string }) {
       ? 'text-[#065F46]'
       : status === 'amber'
         ? 'text-[#92400E]'
-        : 'text-[#6B7280]'
+        : 'text-[#64748d]'
   const dot =
     status === 'green'
       ? 'bg-[#10B981]'
       : status === 'amber'
         ? 'bg-[#F59E0B]'
-        : 'bg-[#9CA3AF]'
+        : 'bg-[#64748d]'
 
   return (
     <div className="flex items-center gap-2">
@@ -28,7 +28,7 @@ function RegBadge({ label, status }: { label: string; status: string }) {
         )}
         <span className={`text-[13px] ${styles}`}>{label}</span>
       </div>
-      <ArrowUpRight size={14} className="text-[#9CA3AF] ml-auto" />
+      <ArrowUpRight size={14} className="text-[#64748d] ml-auto" />
     </div>
   )
 }
@@ -87,7 +87,7 @@ export function RegistrationsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-48 text-sm text-[#6B7280]">
+      <div className="flex items-center justify-center h-48 text-sm text-[#64748d]">
         Loading registrations…
       </div>
     )
@@ -96,12 +96,12 @@ export function RegistrationsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-[#111827]">Registrations</h1>
+        <h1 className="text-2xl font-semibold text-[#061b31]">Registrations</h1>
         {entities.length > 1 && (
           <select
             value={selectedId || entities[0]?.id}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="w-56 border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm text-[#111827] bg-white outline-none focus:border-[#6C5CE7] transition-colors"
+            className="w-56 border border-[#e5edf5] rounded-lg px-3 py-2 text-sm text-[#061b31] bg-white outline-none focus:border-[#533afd] transition-colors"
           >
             {entities.map((e: any) => (
               <option key={e.id} value={e.id}>
@@ -113,31 +113,31 @@ export function RegistrationsPage() {
       </div>
 
       {!entity ? (
-        <p className="text-sm text-[#6B7280]">No entities found. Create an entity to see registration status.</p>
+        <p className="text-sm text-[#64748d]">No entities found. Create an entity to see registration status.</p>
       ) : (
         <>
           {/* Federal */}
-          <h2 className="text-base font-semibold text-[#111827] mb-4">Federal Registrations</h2>
+          <h2 className="text-base font-semibold text-[#061b31] mb-4">Federal Registrations</h2>
           <div className="grid grid-cols-2 gap-4 mb-8">
             {federalItems.map((item) => (
               <div
                 key={item.title}
-                className="bg-white border border-[#E5E7EB] rounded-[10px] p-5 relative"
+                className="bg-white border border-[#e5edf5] rounded-[10px] p-5 relative"
               >
-                <button className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#374151]">
+                <button className="absolute top-4 right-4 text-[#64748d] hover:text-[#273951]">
                   <ArrowUpRight size={16} />
                 </button>
-                <h3 className="text-sm font-medium text-[#111827] mb-1">{item.title}</h3>
-                <p className="text-xs text-[#6B7280] mb-4">{item.department}</p>
+                <h3 className="text-sm font-medium text-[#061b31] mb-1">{item.title}</h3>
+                <p className="text-xs text-[#64748d] mb-4">{item.department}</p>
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
-                      item.registered ? 'bg-[#10B981]' : 'bg-[#9CA3AF]'
+                      item.registered ? 'bg-[#10B981]' : 'bg-[#64748d]'
                     }`}
                   />
                   <span
                     className={`text-xs font-medium ${
-                      item.registered ? 'text-[#065F46]' : 'text-[#6B7280]'
+                      item.registered ? 'text-[#065F46]' : 'text-[#64748d]'
                     }`}
                   >
                     {item.registered ? 'Registered' : 'Not registered'}
@@ -148,14 +148,14 @@ export function RegistrationsPage() {
           </div>
 
           {/* State */}
-          <h2 className="text-base font-semibold text-[#111827] mb-4">State Registrations</h2>
-          <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+          <h2 className="text-base font-semibold text-[#061b31] mb-4">State Registrations</h2>
+          <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
             {/* Header */}
-            <div className="grid grid-cols-4 px-4 py-2.5 border-b border-[#E5E7EB]">
+            <div className="grid grid-cols-4 px-4 py-2.5 border-b border-[#e5edf5]">
               {['State', 'Secretary of State', 'Registered Agent', 'Payroll'].map((h) => (
                 <span
                   key={h}
-                  className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider"
+                  className="text-[11px] font-semibold text-[#64748d] uppercase tracking-wider"
                 >
                   {h}
                 </span>
@@ -166,11 +166,11 @@ export function RegistrationsPage() {
             {stateRows.map((state) => (
               <div
                 key={state.name}
-                className="grid grid-cols-4 px-4 py-3 border-b border-[#F3F4F6] hover:bg-[#F9FAFB] transition-colors"
+                className="grid grid-cols-4 px-4 py-3 border-b border-[#f6f9fc] hover:bg-[#f6f9fc] transition-colors"
               >
-                <div className="flex items-center gap-1.5 text-sm font-medium text-[#111827]">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-[#061b31]">
                   {state.name}
-                  {state.home && <Home size={14} className="text-[#9CA3AF]" />}
+                  {state.home && <Home size={14} className="text-[#64748d]" />}
                 </div>
                 <RegBadge {...state.sos} />
                 <RegBadge {...state.agent} />

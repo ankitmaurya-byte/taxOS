@@ -25,30 +25,30 @@ export function Pagination({ page, totalPages, totalItems, pageSize, onPageChang
 
   return (
     <div className="flex items-center justify-between">
-      <p className="text-sm text-[#6B7280]">
-        Showing <span className="font-medium text-[#111827]">{from}–{to}</span> of{' '}
-        <span className="font-medium text-[#111827]">{totalItems}</span> {itemLabel}
+      <p className="text-sm text-[#64748d]">
+        Showing <span className="font-medium text-[#061b31]">{from}–{to}</span> of{' '}
+        <span className="font-medium text-[#061b31]">{totalItems}</span> {itemLabel}
       </p>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="flex items-center justify-center h-8 w-8 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center justify-center h-8 w-8 rounded-lg border border-[#e5edf5] bg-white text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft size={15} />
         </button>
 
         {pages.map((p, i) =>
           p === '…' ? (
-            <span key={`e${i}`} className="w-8 text-center text-xs text-[#9CA3AF]">…</span>
+            <span key={`e${i}`} className="w-8 text-center text-xs text-[#64748d]">…</span>
           ) : (
             <button
               key={p}
               onClick={() => onPageChange(p as number)}
               className={`h-8 w-8 rounded-lg text-xs font-medium transition-colors ${
                 page === p
-                  ? 'bg-[#6C5CE7] text-white'
-                  : 'border border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F9FAFB]'
+                  ? 'bg-[#533afd] text-white'
+                  : 'border border-[#e5edf5] bg-white text-[#273951] hover:bg-[#f6f9fc]'
               }`}
             >
               {p}
@@ -59,7 +59,7 @@ export function Pagination({ page, totalPages, totalItems, pageSize, onPageChang
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          className="flex items-center justify-center h-8 w-8 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center justify-center h-8 w-8 rounded-lg border border-[#e5edf5] bg-white text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRight size={15} />
         </button>

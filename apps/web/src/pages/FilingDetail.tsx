@@ -333,7 +333,7 @@ export function FilingDetailPage() {
   if (!filing) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-[#6B7280]">Loading filing...</p>
+        <p className="text-[#64748d]">Loading filing...</p>
       </div>
     )
   }
@@ -350,7 +350,7 @@ const renderValue = (value: any): React.ReactNode => {
     const conf = value.confidence != null ? Math.round(value.confidence * 100) : null;
     return (
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[#111827]">{String(value.value ?? '—')}</span>
+        <span className="text-[#061b31]">{String(value.value ?? '—')}</span>
         {conf != null && (
           <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
             conf >= 90 ? 'bg-green-100 text-green-700' :
@@ -360,7 +360,7 @@ const renderValue = (value: any): React.ReactNode => {
           </span>
         )}
         {value.source && (
-          <span className="text-[10px] text-[#9CA3AF]">via {value.source}</span>
+          <span className="text-[10px] text-[#64748d]">via {value.source}</span>
         )}
         {value.needsCpaReview && (
           <span className="inline-flex items-center rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700">Review</span>
@@ -372,11 +372,11 @@ const renderValue = (value: any): React.ReactNode => {
   // Generic objects → key-value pairs
   if (typeof value === 'object') {
     return (
-      <div className="rounded-lg bg-[#F9FAFB] border border-[#F3F4F6] px-3 py-2 space-y-1.5">
+      <div className="rounded-lg bg-[#f6f9fc] border border-[#f6f9fc] px-3 py-2 space-y-1.5">
         {Object.entries(value).map(([k, v]) => (
           <div key={k} className="flex items-start gap-2 text-sm">
-            <span className="font-medium text-[#6B7280] min-w-[100px] shrink-0">{formatKey(k)}</span>
-            <span className="text-[#111827]">{renderValue(v)}</span>
+            <span className="font-medium text-[#64748d] min-w-[100px] shrink-0">{formatKey(k)}</span>
+            <span className="text-[#061b31]">{renderValue(v)}</span>
           </div>
         ))}
       </div>
@@ -389,7 +389,7 @@ const renderValue = (value: any): React.ReactNode => {
   const centerContent = (() => {
     if (isArchived) {
       return {
-        icon: <Archive size={40} className="text-[#6B7280] mb-4" />,
+        icon: <Archive size={40} className="text-[#64748d] mb-4" />,
         title: 'Filing archived',
         description: 'This filing has been archived. No further actions are available.',
       }
@@ -409,7 +409,7 @@ const renderValue = (value: any): React.ReactNode => {
       }
     }
     return {
-      icon: <Hourglass size={40} className="text-[#6C5CE7] mb-4" />,
+      icon: <Hourglass size={40} className="text-[#533afd] mb-4" />,
       title: 'Filing in progress',
       description: 'Our team is processing your filing. You\'ll be notified once it\'s completed. Feel free to reach out with any questions.',
     }
@@ -421,11 +421,11 @@ const renderValue = (value: any): React.ReactNode => {
       <div className="flex-1 flex flex-col overflow-y-auto">
         {/* Breadcrumb */}
         <div className="flex items-center gap-1 px-8 pt-6 pb-3 text-[13px]">
-          <Link to="/filings" className="text-[#6B7280] hover:text-[#374151]">
+          <Link to="/filings" className="text-[#64748d] hover:text-[#273951]">
             Filings
           </Link>
-          <ChevronRight size={12} className="text-[#9CA3AF]" />
-          <span className="text-[#111827]">
+          <ChevronRight size={12} className="text-[#64748d]" />
+          <span className="text-[#061b31]">
             {filing.formType} ({filing.formName})
           </span>
         </div>
@@ -433,7 +433,7 @@ const renderValue = (value: any): React.ReactNode => {
         {/* Filing header */}
         <div className="flex items-center justify-between px-8 pb-4">
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-[#111827]">
+            <h1 className="text-lg font-semibold text-[#061b31]">
               {filing.formType} ({filing.formName})
             </h1>
             <span className="text-lg">🇺🇸</span>
@@ -445,17 +445,17 @@ const renderValue = (value: any): React.ReactNode => {
                 <Circle size={8} fill="#EF4444" />
               </button>
             )}
-            <button className="p-1.5 text-[#9CA3AF] hover:bg-[#F3F4F6] rounded transition-colors">
+            <button className="p-1.5 text-[#64748d] hover:bg-[#f6f9fc] rounded transition-colors">
               <FolderOpen size={16} />
             </button>
-            <button className="p-1.5 text-[#9CA3AF] hover:bg-[#F3F4F6] rounded transition-colors">
+            <button className="p-1.5 text-[#64748d] hover:bg-[#f6f9fc] rounded transition-colors">
               <MoreHorizontal size={16} />
             </button>
           </div>
         </div>
 
         {/* Main content */}
-        <div className="flex-1 bg-white mx-8 mb-8 rounded-xl border border-[#E5E7EB] flex flex-col items-center justify-center p-8">
+        <div className="flex-1 bg-white mx-8 mb-8 rounded-md border border-[#e5edf5] flex flex-col items-center justify-center p-8">
           {/* Stage progress */}
           <div className="flex items-center gap-0 mb-10 w-full max-w-md">
             {stages.map((stage, i) => (
@@ -464,8 +464,8 @@ const renderValue = (value: any): React.ReactNode => {
                   <div
                     className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                       i <= currentStage
-                        ? 'bg-[#6C5CE7] text-white'
-                        : 'bg-[#F3F4F6] text-[#9CA3AF]'
+                        ? 'bg-[#533afd] text-white'
+                        : 'bg-[#f6f9fc] text-[#64748d]'
                     }`}
                   >
                     {i < currentStage ? (
@@ -474,12 +474,12 @@ const renderValue = (value: any): React.ReactNode => {
                       <FileText size={18} />
                     )}
                   </div>
-                  <span className="text-[10px] text-[#6B7280] mt-1.5 text-center">{stage}</span>
+                  <span className="text-[10px] text-[#64748d] mt-1.5 text-center">{stage}</span>
                 </div>
                 {i < stages.length - 1 && (
                   <div
                     className={`h-0.5 flex-1 mx-1 ${
-                      i < currentStage ? 'bg-[#6C5CE7]' : 'bg-[#E5E7EB]'
+                      i < currentStage ? 'bg-[#533afd]' : 'bg-[#e5edf5]'
                     }`}
                   />
                 )}
@@ -489,29 +489,29 @@ const renderValue = (value: any): React.ReactNode => {
 
           {/* Center content — adapts to status */}
           {centerContent.icon}
-          <h2 className="text-lg font-semibold text-[#111827] mb-2">{centerContent.title}</h2>
-          <p className="text-sm text-[#6B7280] text-center max-w-md mb-6">
+          <h2 className="text-lg font-semibold text-[#061b31] mb-2">{centerContent.title}</h2>
+          <p className="text-sm text-[#64748d] text-center max-w-md mb-6">
             {centerContent.description}
           </p>
 
           {/* Details grid */}
           <div className="grid grid-cols-2 gap-x-12 gap-y-3 text-[13px] mb-8">
-            <span className="text-[#6B7280]">Reviewing by:</span>
-            <span className="text-[#111827]">
+            <span className="text-[#64748d]">Reviewing by:</span>
+            <span className="text-[#061b31]">
               {reviewLock
                 ? <span className="inline-flex items-center gap-1 text-[#15803D]"><ShieldCheck size={13} />{reviewLock.cpaEmail || reviewLock.cpaName}</span>
-                : <span className="text-[#9CA3AF]">CPA not assigned yet</span>}
+                : <span className="text-[#64748d]">CPA not assigned yet</span>}
             </span>
-            <span className="text-[#6B7280]">Preparer:</span>
-            <span className="text-[#111827]">
+            <span className="text-[#64748d]">Preparer:</span>
+            <span className="text-[#061b31]">
               {filing.aiConfidenceScore != null
                 ? `AI (${Math.round(filing.aiConfidenceScore * 100)}% confidence)`
                 : filing.cpaAssignedId
                   ? 'CPA assigned'
                   : '—'}
             </span>
-            <span className="text-[#6B7280]">Approx. time of delivery:</span>
-            <span className="text-[#111827]">
+            <span className="text-[#64748d]">Approx. time of delivery:</span>
+            <span className="text-[#061b31]">
               {filing.submittedAt
                 ? formatDate(filing.submittedAt)
                 : (() => {
@@ -519,28 +519,28 @@ const renderValue = (value: any): React.ReactNode => {
                     return deadline?.dueDate ? formatDate(deadline.dueDate) : '—'
                   })()}
             </span>
-            <span className="text-[#6B7280]">Deadline:</span>
-            <span className="text-[#111827] flex items-center gap-1">
-              <Calendar size={13} className="text-[#9CA3AF]" />
+            <span className="text-[#64748d]">Deadline:</span>
+            <span className="text-[#061b31] flex items-center gap-1">
+              <Calendar size={13} className="text-[#64748d]" />
               {(() => {
                 const deadline = deadlines.find((d: any) => d.id === filing.deadlineId)
                 return deadline?.dueDate ? formatDate(deadline.dueDate) : formatDate(filing.createdAt)
               })()}
             </span>
-            <span className="text-[#6B7280]">Entity:</span>
-            <span className="text-[#111827]">
+            <span className="text-[#64748d]">Entity:</span>
+            <span className="text-[#061b31]">
               {entityName ? (
-                <Link to={`/entities/${filing.entityId}`} className="text-[#6C5CE7] hover:underline">
+                <Link to={`/entities/${filing.entityId}`} className="text-[#533afd] hover:underline">
                   {entityName}
                 </Link>
               ) : (
                 '—'
               )}
             </span>
-            <span className="text-[#6B7280]">Tax Year:</span>
-            <span className="text-[#111827]">{filing.taxYear || '—'}</span>
-            <span className="text-[#6B7280]">Approved By:</span>
-            <span className="text-[#111827]">
+            <span className="text-[#64748d]">Tax Year:</span>
+            <span className="text-[#061b31]">{filing.taxYear || '—'}</span>
+            <span className="text-[#64748d]">Approved By:</span>
+            <span className="text-[#061b31]">
               {filing.founderApprovedAt
                 ? <>
                     {(filing as any).approvedBy
@@ -548,18 +548,18 @@ const renderValue = (value: any): React.ReactNode => {
                       : formatDate(filing.founderApprovedAt)
                     }
                   </>
-                : <span className="text-[#9CA3AF]">To be approved</span>
+                : <span className="text-[#64748d]">To be approved</span>
               }
             </span>
-            <span className="text-[#6B7280]">Last Updated:</span>
-            <span className="text-[#111827]">
+            <span className="text-[#64748d]">Last Updated:</span>
+            <span className="text-[#061b31]">
               {filing.updatedAt ? formatDate(filing.updatedAt) : '—'}
             </span>
           </div>
 
           {/* Rejection remarks */}
           {rejectionRemarks.length > 0 && (
-            <div className="mb-8 w-full max-w-4xl rounded-xl border border-amber-200 bg-amber-50 p-4 text-left">
+            <div className="mb-8 w-full max-w-4xl rounded-md border border-amber-200 bg-amber-50 p-4 text-left">
               <h3 className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1.5">
                 <AlertTriangle size={14} />
                 Remarks
@@ -568,9 +568,9 @@ const renderValue = (value: any): React.ReactNode => {
                 {rejectionRemarks.map((remark, i) => (
                   <div key={i} className="rounded-lg bg-white border border-amber-100 px-3 py-2 text-sm">
                     <span className="font-medium text-amber-700">{remark.source}:</span>{' '}
-                    <span className="text-[#374151]">{remark.reason}</span>
+                    <span className="text-[#273951]">{remark.reason}</span>
                     {remark.date && (
-                      <span className="ml-2 text-xs text-[#9CA3AF]">{formatDate(remark.date)}</span>
+                      <span className="ml-2 text-xs text-[#64748d]">{formatDate(remark.date)}</span>
                     )}
                   </div>
                 ))}
@@ -580,21 +580,21 @@ const renderValue = (value: any): React.ReactNode => {
 
           {/* Notified CPAs — hide once claimed */}
           {notifiedCpas.length > 0 && !reviewLock && (
-            <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-white p-4 text-left">
-              <h3 className="text-sm font-semibold text-[#111827] mb-3 flex items-center gap-1.5">
-                <Eye size={14} className="text-[#6C5CE7]" />
+            <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-white p-4 text-left">
+              <h3 className="text-sm font-semibold text-[#061b31] mb-3 flex items-center gap-1.5">
+                <Eye size={14} className="text-[#533afd]" />
                 Claim Sent To ({notifiedCpas.length} CPAs)
               </h3>
               <div className="space-y-2">
                 {notifiedCpas.map((cpa, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-lg bg-[#F9FAFB] px-3 py-2.5">
+                  <div key={i} className="flex items-center justify-between rounded-lg bg-[#f6f9fc] px-3 py-2.5">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EDE9FD] text-xs font-bold text-[#6C5CE7]">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EDE9FD] text-xs font-bold text-[#533afd]">
                         {(cpa.cpaName || 'C')[0].toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-[#111827]">{cpa.cpaName}</p>
-                        <p className="text-xs text-[#6B7280]">{cpa.cpaEmail}</p>
+                        <p className="text-sm font-medium text-[#061b31]">{cpa.cpaName}</p>
+                        <p className="text-xs text-[#64748d]">{cpa.cpaEmail}</p>
                       </div>
                     </div>
                     <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
@@ -634,7 +634,7 @@ const renderValue = (value: any): React.ReactNode => {
                 <button
                   onClick={handleAuditRisk}
                   disabled={auditRiskLoading}
-                  className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
+                  className="h-10 rounded-lg border border-[#e5edf5] px-4 text-sm font-medium text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-50"
                 >
                   {auditRiskLoading ? 'Scoring Risk...' : 'Run Audit Risk'}
                 </button>
@@ -644,7 +644,7 @@ const renderValue = (value: any): React.ReactNode => {
 
           {/* Founder approval — non-founder sees wait message only */}
           {status === 'founder_approval' && !isFounder && (
-            <p className="mb-8 text-sm text-[#6B7280]">Waiting for founder to review and approve this filing.</p>
+            <p className="mb-8 text-sm text-[#64748d]">Waiting for founder to review and approve this filing.</p>
           )}
 
           {/* CPA Review — CPA claimed: approve */}
@@ -678,7 +678,7 @@ const renderValue = (value: any): React.ReactNode => {
                   if (!id) return
                   await claimFilingReview(id)
                 }}
-                className="h-10 rounded-lg bg-[#6C5CE7] px-5 text-sm font-medium text-white hover:bg-[#5B4BD5]"
+                className="h-10 rounded-lg bg-[#533afd] px-5 text-sm font-medium text-white hover:bg-[#4434d4]"
               >
                 Claim Filing
               </button>
@@ -695,7 +695,7 @@ const renderValue = (value: any): React.ReactNode => {
               >
                 {stopWorkflowLoading ? 'Stopping...' : 'Stop Workflow'}
               </button>
-              <p className="flex items-center text-xs text-[#6B7280]">Waiting for CPA to review. Stop workflow to release CPA lock.</p>
+              <p className="flex items-center text-xs text-[#64748d]">Waiting for CPA to review. Stop workflow to release CPA lock.</p>
             </div>
           )}
 
@@ -706,7 +706,7 @@ const renderValue = (value: any): React.ReactNode => {
                 <button
                   onClick={handleStartIntake}
                   disabled={startIntakeLoading}
-                  className="h-10 rounded-lg bg-[#6C5CE7] px-4 text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50"
+                  className="h-10 rounded-lg bg-[#533afd] px-4 text-sm font-medium text-white hover:bg-[#4434d4] disabled:opacity-50"
                 >
                   {startIntakeLoading ? 'Starting Intake...' : 'Start Intake Agent'}
                 </button>
@@ -716,7 +716,7 @@ const renderValue = (value: any): React.ReactNode => {
                 <button
                   onClick={handlePrefill}
                   disabled={prefillLoading}
-                  className="h-10 rounded-lg border border-[#D8D3FF] px-4 text-sm font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] disabled:opacity-50"
+                  className="h-10 rounded-lg border border-[#D8D3FF] px-4 text-sm font-medium text-[#533afd] hover:bg-[#f6f9fc] disabled:opacity-50"
                 >
                   {prefillLoading ? 'Running Prefill...' : 'Run Prefill Agent'}
                 </button>
@@ -726,7 +726,7 @@ const renderValue = (value: any): React.ReactNode => {
                 <button
                   onClick={handleAuditRisk}
                   disabled={auditRiskLoading}
-                  className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
+                  className="h-10 rounded-lg border border-[#e5edf5] px-4 text-sm font-medium text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-50"
                 >
                   {auditRiskLoading ? 'Scoring Risk...' : 'Run Audit Risk'}
                 </button>
@@ -736,7 +736,7 @@ const renderValue = (value: any): React.ReactNode => {
                 <button
                   onClick={() => handleUpdateStatus(statusAction.nextStatus)}
                   disabled={updateStatusLoading}
-                  className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
+                  className="h-10 rounded-lg border border-[#e5edf5] px-4 text-sm font-medium text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-50"
                 >
                   {updateStatusLoading ? 'Updating...' : statusAction.label}
                 </button>
@@ -746,7 +746,7 @@ const renderValue = (value: any): React.ReactNode => {
                 <button
                   onClick={handlePause}
                   disabled={pauseLoading}
-                  className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
+                  className="h-10 rounded-lg border border-[#e5edf5] px-4 text-sm font-medium text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-50"
                 >
                   {pauseLoading ? 'Pausing...' : 'Pause Workflow'}
                 </button>
@@ -766,7 +766,7 @@ const renderValue = (value: any): React.ReactNode => {
                 <button
                   onClick={handleEscalate}
                   disabled={escalateLoading}
-                  className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50"
+                  className="h-10 rounded-lg border border-[#e5edf5] px-4 text-sm font-medium text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-50"
                 >
                   {escalateLoading ? 'Escalating...' : 'Escalate to CPA'}
                 </button>
@@ -780,14 +780,14 @@ const renderValue = (value: any): React.ReactNode => {
               <button
                 onClick={handleArchive}
                 disabled={archiveLoading}
-                className="h-10 rounded-lg border border-[#E5E7EB] px-4 text-sm font-medium text-[#374151] hover:bg-[#F9FAFB] disabled:opacity-50 flex items-center gap-2"
+                className="h-10 rounded-lg border border-[#e5edf5] px-4 text-sm font-medium text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-50 flex items-center gap-2"
               >
                 <Archive size={16} />
                 {archiveLoading ? 'Archiving...' : 'Archive Filing'}
               </button>
               <button
                 onClick={handleExport}
-                className="h-10 rounded-lg border border-[#D8D3FF] px-4 text-sm font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] flex items-center gap-2"
+                className="h-10 rounded-lg border border-[#D8D3FF] px-4 text-sm font-medium text-[#533afd] hover:bg-[#f6f9fc] flex items-center gap-2"
               >
                 <Download size={16} />
                 Export Filing
@@ -800,7 +800,7 @@ const renderValue = (value: any): React.ReactNode => {
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
               <button
                 onClick={handleExport}
-                className="h-10 rounded-lg border border-[#D8D3FF] px-4 text-sm font-medium text-[#6C5CE7] hover:bg-[#F3F0FF] flex items-center gap-2"
+                className="h-10 rounded-lg border border-[#D8D3FF] px-4 text-sm font-medium text-[#533afd] hover:bg-[#f6f9fc] flex items-center gap-2"
               >
                 <Download size={16} />
                 Export Filing
@@ -810,14 +810,14 @@ const renderValue = (value: any): React.ReactNode => {
 
           {/* Audit Risk Result */}
           {auditRiskResult && (
-            <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-white p-4 text-left">
-              <h3 className="text-sm font-semibold text-[#111827] mb-3 flex items-center gap-1.5">
+            <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-white p-4 text-left">
+              <h3 className="text-sm font-semibold text-[#061b31] mb-3 flex items-center gap-1.5">
                 <ShieldCheck size={14} />
                 Audit Risk Assessment
               </h3>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className="rounded-lg bg-[#F9FAFB] px-3 py-2.5">
-                  <span className="text-xs text-[#6B7280]">Risk Score</span>
+                <div className="rounded-lg bg-[#f6f9fc] px-3 py-2.5">
+                  <span className="text-xs text-[#64748d]">Risk Score</span>
                   <p className={`text-lg font-bold ${
                     auditRiskResult.riskScore > 60 ? 'text-red-600' :
                     auditRiskResult.riskScore > 30 ? 'text-amber-600' : 'text-green-600'
@@ -825,28 +825,28 @@ const renderValue = (value: any): React.ReactNode => {
                     {auditRiskResult.riskScore}/100
                   </p>
                 </div>
-                <div className="rounded-lg bg-[#F9FAFB] px-3 py-2.5">
-                  <span className="text-xs text-[#6B7280]">Risk Level</span>
-                  <p className="text-lg font-bold text-[#111827]">{auditRiskResult.riskLevel}</p>
+                <div className="rounded-lg bg-[#f6f9fc] px-3 py-2.5">
+                  <span className="text-xs text-[#64748d]">Risk Level</span>
+                  <p className="text-lg font-bold text-[#061b31]">{auditRiskResult.riskLevel}</p>
                 </div>
               </div>
               {auditRiskResult.summary && (
-                <div className="rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] p-3 text-sm text-[#374151] whitespace-pre-wrap mb-3">
+                <div className="rounded-lg bg-[#f6f9fc] border border-[#e5edf5] p-3 text-sm text-[#273951] whitespace-pre-wrap mb-3">
                   {auditRiskResult.summary}
                 </div>
               )}
               {auditRiskResult.flaggedItems?.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-medium text-[#6B7280] uppercase">Flagged Items</h4>
+                  <h4 className="text-xs font-medium text-[#64748d] uppercase">Flagged Items</h4>
                   {auditRiskResult.flaggedItems.map((item: any, i: number) => (
-                    <div key={i} className="rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm">
+                    <div key={i} className="rounded-lg border border-[#e5edf5] px-3 py-2 text-sm">
                       <span className={`inline-block mr-2 px-1.5 py-0.5 rounded text-xs font-medium ${
                         item.severity === 'high' ? 'bg-red-100 text-red-700' :
                         item.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
                       }`}>{item.severity}</span>
-                      <span className="text-[#374151]">{item.description || item.issue}</span>
+                      <span className="text-[#273951]">{item.description || item.issue}</span>
                       {item.recommendation && (
-                        <p className="mt-1 text-xs text-[#6B7280]">{item.recommendation}</p>
+                        <p className="mt-1 text-xs text-[#64748d]">{item.recommendation}</p>
                       )}
                     </div>
                   ))}
@@ -857,11 +857,11 @@ const renderValue = (value: any): React.ReactNode => {
 
           {/* Intake conversation — only show when an intake conversation exists or filing is at intake/ai_prep */}
           {canChat && (
-            <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4 text-left">
+            <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-[#FCFCFD] p-4 text-left">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-[#111827]">Intake Conversation</h3>
-                  <p className="mt-1 text-xs text-[#6B7280]">
+                  <h3 className="text-sm font-semibold text-[#061b31]">Intake Conversation</h3>
+                  <p className="mt-1 text-xs text-[#64748d]">
                     Status: {intakeConversation?.status}
                   </p>
                 </div>
@@ -869,14 +869,14 @@ const renderValue = (value: any): React.ReactNode => {
 
               <div className="max-h-72 space-y-3 overflow-y-auto rounded-lg bg-white p-3">
                 {intakeMessages.length === 0 && chatMessages.length === 0 ? (
-                  <p className="text-sm text-[#6B7280]">No intake messages yet.</p>
+                  <p className="text-sm text-[#64748d]">No intake messages yet.</p>
                 ) : (
                   [...intakeMessages, ...chatMessages].map((message: any, index: number) => (
                     <div
                       key={`${message.timestamp || 'msg'}-${index}`}
-                      className={`rounded-lg px-3 py-2 text-sm ${message.role === 'assistant' ? 'bg-[#F3F0FF] text-[#211B4E]' : 'ml-10 bg-[#F3F4F6] text-[#111827]'}`}
+                      className={`rounded-lg px-3 py-2 text-sm ${message.role === 'assistant' ? 'bg-[#f6f9fc] text-[#211B4E]' : 'ml-10 bg-[#f6f9fc] text-[#061b31]'}`}
                     >
-                      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#6B7280]">
+                      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#64748d]">
                         {message.role === 'assistant' ? 'TaxOS AI' : 'You'}
                       </p>
                       <p className="whitespace-pre-wrap">{cleanMessageContent(message.content)}</p>
@@ -894,12 +894,12 @@ const renderValue = (value: any): React.ReactNode => {
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                   disabled={isStreaming}
                   placeholder="Continue the intake conversation..."
-                  className="h-10 flex-1 rounded-lg border border-[#E5E7EB] px-3 text-sm text-[#111827] outline-none focus:border-[#6C5CE7]"
+                  className="h-10 flex-1 rounded-lg border border-[#e5edf5] px-3 text-sm text-[#061b31] outline-none focus:border-[#533afd]"
                 />
                 <button
                   onClick={handleSend}
                   disabled={isStreaming || !chatInput.trim()}
-                  className="h-10 rounded-lg bg-[#6C5CE7] px-4 text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50"
+                  className="h-10 rounded-lg bg-[#533afd] px-4 text-sm font-medium text-white hover:bg-[#4434d4] disabled:opacity-50"
                 >
                   {isStreaming ? 'Sending...' : 'Send'}
                 </button>
@@ -909,11 +909,11 @@ const renderValue = (value: any): React.ReactNode => {
 
           {/* Intake conversation read-only — show past messages when conversation is completed or filing moved past intake */}
           {!canChat && intakeMessages.length > 0 && (
-            <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-[#FCFCFD] p-4 text-left">
+            <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-[#FCFCFD] p-4 text-left">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-[#111827]">Intake Conversation</h3>
-                  <p className="mt-1 text-xs text-[#6B7280]">
+                  <h3 className="text-sm font-semibold text-[#061b31]">Intake Conversation</h3>
+                  <p className="mt-1 text-xs text-[#64748d]">
                     Completed — {intakeMessages.length} messages
                   </p>
                 </div>
@@ -922,9 +922,9 @@ const renderValue = (value: any): React.ReactNode => {
                 {intakeMessages.map((message: any, index: number) => (
                   <div
                     key={`${message.timestamp || 'msg'}-${index}`}
-                    className={`rounded-lg px-3 py-2 text-sm ${message.role === 'assistant' ? 'bg-[#F3F0FF] text-[#211B4E]' : 'ml-10 bg-[#F3F4F6] text-[#111827]'}`}
+                    className={`rounded-lg px-3 py-2 text-sm ${message.role === 'assistant' ? 'bg-[#f6f9fc] text-[#211B4E]' : 'ml-10 bg-[#f6f9fc] text-[#061b31]'}`}
                   >
-                    <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#6B7280]">
+                    <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#64748d]">
                       {message.role === 'assistant' ? 'TaxOS AI' : 'You'}
                     </p>
                     <p className="whitespace-pre-wrap">{cleanMessageContent(message.content)}</p>
@@ -936,13 +936,13 @@ const renderValue = (value: any): React.ReactNode => {
 
           {/* Collected data from intake conversation */}
           {Object.keys(collectedData).length > 0 && (
-            <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-white p-4 text-left">
-              <h3 className="text-sm font-semibold text-[#111827] mb-3">Collected Data</h3>
+            <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-white p-4 text-left">
+              <h3 className="text-sm font-semibold text-[#061b31] mb-3">Collected Data</h3>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(collectedData).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between rounded-lg bg-[#F9FAFB] px-3 py-2.5">
-                    <span className="text-xs font-medium text-[#6B7280]">{formatKey(key)}</span>
-                    <span className="text-sm font-medium text-[#111827]">{value}</span>
+                  <div key={key} className="flex items-center justify-between rounded-lg bg-[#f6f9fc] px-3 py-2.5">
+                    <span className="text-xs font-medium text-[#64748d]">{formatKey(key)}</span>
+                    <span className="text-sm font-medium text-[#061b31]">{value}</span>
                   </div>
                 ))}
               </div>
@@ -950,15 +950,15 @@ const renderValue = (value: any): React.ReactNode => {
           )}
 
           {/* Filing data — editable section */}
-          <div className="mb-8 w-full max-w-4xl rounded-xl border border-[#E5E7EB] bg-white p-4 text-left">
+          <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-white p-4 text-left">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-[#111827]">
+              <h3 className="text-sm font-semibold text-[#061b31]">
                 Filing Data {Object.keys(filing.filingData ?? {}).length > 0 && `(${Object.keys(filing.filingData).length} fields)`}
               </h3>
               {(status === 'intake' || status === 'ai_prep') && (
                 <button
                   onClick={() => setShowEditData(true)}
-                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#E5E7EB] text-xs font-medium text-[#374151] hover:bg-[#F9FAFB] transition-colors"
+                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#e5edf5] text-xs font-medium text-[#273951] hover:bg-[#f6f9fc] transition-colors"
                 >
                   <Pencil size={13} />
                   Edit / Add Fields
@@ -966,21 +966,21 @@ const renderValue = (value: any): React.ReactNode => {
               )}
             </div>
             {Object.keys(filing.filingData ?? {}).length === 0 ? (
-              <p className="text-sm text-[#6B7280] italic">No data fields yet. Use "Edit / Add Fields" to add them manually.</p>
+              <p className="text-sm text-[#64748d] italic">No data fields yet. Use "Edit / Add Fields" to add them manually.</p>
             ) : (
-              <div className="bg-white border border-[#E5E7EB] rounded-lg overflow-hidden">
+              <div className="bg-white border border-[#e5edf5] rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-[#F9FAFB]">
-                      <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-2 w-1/3">Field</th>
-                      <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-2">Value</th>
+                    <tr className="bg-[#f6f9fc]">
+                      <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-2 w-1/3">Field</th>
+                      <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-2">Value</th>
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(filing.filingData ?? {}).map(([key, value]) => (
-                      <tr key={key} className="border-t border-[#F3F4F6]">
-                        <td className="px-4 py-2 text-sm text-[#6B7280] font-medium">{formatKey(key)}</td>
-                        <td className="px-4 py-2 text-sm text-[#111827]">
+                      <tr key={key} className="border-t border-[#f6f9fc]">
+                        <td className="px-4 py-2 text-sm text-[#64748d] font-medium">{formatKey(key)}</td>
+                        <td className="px-4 py-2 text-sm text-[#061b31]">
                         {renderValue(value)}
                         </td>
                       </tr>
@@ -993,7 +993,7 @@ const renderValue = (value: any): React.ReactNode => {
 
           <button
             onClick={() => setShowPreview(true)}
-            className="w-full max-w-sm h-10 border border-[#6C5CE7] text-[#6C5CE7] rounded-lg text-sm font-medium hover:bg-[#EDE9FD] transition-colors flex items-center justify-center gap-2"
+            className="w-full max-w-sm h-10 border border-[#533afd] text-[#533afd] rounded-lg text-sm font-medium hover:bg-[#EDE9FD] transition-colors flex items-center justify-center gap-2"
           >
             <Eye size={16} />
             Preview form
@@ -1044,20 +1044,20 @@ function FormPreviewModal({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+      <div className="relative bg-white rounded-md shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5edf5]">
           <div>
-            <h2 className="text-lg font-semibold text-[#111827]">
+            <h2 className="text-lg font-semibold text-[#061b31]">
               {filing.formType} — {filing.formName}
             </h2>
-            <p className="text-xs text-[#6B7280] mt-0.5">
+            <p className="text-xs text-[#64748d] mt-0.5">
               {entityName || 'Unknown entity'} &middot; Tax year {filing.taxYear || '—'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#9CA3AF] hover:bg-[#F3F4F6] hover:text-[#374151]"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#64748d] hover:bg-[#f6f9fc] hover:text-[#273951]"
           >
             <X size={18} />
           </button>
@@ -1069,7 +1069,7 @@ function FormPreviewModal({
           <div className="flex items-center gap-3">
             <StatusBadge status={filing.status} />
             {filing.aiConfidenceScore != null && (
-              <span className="text-xs text-[#6B7280]">
+              <span className="text-xs text-[#64748d]">
                 AI confidence: {Math.round(filing.aiConfidenceScore * 100)}%
               </span>
             )}
@@ -1078,8 +1078,8 @@ function FormPreviewModal({
           {/* AI Summary */}
           {filing.aiSummary && (
             <div>
-              <h3 className="text-sm font-semibold text-[#111827] mb-2">AI Summary</h3>
-              <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-4 text-sm text-[#374151] whitespace-pre-wrap">
+              <h3 className="text-sm font-semibold text-[#061b31] mb-2">AI Summary</h3>
+              <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-lg p-4 text-sm text-[#273951] whitespace-pre-wrap">
                 {filing.aiSummary}
               </div>
             </div>
@@ -1088,8 +1088,8 @@ function FormPreviewModal({
           {/* AI Reasoning */}
           {filing.aiReasoning && (
             <div>
-              <h3 className="text-sm font-semibold text-[#111827] mb-2">AI Reasoning</h3>
-              <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-4 text-sm text-[#374151] whitespace-pre-wrap">
+              <h3 className="text-sm font-semibold text-[#061b31] mb-2">AI Reasoning</h3>
+              <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-lg p-4 text-sm text-[#273951] whitespace-pre-wrap">
                 {filing.aiReasoning}
               </div>
             </div>
@@ -1097,31 +1097,31 @@ function FormPreviewModal({
 
           {/* Filing Data fields */}
           <div>
-            <h3 className="text-sm font-semibold text-[#111827] mb-2">
+            <h3 className="text-sm font-semibold text-[#061b31] mb-2">
               Form Data {dataEntries.length > 0 && `(${dataEntries.length} fields)`}
             </h3>
             {dataEntries.length === 0 ? (
-              <p className="text-sm text-[#6B7280] italic">No form data collected yet.</p>
+              <p className="text-sm text-[#64748d] italic">No form data collected yet.</p>
             ) : (
-              <div className="bg-white border border-[#E5E7EB] rounded-lg overflow-hidden">
+              <div className="bg-white border border-[#e5edf5] rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-[#F9FAFB]">
-                      <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-2 w-1/3">
+                    <tr className="bg-[#f6f9fc]">
+                      <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-2 w-1/3">
                         Field
                       </th>
-                      <th className="text-left text-xs font-medium text-[#6B7280] uppercase px-4 py-2">
+                      <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-2">
                         Value
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {dataEntries.map(([key, value]) => (
-                      <tr key={key} className="border-t border-[#F3F4F6]">
-                        <td className="px-4 py-2 text-sm text-[#6B7280] font-medium">
+                      <tr key={key} className="border-t border-[#f6f9fc]">
+                        <td className="px-4 py-2 text-sm text-[#64748d] font-medium">
                           {key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())}
                         </td>
-                        <td className="px-4 py-2 text-sm text-[#111827]">
+                        <td className="px-4 py-2 text-sm text-[#061b31]">
                           {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value ?? '—')}
                         </td>
                       </tr>
@@ -1134,25 +1134,25 @@ function FormPreviewModal({
 
           {/* Attached Documents */}
           <div>
-            <h3 className="text-sm font-semibold text-[#111827] mb-2">
+            <h3 className="text-sm font-semibold text-[#061b31] mb-2">
               Documents {documents.length > 0 && `(${documents.length})`}
             </h3>
             {documents.length === 0 ? (
-              <p className="text-sm text-[#6B7280] italic">No documents attached.</p>
+              <p className="text-sm text-[#64748d] italic">No documents attached.</p>
             ) : (
               <div className="space-y-2">
                 {documents.map((doc: any) => (
                   <div
                     key={doc.id}
-                    className="flex items-center gap-3 p-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg"
+                    className="flex items-center gap-3 p-3 bg-[#f6f9fc] border border-[#e5edf5] rounded-lg"
                   >
-                    <FileText size={16} className="text-[#6C5CE7] flex-shrink-0" />
+                    <FileText size={16} className="text-[#533afd] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#111827] truncate">{doc.fileName}</p>
-                      <p className="text-xs text-[#6B7280]">{doc.mimeType}</p>
+                      <p className="text-sm text-[#061b31] truncate">{doc.fileName}</p>
+                      <p className="text-xs text-[#64748d]">{doc.mimeType}</p>
                     </div>
                     {doc.confidenceScore != null && (
-                      <span className="text-xs text-[#6B7280]">
+                      <span className="text-xs text-[#64748d]">
                         {Math.round(doc.confidenceScore * 100)}%
                       </span>
                     )}
@@ -1164,22 +1164,22 @@ function FormPreviewModal({
 
           {/* Key Dates */}
           <div>
-            <h3 className="text-sm font-semibold text-[#111827] mb-2">Key Dates</h3>
+            <h3 className="text-sm font-semibold text-[#061b31] mb-2">Key Dates</h3>
             <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-              <span className="text-[#6B7280]">Created:</span>
-              <span className="text-[#111827]">{formatDate(filing.createdAt)}</span>
-              <span className="text-[#6B7280]">Last Updated:</span>
-              <span className="text-[#111827]">{filing.updatedAt ? formatDate(filing.updatedAt) : '—'}</span>
+              <span className="text-[#64748d]">Created:</span>
+              <span className="text-[#061b31]">{formatDate(filing.createdAt)}</span>
+              <span className="text-[#64748d]">Last Updated:</span>
+              <span className="text-[#061b31]">{filing.updatedAt ? formatDate(filing.updatedAt) : '—'}</span>
               {filing.founderApprovedAt && (
                 <>
-                  <span className="text-[#6B7280]">Founder Approved:</span>
-                  <span className="text-[#111827]">{formatDate(filing.founderApprovedAt)}</span>
+                  <span className="text-[#64748d]">Founder Approved:</span>
+                  <span className="text-[#061b31]">{formatDate(filing.founderApprovedAt)}</span>
                 </>
               )}
               {filing.submittedAt && (
                 <>
-                  <span className="text-[#6B7280]">Submitted:</span>
-                  <span className="text-[#111827]">{formatDate(filing.submittedAt)}</span>
+                  <span className="text-[#64748d]">Submitted:</span>
+                  <span className="text-[#061b31]">{formatDate(filing.submittedAt)}</span>
                 </>
               )}
             </div>
@@ -1187,10 +1187,10 @@ function FormPreviewModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#E5E7EB] flex justify-end">
+        <div className="px-6 py-4 border-t border-[#e5edf5] flex justify-end">
           <button
             onClick={onClose}
-            className="h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] transition-colors"
+            className="h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] transition-colors"
           >
             Close
           </button>
@@ -1274,11 +1274,11 @@ function FilingDataEditor({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+      <div className="relative bg-white rounded-md shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB]">
-          <h2 className="text-base font-semibold text-[#111827]">Edit Filing Data</h2>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-[#9CA3AF] hover:bg-[#F3F4F6]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5edf5]">
+          <h2 className="text-base font-semibold text-[#061b31]">Edit Filing Data</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-[#64748d] hover:bg-[#f6f9fc]">
             <X size={18} />
           </button>
         </div>
@@ -1286,45 +1286,45 @@ function FilingDataEditor({
         {/* Existing fields */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
           {rows.length === 0 && (
-            <p className="text-sm text-[#9CA3AF] italic">No fields yet. Add one below.</p>
+            <p className="text-sm text-[#64748d] italic">No fields yet. Add one below.</p>
           )}
           {rows.map(row => (
             <div key={row.key} className="flex items-center gap-2">
-              <span className="w-36 shrink-0 text-xs font-medium text-[#6B7280] truncate" title={row.key}>
+              <span className="w-36 shrink-0 text-xs font-medium text-[#64748d] truncate" title={row.key}>
                 {formatKey(row.key)}
               </span>
               <input
                 value={row.value}
                 onChange={e => updateValue(row.key, e.target.value)}
-                className="flex-1 h-8 text-sm border border-[#E5E7EB] rounded-lg px-2 outline-none focus:border-[#6C5CE7]"
+                className="flex-1 h-8 text-sm border border-[#e5edf5] rounded-lg px-2 outline-none focus:border-[#533afd]"
               />
-              <button onClick={() => removeRow(row.key)} className="p-1 text-[#9CA3AF] hover:text-[#EF4444]">
+              <button onClick={() => removeRow(row.key)} className="p-1 text-[#64748d] hover:text-[#EF4444]">
                 <Trash2 size={14} />
               </button>
             </div>
           ))}
 
           {/* Add new field */}
-          <div className="pt-3 border-t border-[#F3F4F6] mt-3">
-            <p className="text-xs font-medium text-[#6B7280] mb-2">Add new field</p>
+          <div className="pt-3 border-t border-[#f6f9fc] mt-3">
+            <p className="text-xs font-medium text-[#64748d] mb-2">Add new field</p>
             <div className="flex items-center gap-2">
               <input
                 value={newKey}
                 onChange={e => setNewKey(e.target.value)}
                 placeholder="fieldName"
-                className="w-36 h-8 text-sm border border-[#E5E7EB] rounded-lg px-2 outline-none focus:border-[#6C5CE7]"
+                className="w-36 h-8 text-sm border border-[#e5edf5] rounded-lg px-2 outline-none focus:border-[#533afd]"
               />
               <input
                 value={newValue}
                 onChange={e => setNewValue(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addRow()}
                 placeholder="value"
-                className="flex-1 h-8 text-sm border border-[#E5E7EB] rounded-lg px-2 outline-none focus:border-[#6C5CE7]"
+                className="flex-1 h-8 text-sm border border-[#e5edf5] rounded-lg px-2 outline-none focus:border-[#533afd]"
               />
               <button
                 onClick={addRow}
                 disabled={!newKey.trim()}
-                className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#6C5CE7] text-white hover:bg-[#5B4BD5] disabled:opacity-40"
+                className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#533afd] text-white hover:bg-[#4434d4] disabled:opacity-40"
               >
                 <Plus size={14} />
               </button>
@@ -1335,14 +1335,14 @@ function FilingDataEditor({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#E5E7EB] flex justify-end gap-2">
-          <button onClick={onClose} className="h-9 px-4 border border-[#E5E7EB] rounded-lg text-sm font-medium text-[#374151] hover:bg-[#F9FAFB]">
+        <div className="px-6 py-4 border-t border-[#e5edf5] flex justify-end gap-2">
+          <button onClick={onClose} className="h-9 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#273951] hover:bg-[#f6f9fc]">
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] disabled:opacity-50"
+            className="h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Save Changes'}
           </button>

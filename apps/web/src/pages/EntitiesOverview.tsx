@@ -48,12 +48,12 @@ export function EntitiesOverviewPage() {
       {/* Top row */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <p className="text-xs text-[#6B7280]">Overall Brand</p>
-          <h1 className="text-xl font-semibold text-[#111827]">{user?.name || 'My Brand'}</h1>
+          <p className="text-xs text-[#64748d]">Overall Brand</p>
+          <h1 className="text-xl font-semibold text-[#061b31]">{user?.name || 'My Brand'}</h1>
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-1.5 h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] transition-colors"
+          className="flex items-center gap-1.5 h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] transition-colors"
         >
           <Plus size={16} />
           {showAddForm ? 'Cancel' : 'Add Entity'}
@@ -62,11 +62,11 @@ export function EntitiesOverviewPage() {
 
       {/* Add Entity form */}
       {showAddForm && (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 mb-6">
-          <h3 className="text-sm font-semibold text-[#111827] mb-4">New Entity</h3>
+        <div className="bg-white border border-[#e5edf5] rounded-md p-5 mb-6">
+          <h3 className="text-sm font-semibold text-[#061b31] mb-4">New Entity</h3>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Legal Name</label>
+              <label className="block text-xs text-[#64748d] mb-1">Legal Name</label>
               <Input
                 value={form.legalName}
                 onChange={(e) => setForm((f) => ({ ...f, legalName: e.target.value }))}
@@ -74,9 +74,9 @@ export function EntitiesOverviewPage() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Entity Type</label>
+              <label className="block text-xs text-[#64748d] mb-1">Entity Type</label>
               <select
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]"
+                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
                 value={form.entityType}
                 onChange={(e) => setForm((f) => ({ ...f, entityType: e.target.value }))}
               >
@@ -87,7 +87,7 @@ export function EntitiesOverviewPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">State of Incorporation</label>
+              <label className="block text-xs text-[#64748d] mb-1">State of Incorporation</label>
               <Input
                 value={form.stateOfIncorporation}
                 onChange={(e) => setForm((f) => ({ ...f, stateOfIncorporation: e.target.value }))}
@@ -95,7 +95,7 @@ export function EntitiesOverviewPage() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">EIN (optional)</label>
+              <label className="block text-xs text-[#64748d] mb-1">EIN (optional)</label>
               <Input
                 value={form.ein}
                 onChange={(e) => setForm((f) => ({ ...f, ein: e.target.value }))}
@@ -103,7 +103,7 @@ export function EntitiesOverviewPage() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#6B7280] mb-1">Country</label>
+              <label className="block text-xs text-[#64748d] mb-1">Country</label>
               <Input
                 value={form.country}
                 onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
@@ -121,7 +121,7 @@ export function EntitiesOverviewPage() {
               } finally { setCreateLoading(false) }
             }}
             disabled={!form.legalName || !form.stateOfIncorporation || createLoading}
-            className="h-9 px-4 bg-[#6C5CE7] text-white rounded-lg text-sm font-medium hover:bg-[#5B4BD5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {createLoading ? 'Creating...' : 'Create Entity'}
           </button>
@@ -129,14 +129,14 @@ export function EntitiesOverviewPage() {
       )}
 
       {/* Section */}
-      <h2 className="text-base font-semibold text-[#111827] mb-4">Your Brand Entities</h2>
+      <h2 className="text-base font-semibold text-[#061b31] mb-4">Your Brand Entities</h2>
 
       {/* Entity cards */}
       <div className="space-y-4">
         {entities.length === 0 && (
-          <div className="bg-white border border-[#E5E7EB] rounded-xl p-12 flex flex-col items-center text-center">
-            <FileText size={32} className="text-[#D1D5DB] mb-3" />
-            <p className="text-sm text-[#6B7280]">No entities yet. Add your first entity to get started.</p>
+          <div className="bg-white border border-[#e5edf5] rounded-md p-12 flex flex-col items-center text-center">
+            <FileText size={32} className="text-[#e5edf5] mb-3" />
+            <p className="text-sm text-[#64748d]">No entities yet. Add your first entity to get started.</p>
           </div>
         )}
 
@@ -152,11 +152,11 @@ export function EntitiesOverviewPage() {
             >
               {/* Connector line for sub-entities */}
               {index > 0 && (
-                <div className="absolute left-8 -top-4 w-0.5 h-4 bg-[#E5E7EB]" />
+                <div className="absolute left-8 -top-4 w-0.5 h-4 bg-[#e5edf5]" />
               )}
 
               <div
-                className={`bg-white border border-[#E5E7EB] rounded-xl p-5 hover:border-[#6C5CE7] hover:shadow-sm transition-all ${
+                className={`bg-white border border-[#e5edf5] rounded-md p-5 hover:border-[#533afd] hover:shadow-sm transition-all ${
                   index > 0 ? 'ml-8' : ''
                 }`}
               >
@@ -164,7 +164,7 @@ export function EntitiesOverviewPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{flag}</span>
-                    <h3 className="text-[15px] font-semibold text-[#111827] uppercase">
+                    <h3 className="text-[15px] font-semibold text-[#061b31] uppercase">
                       {entity.legalName}
                     </h3>
                   </div>
@@ -174,31 +174,31 @@ export function EntitiesOverviewPage() {
                 {/* Details */}
                 <div className="grid grid-cols-3 gap-6 mb-4">
                   <div>
-                    <p className="text-[11px] text-[#9CA3AF] uppercase tracking-wider mb-0.5">
+                    <p className="text-[11px] text-[#64748d] uppercase tracking-wider mb-0.5">
                       Country
                     </p>
-                    <p className="text-[13px] font-medium text-[#111827]">
+                    <p className="text-[13px] font-medium text-[#061b31]">
                       {entity.country || 'US'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-[#9CA3AF] uppercase tracking-wider mb-0.5">
+                    <p className="text-[11px] text-[#64748d] uppercase tracking-wider mb-0.5">
                       State
                     </p>
-                    <p className="text-[13px] font-medium text-[#111827]">
+                    <p className="text-[13px] font-medium text-[#061b31]">
                       {entity.stateOfIncorporation}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-[#9CA3AF] uppercase tracking-wider mb-0.5">
+                    <p className="text-[11px] text-[#64748d] uppercase tracking-wider mb-0.5">
                       Formation
                     </p>
-                    <p className="text-[13px] font-medium text-[#111827]">{entity.entityType}</p>
+                    <p className="text-[13px] font-medium text-[#061b31]">{entity.entityType}</p>
                   </div>
                 </div>
 
                 {/* Tabs — each navigates to EntityDetailPage with the matching tab */}
-                <div className="flex items-center gap-4 border-t border-[#E5E7EB] pt-3">
+                <div className="flex items-center gap-4 border-t border-[#e5edf5] pt-3">
                   {[
                     { key: 'overview', icon: FileText, label: 'Overview' },
                     { key: 'directors', icon: Users, label: 'Directors & Officers' },
@@ -211,7 +211,7 @@ export function EntitiesOverviewPage() {
                         // Navigates to → /entities/:entityId?tab=<tab> (EntityDetailPage)
                         navigate(`/entities/${entity.id}?tab=${TAB_NAV_MAP[t.key]}`)
                       }}
-                      className="flex items-center gap-1.5 text-[13px] pb-1 text-[#6B7280] hover:text-[#6C5CE7] transition-colors"
+                      className="flex items-center gap-1.5 text-[13px] pb-1 text-[#64748d] hover:text-[#533afd] transition-colors"
                     >
                       <t.icon size={14} />
                       {t.label}

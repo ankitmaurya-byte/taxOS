@@ -77,6 +77,18 @@ export function markAsReviewed(req: Request, res: Response) {
   res.json({ message: 'Document marked as reviewed' })
 }
 
+// ─── DELETE /api/documents/:id ───────────────────────
+export function deleteDocument(req: Request, res: Response) {
+  const doc = db.select().from(documents)
+    .where(and(eq(documents.id, req.params.id as string), eq(documents.orgId, req.user!.orgId)))
+    .get()
+  if (!doc) return res.status(404).json({ error: 'Document not found' })
+
+  db.delete(documentContexts).where(eq(documentContexts.documentId, doc.id)).run()
+  db.delete(documents).where(eq(documents.id, doc.id)).run()
+  res.json({ message: 'Document deleted' })
+}
+
 // ─── GET /api/documents/:id/context ──────────────────
 export function getDocumentContext(req: Request, res: Response) {
   const doc = db.select().from(documents)

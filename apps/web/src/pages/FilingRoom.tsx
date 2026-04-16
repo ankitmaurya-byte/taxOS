@@ -57,7 +57,7 @@ function FilingDataFields({ data, depth = 0 }: { data: Record<string, any>; dept
   const entries = Object.entries(data)
 
   return (
-    <div className={depth > 0 ? 'rounded-lg border border-[#E5E7EB] overflow-hidden' : ''}>
+    <div className={depth > 0 ? 'rounded-lg border border-[#e5edf5] overflow-hidden' : ''}>
       {entries.map(([key, value], idx) => {
         const isLast = idx === entries.length - 1
         const isObject = value != null && typeof value === 'object' && !Array.isArray(value)
@@ -66,9 +66,9 @@ function FilingDataFields({ data, depth = 0 }: { data: Record<string, any>; dept
         // Nested object — render as section
         if (isObject) {
           return (
-            <div key={key} className={!isLast ? 'border-b border-[#F3F4F6]' : ''}>
-              <div className="bg-[#F9FAFB] px-4 py-2.5">
-                <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{formatFieldLabel(key)}</p>
+            <div key={key} className={!isLast ? 'border-b border-[#f6f9fc]' : ''}>
+              <div className="bg-[#f6f9fc] px-4 py-2.5">
+                <p className="text-xs font-semibold text-[#64748d] uppercase tracking-wide">{formatFieldLabel(key)}</p>
               </div>
               <div className="px-4 py-2">
                 <FilingDataFields data={value} depth={depth + 1} />
@@ -80,30 +80,30 @@ function FilingDataFields({ data, depth = 0 }: { data: Record<string, any>; dept
         // Array — render each item
         if (isArray) {
           return (
-            <div key={key} className={!isLast ? 'border-b border-[#F3F4F6]' : ''}>
-              <div className="bg-[#F9FAFB] px-4 py-2.5">
-                <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{formatFieldLabel(key)}</p>
+            <div key={key} className={!isLast ? 'border-b border-[#f6f9fc]' : ''}>
+              <div className="bg-[#f6f9fc] px-4 py-2.5">
+                <p className="text-xs font-semibold text-[#64748d] uppercase tracking-wide">{formatFieldLabel(key)}</p>
               </div>
               <div className="px-4 py-2 space-y-2">
                 {value.map((item: any, i: number) => (
                   <div key={i}>
                     {item != null && typeof item === 'object' ? (
-                      <div className="rounded-lg border border-[#E5E7EB] overflow-hidden">
-                        <div className="bg-[#FAFAFA] px-3 py-1.5 border-b border-[#F3F4F6]">
-                          <span className="text-[11px] font-medium text-[#9CA3AF]">#{i + 1}</span>
+                      <div className="rounded-lg border border-[#e5edf5] overflow-hidden">
+                        <div className="bg-[#FAFAFA] px-3 py-1.5 border-b border-[#f6f9fc]">
+                          <span className="text-[11px] font-medium text-[#64748d]">#{i + 1}</span>
                         </div>
                         <FilingDataFields data={item} depth={depth + 1} />
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 px-1 py-1">
-                        <span className="text-[11px] text-[#9CA3AF]">#{i + 1}</span>
-                        <span className="text-sm text-[#111827]">{formatFieldValue(item)}</span>
+                        <span className="text-[11px] text-[#64748d]">#{i + 1}</span>
+                        <span className="text-sm text-[#061b31]">{formatFieldValue(item)}</span>
                       </div>
                     )}
                   </div>
                 ))}
                 {value.length === 0 && (
-                  <p className="text-sm text-[#9CA3AF] italic py-1">None</p>
+                  <p className="text-sm text-[#64748d] italic py-1">None</p>
                 )}
               </div>
             </div>
@@ -115,10 +115,10 @@ function FilingDataFields({ data, depth = 0 }: { data: Record<string, any>; dept
         return (
           <div
             key={key}
-            className={`flex items-center justify-between px-4 py-3 ${!isLast ? 'border-b border-[#F3F4F6]' : ''} ${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}
+            className={`flex items-center justify-between px-4 py-3 ${!isLast ? 'border-b border-[#f6f9fc]' : ''} ${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}
           >
-            <span className="text-sm text-[#6B7280]">{formatFieldLabel(key)}</span>
-            <span className={`text-sm font-medium text-[#111827] text-right max-w-[60%] break-words ${currencyField ? 'tabular-nums' : ''}`}>
+            <span className="text-sm text-[#64748d]">{formatFieldLabel(key)}</span>
+            <span className={`text-sm font-medium text-[#061b31] text-right max-w-[60%] break-words ${currencyField ? 'tabular-nums' : ''}`}>
               {currencyField ? `$${(value as number).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : formatFieldValue(value)}
             </span>
           </div>
@@ -202,30 +202,30 @@ export function FilingRoom() {
     return (
       <div className="space-y-5">
         <div className="flex items-center gap-1 text-[13px]">
-          <Link to="/filings" className="text-[#6B7280] hover:text-[#374151]">Filings</Link>
-          <ChevronRight size={12} className="text-[#9CA3AF]" />
-          <span className="text-[#111827]">Workflow View</span>
+          <Link to="/filings" className="text-[#64748d] hover:text-[#273951]">Filings</Link>
+          <ChevronRight size={12} className="text-[#64748d]" />
+          <span className="text-[#061b31]">Workflow View</span>
         </div>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-[#111827]">Filing Room</h1>
-          <span className="text-sm text-[#6B7280]">{filtered.length} filing{filtered.length !== 1 ? 's' : ''}</span>
+          <h1 className="text-2xl font-light tracking-tight text-[#061b31]">Filing Room</h1>
+          <span className="text-sm text-[#64748d]">{filtered.length} filing{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
         {/* Toolbar */}
         <div className="flex items-center gap-2">
           {/* Search */}
           <div className="relative flex-1 max-w-xs">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#64748d]" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by form type or name…"
-              className="h-9 w-full rounded-lg border border-[#E5E7EB] pl-8 pr-3 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:border-[#6C5CE7] transition-colors"
+              className="h-9 w-full rounded-lg border border-[#e5edf5] pl-8 pr-3 text-sm text-[#061b31] placeholder:text-[#64748d] outline-none focus:border-[#533afd] transition-colors"
             />
             {search && (
-              <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#374151]">
+              <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#64748d] hover:text-[#273951]">
                 <X size={13} />
               </button>
             )}
@@ -235,7 +235,7 @@ export function FilingRoom() {
           <div className="relative">
             <button
               onClick={() => { setShowStatusDrop(!showStatusDrop); setShowYearDrop(false) }}
-              className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm transition-colors ${statusFilter ? 'border-[#6C5CE7] text-[#6C5CE7] bg-[#EDE9FD]' : 'border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6]'}`}
+              className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm transition-colors ${statusFilter ? 'border-[#533afd] text-[#533afd] bg-[#EDE9FD]' : 'border-[#e5edf5] text-[#273951] hover:bg-[#f6f9fc]'}`}
             >
               <Filter size={14} />
               {statusFilter ? STATUS_OPTIONS.find(o => o.key === statusFilter)?.label : 'Status'}
@@ -244,10 +244,10 @@ export function FilingRoom() {
             {showStatusDrop && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowStatusDrop(false)} />
-                <div className="absolute left-0 top-full mt-1 z-20 min-w-[160px] rounded-lg border border-[#E5E7EB] bg-white shadow-lg">
-                  <button onClick={() => { setStatusFilter(null); setShowStatusDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${!statusFilter ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'}`}>All statuses</button>
+                <div className="absolute left-0 top-full mt-1 z-20 min-w-[160px] rounded-lg border border-[#e5edf5] bg-white shadow-lg">
+                  <button onClick={() => { setStatusFilter(null); setShowStatusDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#f6f9fc] ${!statusFilter ? 'text-[#533afd] font-medium' : 'text-[#061b31]'}`}>All statuses</button>
                   {STATUS_OPTIONS.map(opt => (
-                    <button key={opt.key} onClick={() => { setStatusFilter(opt.key); setShowStatusDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${statusFilter === opt.key ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'}`}>{opt.label}</button>
+                    <button key={opt.key} onClick={() => { setStatusFilter(opt.key); setShowStatusDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#f6f9fc] ${statusFilter === opt.key ? 'text-[#533afd] font-medium' : 'text-[#061b31]'}`}>{opt.label}</button>
                   ))}
                 </div>
               </>
@@ -258,7 +258,7 @@ export function FilingRoom() {
           <div className="relative">
             <button
               onClick={() => { setShowYearDrop(!showYearDrop); setShowStatusDrop(false) }}
-              className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm transition-colors ${yearFilter ? 'border-[#6C5CE7] text-[#6C5CE7] bg-[#EDE9FD]' : 'border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6]'}`}
+              className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm transition-colors ${yearFilter ? 'border-[#533afd] text-[#533afd] bg-[#EDE9FD]' : 'border-[#e5edf5] text-[#273951] hover:bg-[#f6f9fc]'}`}
             >
               {yearFilter ?? 'All years'}
               <ChevronDown size={12} />
@@ -266,10 +266,10 @@ export function FilingRoom() {
             {showYearDrop && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowYearDrop(false)} />
-                <div className="absolute left-0 top-full mt-1 z-20 min-w-[120px] rounded-lg border border-[#E5E7EB] bg-white shadow-lg">
-                  <button onClick={() => { setYearFilter(null); setShowYearDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${!yearFilter ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'}`}>All years</button>
+                <div className="absolute left-0 top-full mt-1 z-20 min-w-[120px] rounded-lg border border-[#e5edf5] bg-white shadow-lg">
+                  <button onClick={() => { setYearFilter(null); setShowYearDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#f6f9fc] ${!yearFilter ? 'text-[#533afd] font-medium' : 'text-[#061b31]'}`}>All years</button>
                   {availableYears.map((y: number) => (
-                    <button key={y} onClick={() => { setYearFilter(y); setShowYearDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#F3F0FF] ${yearFilter === y ? 'text-[#6C5CE7] font-medium' : 'text-[#111827]'}`}>{y}</button>
+                    <button key={y} onClick={() => { setYearFilter(y); setShowYearDrop(false) }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#f6f9fc] ${yearFilter === y ? 'text-[#533afd] font-medium' : 'text-[#061b31]'}`}>{y}</button>
                   ))}
                 </div>
               </>
@@ -278,7 +278,7 @@ export function FilingRoom() {
 
           {/* Clear all */}
           {hasFilters && (
-            <button onClick={() => { setSearch(''); setStatusFilter(null); setYearFilter(null) }} className="flex items-center gap-1 h-9 px-3 text-sm text-[#6B7280] hover:text-[#374151] transition-colors">
+            <button onClick={() => { setSearch(''); setStatusFilter(null); setYearFilter(null) }} className="flex items-center gap-1 h-9 px-3 text-sm text-[#64748d] hover:text-[#273951] transition-colors">
               <X size={13} /> Clear
             </button>
           )}
@@ -286,10 +286,10 @@ export function FilingRoom() {
 
         {/* Filing cards */}
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#E5E7EB] py-16 text-center">
-            <Filter size={28} className="mb-3 text-[#D1D5DB]" />
-            <p className="text-sm font-medium text-[#374151]">No filings match your filters</p>
-            <p className="mt-1 text-sm text-[#6B7280]">Try adjusting the search or filter criteria.</p>
+          <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-[#e5edf5] py-16 text-center">
+            <Filter size={28} className="mb-3 text-[#e5edf5]" />
+            <p className="text-sm font-medium text-[#273951]">No filings match your filters</p>
+            <p className="mt-1 text-sm text-[#64748d]">Try adjusting the search or filter criteria.</p>
           </div>
         ) : (
           <div className="grid gap-3">
@@ -297,8 +297,8 @@ export function FilingRoom() {
               <Card key={f.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/filings/room/${f.id}`)}>
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
-                    <p className="font-medium text-[#111827]">{f.formType} — {f.formName}</p>
-                    <p className="text-sm text-[#6B7280] mt-0.5">Tax Year {f.taxYear || 2025} • {formatDate(f.updatedAt || f.createdAt)}</p>
+                    <p className="font-medium text-[#061b31]">{f.formType} — {f.formName}</p>
+                    <p className="text-sm text-[#64748d] mt-0.5">Tax Year {f.taxYear || 2025} • {formatDate(f.updatedAt || f.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     {f.aiConfidenceScore != null && <ConfidenceBadge score={f.aiConfidenceScore} />}
@@ -320,11 +320,11 @@ export function FilingRoom() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-1 text-[13px] mb-1">
-        <Link to="/filings" className="text-[#6B7280] hover:text-[#374151]">Filings</Link>
-        <ChevronRight size={12} className="text-[#9CA3AF]" />
-        <Link to="/filings/room" className="text-[#6B7280] hover:text-[#374151]">Workflow View</Link>
-        <ChevronRight size={12} className="text-[#9CA3AF]" />
-        <span className="text-[#111827]">{filing.formType}</span>
+        <Link to="/filings" className="text-[#64748d] hover:text-[#273951]">Filings</Link>
+        <ChevronRight size={12} className="text-[#64748d]" />
+        <Link to="/filings/room" className="text-[#64748d] hover:text-[#273951]">Workflow View</Link>
+        <ChevronRight size={12} className="text-[#64748d]" />
+        <span className="text-[#061b31]">{filing.formType}</span>
       </div>
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold text-gray-900">{filing.formType} — {filing.formName}</h1>
@@ -427,8 +427,8 @@ export function FilingRoom() {
               )}
               {filing.filingData && typeof filing.filingData === 'object' && (
                 <div className='overflow-y-scroll max-h-96'>
-                  <p className="text-sm font-medium text-[#111827] mb-3">Filing Data</p>
-                  <div className="rounded-xl border border-[#E5E7EB] overflow-hidden">
+                  <p className="text-sm font-medium text-[#061b31] mb-3">Filing Data</p>
+                  <div className="rounded-md border border-[#e5edf5] overflow-hidden">
                     <FilingDataFields data={filing.filingData as Record<string, any>} />
                   </div>
                 </div>

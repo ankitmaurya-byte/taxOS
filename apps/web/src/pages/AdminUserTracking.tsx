@@ -36,7 +36,7 @@ export function AdminUserTracking() {
     },
   })
 
-  if (isLoading) return <div className="p-6 text-[#6B7280]">Loading users...</div>
+  if (isLoading) return <div className="p-6 text-[#64748d]">Loading users...</div>
 
   let filteredUsers = (users || []) as any[]
 
@@ -69,12 +69,12 @@ export function AdminUserTracking() {
     <div className="space-y-6 p-6 max-w-7xl mx-auto relative">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold text-[#111827]">User Management</h1>
-          <p className="mt-1 text-sm text-[#6B7280]">Full control over founders, team members, and CPAs.</p>
+          <h1 className="text-2xl font-semibold text-[#061b31]">User Management</h1>
+          <p className="mt-1 text-sm text-[#64748d]">Full control over founders, team members, and CPAs.</p>
         </div>
         <button
           onClick={() => setShowInviteCpa(true)}
-          className="px-4 py-2 bg-[#6C5CE7] text-white rounded-lg font-medium hover:bg-[#5a4bce] transition-colors"
+          className="px-4 py-2 bg-[#533afd] text-white rounded-lg font-medium hover:bg-[#5a4bce] transition-colors"
         >
           + Invite CPA
         </button>
@@ -83,16 +83,16 @@ export function AdminUserTracking() {
       {/* Search + Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1 max-w-sm">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d]" />
           <input
             type="text"
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search by name, email, org..."
-            className="h-9 w-full rounded-lg border border-[#E5E7EB] bg-white pl-9 pr-8 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7] focus:border-transparent"
+            className="h-9 w-full rounded-lg border border-[#e5edf5] bg-white pl-9 pr-8 text-sm text-[#061b31] placeholder:text-[#64748d] outline-none focus:ring-2 focus:ring-[#533afd] focus:border-transparent"
           />
           {search && (
-            <button onClick={() => handleSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#374151]">
+            <button onClick={() => handleSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#64748d] hover:text-[#273951]">
               <X size={14} />
             </button>
           )}
@@ -106,8 +106,8 @@ export function AdminUserTracking() {
               onClick={() => handleFilter(role)}
               className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
                 filter === role
-                  ? 'bg-[#111827] text-white'
-                  : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F9FAFB]'
+                  ? 'bg-[#061b31] text-white'
+                  : 'bg-white text-[#273951] border border-[#e5edf5] hover:bg-[#f6f9fc]'
               }`}
             >
               {role === 'all' ? 'All Roles' : role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -120,7 +120,7 @@ export function AdminUserTracking() {
           <button
             onClick={() => handleStatusFilter(null)}
             className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
-              !statusFilter ? 'bg-[#6C5CE7] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F9FAFB]'
+              !statusFilter ? 'bg-[#533afd] text-white' : 'bg-white text-[#273951] border border-[#e5edf5] hover:bg-[#f6f9fc]'
             }`}
           >
             All Status
@@ -131,8 +131,8 @@ export function AdminUserTracking() {
               onClick={() => handleStatusFilter(status)}
               className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
                 statusFilter === status
-                  ? 'bg-[#6C5CE7] text-white'
-                  : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F9FAFB]'
+                  ? 'bg-[#533afd] text-white'
+                  : 'bg-white text-[#273951] border border-[#e5edf5] hover:bg-[#f6f9fc]'
               }`}
             >
               {status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -142,13 +142,13 @@ export function AdminUserTracking() {
       </div>
 
       {/* Results count */}
-      <p className="text-xs text-[#6B7280]">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} found</p>
+      <p className="text-xs text-[#64748d]">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} found</p>
 
 
-      <div className="rounded-xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
+      <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-[#374151]">
-            <thead className="bg-[#F9FAFB] text-xs uppercase text-[#6B7280] border-b border-[#E5E7EB]">
+          <table className="w-full text-left text-sm text-[#273951]">
+            <thead className="bg-[#f6f9fc] text-xs uppercase text-[#64748d] border-b border-[#e5edf5]">
               <tr>
                 <th className="px-6 py-4 font-medium">Name</th>
                 <th className="px-6 py-4 font-medium">Email</th>
@@ -158,11 +158,11 @@ export function AdminUserTracking() {
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
+            <tbody className="divide-y divide-[#e5edf5]">
               {paginated.map((user: any) => (
-                <tr key={user.id} className="hover:bg-[#F9FAFB]/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-[#111827]">
-                    <Link to={`/admin/users/${user.id}`} className="text-[#6C5CE7] hover:underline">
+                <tr key={user.id} className="hover:bg-[#f6f9fc]/50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-[#061b31]">
+                    <Link to={`/admin/users/${user.id}`} className="text-[#533afd] hover:underline">
                       {user.name}
                     </Link>
                   </td>
@@ -173,7 +173,7 @@ export function AdminUserTracking() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    {user.orgName ? <span className="text-[#374151]">{user.orgName}</span> : <span className="text-[#9CA3AF] italic">Unassigned</span>}
+                    {user.orgName ? <span className="text-[#273951]">{user.orgName}</span> : <span className="text-[#64748d] italic">Unassigned</span>}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${
@@ -198,7 +198,7 @@ export function AdminUserTracking() {
               ))}
               {paginated.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-[#6B7280]">
+                  <td colSpan={6} className="px-6 py-8 text-center text-[#64748d]">
                     {search || filter !== 'all' || statusFilter ? 'No users match your filters.' : 'No users found.'}
                   </td>
                 </tr>
@@ -219,12 +219,12 @@ export function AdminUserTracking() {
 
       {showInviteCpa && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl w-[400px] shadow-xl">
+          <div className="bg-white p-6 rounded-md w-[400px] shadow-xl">
             <h2 className="text-xl font-semibold mb-1">Invite CPA</h2>
-            <p className="text-sm text-[#6B7280] mb-5">The CPA will receive an email invitation to set up their account.</p>
+            <p className="text-sm text-[#64748d] mb-5">The CPA will receive an email invitation to set up their account.</p>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#374151] mb-1">Email Address</label>
+                <label className="block text-xs font-medium text-[#273951] mb-1">Email Address</label>
                 <input
                   type="email"
                   placeholder="cpa@example.com"
@@ -240,7 +240,7 @@ export function AdminUserTracking() {
               <button
                 onClick={() => inviteCpaMutation.mutate(cpaEmail.trim())}
                 disabled={!cpaEmail.trim() || inviteCpaMutation.isPending}
-                className="px-4 py-2 text-sm bg-[#6C5CE7] text-white rounded-lg hover:bg-[#5a4bce] disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-[#533afd] text-white rounded-lg hover:bg-[#5a4bce] disabled:opacity-50"
               >
                 {inviteCpaMutation.isPending ? 'Sending...' : 'Send Invite'}
               </button>

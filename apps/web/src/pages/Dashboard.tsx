@@ -42,8 +42,8 @@ export function DashboardPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#111827]">Dashboard</h1>
-        <p className="mt-1 text-sm text-[#6B7280]">
+        <h1 className="text-2xl font-light tracking-tight text-[#061b31]">Dashboard</h1>
+        <p className="mt-1 text-sm text-[#64748d]">
           {isAdmin
             ? 'Platform oversight for founders, team members, and CPA coverage.'
             : isCpa
@@ -59,54 +59,54 @@ export function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <div
               onClick={() => navigate('/admin/founder-applications')}
-              className="rounded-xl border border-[#E5E7EB] bg-white p-5 cursor-pointer hover:border-[#D1D5DB] transition-colors"
+              className="rounded-md border border-[#e5edf5] bg-white p-5 cursor-pointer hover:border-[#e5edf5] transition-colors"
             >
-              <p className="text-sm text-[#6B7280]">Pending founder applications</p>
-              <p className="mt-2 text-3xl font-semibold text-[#111827]">
+              <p className="text-sm text-[#64748d]">Pending founder applications</p>
+              <p className="mt-2 text-3xl font-light font-tnum text-[#061b31]">
                 {founderApplications.filter((item: ApiFounderApplication) => item.status === 'pending').length}
               </p>
             </div>
             <div
               onClick={() => navigate('/admin/tracking')}
-              className="rounded-xl border border-[#E5E7EB] bg-white p-5 cursor-pointer hover:border-[#D1D5DB] transition-colors"
+              className="rounded-md border border-[#e5edf5] bg-white p-5 cursor-pointer hover:border-[#e5edf5] transition-colors"
             >
-              <p className="text-sm text-[#6B7280]">Active CPAs</p>
-              <p className="mt-2 text-3xl font-semibold text-[#111827]">{cpas.filter((c: ApiCpa) => c.role === 'cpa').length}</p>
+              <p className="text-sm text-[#64748d]">Active CPAs</p>
+              <p className="mt-2 text-3xl font-light font-tnum text-[#061b31]">{cpas.filter((c: ApiCpa) => c.role === 'cpa').length}</p>
             </div>
             <div
               onClick={() => navigate('/admin/organizations')}
-              className="rounded-xl border border-[#E5E7EB] bg-white p-5 cursor-pointer hover:border-[#D1D5DB] transition-colors"
+              className="rounded-md border border-[#e5edf5] bg-white p-5 cursor-pointer hover:border-[#e5edf5] transition-colors"
             >
-              <p className="text-sm text-[#6B7280]">Organizations tracked</p>
-              <p className="mt-2 text-3xl font-semibold text-[#111827]">
+              <p className="text-sm text-[#64748d]">Organizations tracked</p>
+              <p className="mt-2 text-3xl font-light font-tnum text-[#061b31]">
                 {adminOrganizations.length}
               </p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
-            <h2 className="text-lg font-medium text-[#111827] mb-4">Founder review queue</h2>
+          <div className="rounded-md border border-[#e5edf5] bg-white p-5">
+            <h2 className="text-lg font-medium text-[#061b31] mb-4">Founder review queue</h2>
             <div className="space-y-3">
               {founderApplications.slice(0, 5).map((item: ApiFounderApplication) => (
                 <div
                   key={item.id}
                   onClick={() => navigate('/admin/founder-applications')}
-                  className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+                  className="flex items-center justify-between rounded-lg border border-[#e5edf5] p-4 cursor-pointer hover:bg-[#f6f9fc] transition-colors"
                 >
                   <div>
-                    <p className="font-medium text-[#111827]">{item.organizationName}</p>
-                    <p className="text-sm text-[#6B7280]">{item.name} · {item.email}</p>
+                    <p className="font-medium text-[#061b31]">{item.organizationName}</p>
+                    <p className="text-sm text-[#64748d]">{item.name} · {item.email}</p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${item.status === 'pending' ? 'bg-[#FEF3C7] text-[#92400E]' : item.status === 'approved' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-[#FEE2E2] text-[#991B1B]'}`}>{item.status}</span>
+                  <span className={`rounded-sm px-3 py-1 text-xs font-medium ${item.status === 'pending' ? 'bg-[#FEF3C7] text-[#92400E]' : item.status === 'approved' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-[#FEE2E2] text-[#991B1B]'}`}>{item.status}</span>
                 </div>
               ))}
-              {founderApplicationsLoading && <p className="text-sm text-[#6B7280]">Loading...</p>}
+              {founderApplicationsLoading && <p className="text-sm text-[#64748d]">Loading...</p>}
             </div>
             {founderApplications.length > 5 && (
-              <div className="mt-4 border-t border-[#E5E7EB] pt-3 text-center">
+              <div className="mt-4 border-t border-[#e5edf5] pt-3 text-center">
                 <button
                   onClick={() => navigate('/admin/founder-applications')}
-                  className="text-sm font-medium text-[#6C5CE7] hover:text-[#5A4BD1] transition-colors"
+                  className="text-sm font-medium text-[#533afd] hover:text-[#4434d4] transition-colors"
                 >
                   View all applications &rarr;
                 </button>
@@ -114,33 +114,33 @@ export function DashboardPage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
-            <h2 className="text-lg font-medium text-[#111827] mb-4">Platform organization overview</h2>
+          <div className="rounded-md border border-[#e5edf5] bg-white p-5">
+            <h2 className="text-lg font-medium text-[#061b31] mb-4">Platform organization overview</h2>
             <div className="space-y-3">
               {adminOrganizations.slice(0, 5).map((organization) => (
                 <div
                   key={organization.id}
                   onClick={() => navigate(`/admin/organizations/${organization.id}`)}
-                  className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+                  className="flex items-center justify-between rounded-lg border border-[#e5edf5] p-4 cursor-pointer hover:bg-[#f6f9fc] transition-colors"
                 >
                   <div>
-                    <p className="font-medium text-[#111827]">{organization.name}</p>
-                    <p className="text-sm text-[#6B7280]">
+                    <p className="font-medium text-[#061b31]">{organization.name}</p>
+                    <p className="text-sm text-[#64748d]">
                       {organization.founderCount} founder{organization.founderCount === 1 ? '' : 's'} · {organization.teamMemberCount} team member{organization.teamMemberCount === 1 ? '' : 's'} · {organization.assignedCpaCount} CPA assignment{organization.assignedCpaCount === 1 ? '' : 's'}
                     </p>
                   </div>
-                  <span className="rounded-full bg-[#F3F4F6] px-3 py-1 text-xs text-[#374151]">
+                  <span className="rounded-sm bg-[#F3F4F6] px-3 py-1 text-xs text-[#273951]">
                     {organization.founderNames?.join(', ') || 'No founder'}
                   </span>
                 </div>
               ))}
-              {!adminOrganizations.length && !cpasLoading && !founderApplicationsLoading && <p className="text-sm text-[#6B7280]">No organizations found.</p>}
+              {!adminOrganizations.length && !cpasLoading && !founderApplicationsLoading && <p className="text-sm text-[#64748d]">No organizations found.</p>}
             </div>
             {adminOrganizations.length > 5 && (
-              <div className="mt-4 border-t border-[#E5E7EB] pt-3 text-center">
+              <div className="mt-4 border-t border-[#e5edf5] pt-3 text-center">
                 <button
                   onClick={() => navigate('/admin/organizations')}
-                  className="text-sm font-medium text-[#6C5CE7] hover:text-[#5A4BD1] transition-colors"
+                  className="text-sm font-medium text-[#533afd] hover:text-[#4434d4] transition-colors"
                 >
                   View all organizations &rarr;
                 </button>
@@ -156,19 +156,19 @@ export function DashboardPage() {
             {canViewFilings && (
               <div
                 onClick={() => navigate('/filings')}
-                className="rounded-xl border border-[#E5E7EB] bg-white p-5 cursor-pointer hover:border-[#D1D5DB] transition-colors"
+                className="rounded-md border border-[#e5edf5] bg-white p-5 cursor-pointer hover:border-[#e5edf5] transition-colors"
               >
-                <p className="text-sm text-[#6B7280]">{isCpa ? 'Assigned filings' : 'Total filings'}</p>
-                <p className="mt-2 text-3xl font-semibold text-[#111827]">{filings.length}</p>
+                <p className="text-sm text-[#64748d]">{isCpa ? 'Assigned filings' : 'Total filings'}</p>
+                <p className="mt-2 text-3xl font-light font-tnum text-[#061b31]">{filings.length}</p>
               </div>
             )}
             {isCpa && (
               <div
                 onClick={() => navigate('/cpa/review')}
-                className="rounded-xl border border-[#E5E7EB] bg-white p-5 cursor-pointer hover:border-[#D1D5DB] transition-colors"
+                className="rounded-md border border-[#e5edf5] bg-white p-5 cursor-pointer hover:border-[#e5edf5] transition-colors"
               >
-                <p className="text-sm text-[#6B7280]">Needs CPA review</p>
-                <p className="mt-2 text-3xl font-semibold text-[#111827]">
+                <p className="text-sm text-[#64748d]">Needs CPA review</p>
+                <p className="mt-2 text-3xl font-light font-tnum text-[#061b31]">
                   {filings.filter((f: ApiFiling) => f.status === 'cpa_review').length}
                 </p>
               </div>
@@ -176,16 +176,16 @@ export function DashboardPage() {
             {canViewDocuments && (
               <div
                 onClick={() => navigate('/documents')}
-                className="rounded-xl border border-[#E5E7EB] bg-white p-5 cursor-pointer hover:border-[#D1D5DB] transition-colors"
+                className="rounded-md border border-[#e5edf5] bg-white p-5 cursor-pointer hover:border-[#e5edf5] transition-colors"
               >
-                <p className="text-sm text-[#6B7280]">Documents</p>
-                <p className="mt-2 text-3xl font-semibold text-[#111827]">{documents.length}</p>
+                <p className="text-sm text-[#64748d]">Documents</p>
+                <p className="mt-2 text-3xl font-light font-tnum text-[#061b31]">{documents.length}</p>
               </div>
             )}
             {canViewFilings && (
-              <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
-                <p className="text-sm text-[#6B7280]">Ready for founder review</p>
-                <p className="mt-2 text-3xl font-semibold text-[#111827]">
+              <div className="rounded-md border border-[#e5edf5] bg-white p-5">
+                <p className="text-sm text-[#64748d]">Ready for founder review</p>
+                <p className="mt-2 text-3xl font-light font-tnum text-[#061b31]">
                   {filings.filter((f: ApiFiling) => f.status === 'founder_approval').length}
                 </p>
               </div>
@@ -194,37 +194,37 @@ export function DashboardPage() {
 
           {/* Recent Documents */}
           {canViewDocuments && (
-            <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
+            <div className="rounded-md border border-[#e5edf5] bg-white p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium text-[#111827]">Recent Documents</h2>
+                <h2 className="text-lg font-medium text-[#061b31]">Recent Documents</h2>
                 <button
                   onClick={() => navigate('/documents')}
-                  className="text-sm text-[#6C5CE7] hover:underline"
+                  className="text-sm text-[#533afd] hover:underline"
                 >
                   View all
                 </button>
               </div>
               <div className="space-y-3">
                 {recentDocs.length === 0 && !filingsLoading && (
-                  <p className="text-sm text-[#6B7280]">No documents uploaded yet.</p>
+                  <p className="text-sm text-[#64748d]">No documents uploaded yet.</p>
                 )}
                 {recentDocs.map((doc: any) => (
                   <div
                     key={doc.id}
                     onClick={() => navigate('/documents')}
-                    className="flex items-center gap-3 rounded-lg border border-[#E5E7EB] p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+                    className="flex items-center gap-3 rounded-lg border border-[#e5edf5] p-4 cursor-pointer hover:bg-[#f6f9fc] transition-colors"
                   >
-                    <FolderOpen size={18} className="text-[#6C5CE7] flex-shrink-0" />
+                    <FolderOpen size={18} className="text-[#533afd] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-[#111827] truncate">{doc.fileName}</p>
-                      <p className="text-xs text-[#6B7280]">{doc.mimeType} · {formatDate(doc.createdAt)}</p>
+                      <p className="font-medium text-[#061b31] truncate">{doc.fileName}</p>
+                      <p className="text-xs text-[#64748d]">{doc.mimeType} · {formatDate(doc.createdAt)}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {doc.confidenceScore != null && (
-                        <span className="text-xs text-[#6B7280]">{Math.round(doc.confidenceScore * 100)}%</span>
+                        <span className="text-xs text-[#64748d]">{Math.round(doc.confidenceScore * 100)}%</span>
                       )}
                       {doc.reviewedByHuman && (
-                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">Reviewed</span>
+                        <span className="rounded-sm bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">Reviewed</span>
                       )}
                     </div>
                   </div>
@@ -235,12 +235,12 @@ export function DashboardPage() {
 
           {/* Filings list */}
           {canViewFilings && (
-            <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
+            <div className="rounded-md border border-[#e5edf5] bg-white p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium text-[#111827]">{isCpa ? 'Assigned filings' : 'Filings'}</h2>
+                <h2 className="text-lg font-medium text-[#061b31]">{isCpa ? 'Assigned filings' : 'Filings'}</h2>
                 <button
                   onClick={() => navigate('/filings')}
-                  className="text-sm text-[#6C5CE7] hover:underline"
+                  className="text-sm text-[#533afd] hover:underline"
                 >
                   View all
                 </button>
@@ -250,18 +250,18 @@ export function DashboardPage() {
                   <div
                     key={filing.id}
                     onClick={() => navigate(`/filings/${filing.id}`)}
-                    className="flex items-center gap-3 rounded-lg border border-[#E5E7EB] p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+                    className="flex items-center gap-3 rounded-lg border border-[#e5edf5] p-4 cursor-pointer hover:bg-[#f6f9fc] transition-colors"
                   >
-                    <FileText size={18} className="text-[#6C5CE7] flex-shrink-0" />
+                    <FileText size={18} className="text-[#533afd] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-[#111827]">{filing.formType} — {filing.formName}</p>
-                      <p className="text-xs text-[#6B7280]">Tax year {filing.taxYear || '—'}</p>
+                      <p className="font-medium text-[#061b31]">{filing.formType} — {filing.formName}</p>
+                      <p className="text-xs text-[#64748d]">Tax year {filing.taxYear || '—'}</p>
                     </div>
                     <StatusBadge status={filing.status} />
                   </div>
                 ))}
-                {!filings.length && !filingsLoading && <p className="text-sm text-[#6B7280]">No filings assigned.</p>}
-                {filingsLoading && <p className="text-sm text-[#6B7280]">Loading...</p>}
+                {!filings.length && !filingsLoading && <p className="text-sm text-[#64748d]">No filings assigned.</p>}
+                {filingsLoading && <p className="text-sm text-[#64748d]">Loading...</p>}
               </div>
             </div>
           )}

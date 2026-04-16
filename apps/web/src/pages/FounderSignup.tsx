@@ -47,10 +47,10 @@ export function FounderSignupPage() {
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#6C5CE7]" required />
-              <input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} placeholder="Organization name" className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#6C5CE7]" required />
-              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Work email address" className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#6C5CE7]" required />
-              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Create password" className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#6C5CE7]" required />
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#533afd]" required />
+              <input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} placeholder="Organization name" className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#533afd]" required />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Work email address" className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#533afd]" required />
+              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Create password" className="h-10 w-full rounded-lg border border-[#DED8EB] bg-white px-3.5 text-sm text-[#312A56] outline-none placeholder:text-[#ABA7BE] focus:ring-2 focus:ring-[#533afd]" required />
 
               <label className="flex items-start gap-2.5 pt-1 text-sm text-[#4E4970]">
                 <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-[#DAD4EA]" />
