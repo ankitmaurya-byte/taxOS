@@ -381,19 +381,23 @@ async function fakeSeed() {
   const allFolders: { id: string; vaultId: string }[] = []
 
   // ─── 1. Organizations ─────────────────────────────
+  // First org is the hardcoded demo org; rest are random
   console.log(`Creating ${NUM_ORGS} organizations...`)
+  let demoOrgId = ''
   for (let i = 0; i < NUM_ORGS; i++) {
-    const name = genCompanyName()
+    const isDemo = i === 0
+    const name = isDemo ? 'Acme Technologies' : genCompanyName()
     const orgId = uuid()
+    if (isDemo) demoOrgId = orgId
     db.insert(schema.organizations).values({
       id: orgId,
       name,
       legalName: `${name} Inc.`,
-      registrationNumber: `REG-${rand(100000, 999999)}`,
-      incorporationCountry: pick(countries),
-      incorporationState: pick(usStates),
+      registrationNumber: isDemo ? 'REG-DEMO-001' : `REG-${rand(100000, 999999)}`,
+      incorporationCountry: isDemo ? 'US' : pick(countries),
+      incorporationState: isDemo ? 'Delaware' : pick(usStates),
       incorporationDate: pastDate(1500),
-      plan: pick(['free', 'starter', 'pro', 'pro', 'pro']),
+      plan: isDemo ? 'pro' : pick(['free', 'starter', 'pro', 'pro', 'pro']),
     }).run()
     allOrgs.push(orgId)
   }
@@ -422,17 +426,23 @@ async function fakeSeed() {
   allUsers.push({ id: adminId, orgId: adminOrgId, role: 'admin', email: 'superadmin@taxos.ai', name: 'Platform Admin' })
 
   // ─── 3. CPAs ──────────────────────────────────────
+  // First CPA is the hardcoded demo CPA; rest are random
   console.log(`Creating ${NUM_CPAS} CPAs...`)
-  const usedEmails = new Set<string>(['superadmin@taxos.ai'])
+  const usedEmails = new Set<string>(['superadmin@taxos.ai', 'founder@demo.taxos.ai', 'team@demo.taxos.ai', 'cpa@demo.taxos.ai'])
 
+  let demoCpaId = ''
   for (let i = 0; i < NUM_CPAS; i++) {
-    const name = genName()
+    const isDemo = i === 0
+    const name = isDemo ? 'Sam Rivera' : genName()
     const domain = 'taxos-cpas.com'
-    let email = genEmail(name, domain)
-    while (usedEmails.has(email)) email = genEmail(name + rand(1, 999), domain)
+    let email = isDemo ? 'cpa@demo.taxos.ai' : genEmail(name, domain)
+    if (!isDemo) {
+      while (usedEmails.has(email)) email = genEmail(name + rand(1, 999), domain)
+    }
     usedEmails.add(email)
 
     const cpaId = uuid()
+    if (isDemo) demoCpaId = cpaId
     const status = i < 15 ? 'active' as const : pick(['active', 'active', 'pending_admin_review'] as const)
     const cpaName = `${name}, CPA`
 
@@ -454,10 +464,10 @@ async function fakeSeed() {
     allUsers.push({ id: cpaId, orgId: adminOrgId, role: 'cpa', email, name: cpaName })
   }
 
-  // Deterministic CPA logins
-  for (let i = 0; i < Math.min(5, allCpas.length); i++) {
+  // Deterministic CPA logins (skip demo CPA at index 0)
+  for (let i = 1; i < Math.min(6, allCpas.length); i++) {
     const cpa = allCpas[i]
-    const newEmail = `cpa${i + 1}@taxos.ai`
+    const newEmail = `cpa${i}@taxos.ai`
     sqlite.prepare("UPDATE users SET email = ?, name = ? WHERE id = ?").run(newEmail, cpa.name, cpa.id)
     cpa.email = newEmail
     usedEmails.add(newEmail)
@@ -466,23 +476,31 @@ async function fakeSeed() {
   console.log(`  → ${allCpas.length} CPAs created`)
 
   // ─── 4. Client org users ──────────────────────────
+  // For the demo org (first org), founder and first team member get hardcoded emails
   console.log('Creating client org users...')
+  let demoFounderId = ''
   for (const orgId of allOrgs) {
+    const isDemo = orgId === demoOrgId
     const numUsers = rand(USERS_PER_ORG.min, USERS_PER_ORG.max)
     const roles: Array<'founder' | 'team_member'> = ['founder']
     for (let j = 1; j < numUsers; j++) roles.push('team_member')
 
     for (let j = 0; j < numUsers; j++) {
-      const name = genName()
+      const isFounderDemo = isDemo && j === 0
+      const isTeamDemo = isDemo && j === 1
+      const name = isFounderDemo ? 'Alex Morgan' : isTeamDemo ? 'Jordan Lee' : genName()
       const domain = `${pick(companyPrefixes).toLowerCase()}.com`
-      let email = genEmail(name, domain)
-      let attempt = 0
-      while (usedEmails.has(email)) email = genEmail(name + (++attempt), domain)
+      let email = isFounderDemo ? 'founder@demo.taxos.ai' : isTeamDemo ? 'team@demo.taxos.ai' : genEmail(name, domain)
+      if (!isFounderDemo && !isTeamDemo) {
+        let attempt = 0
+        while (usedEmails.has(email)) email = genEmail(name + (++attempt), domain)
+      }
       usedEmails.add(email)
 
       const userId = uuid()
+      if (isFounderDemo) demoFounderId = userId
       const role = roles[j] || 'team_member'
-      const status = j === 0 ? 'active' as const : pick(['active', 'active', 'active', 'pending_admin_review'] as const)
+      const status = (j === 0 || isTeamDemo) ? 'active' as const : pick(['active', 'active', 'active', 'pending_admin_review'] as const)
 
       db.insert(schema.users).values({
         id: userId,
@@ -568,6 +586,17 @@ async function fakeSeed() {
       orgCpaMap.set(orgId, list)
       cpaAssignCount++
     }
+  }
+  // Ensure demo CPA is assigned to demo org
+  const demoCpaAssigned = sqlite.prepare('SELECT 1 FROM cpa_assignments WHERE user_id = ? AND organization_id = ?').get(demoCpaId, demoOrgId)
+  if (!demoCpaAssigned) {
+    db.insert(schema.cpaAssignments).values({
+      id: uuid(), userId: demoCpaId, organizationId: demoOrgId, createdByUserId: adminId,
+    }).run()
+    const list = orgCpaMap.get(demoOrgId) ?? []
+    list.push(demoCpaId)
+    orgCpaMap.set(demoOrgId, list)
+    cpaAssignCount++
   }
   console.log(`  → ${cpaAssignCount} CPA assignments`)
 
@@ -1166,9 +1195,12 @@ async function fakeSeed() {
   console.log(`  Invites:              ${inviteCount}`)
   console.log(`  Founder Applications: ${appCount}`)
   console.log(`  Email Tokens:         ${tokenCount}`)
-  console.log(`\n  Login: superadmin@taxos.ai / admin1234`)
-  console.log(`  CPA logins: cpa1@taxos.ai ... cpa5@taxos.ai / password123`)
-  console.log(`  All other users: password123`)
+  console.log(`\n  Login credentials:`)
+  console.log(`    Admin:       superadmin@taxos.ai / admin1234`)
+  console.log(`    Founder:     founder@demo.taxos.ai / password123`)
+  console.log(`    Team Member: team@demo.taxos.ai / password123`)
+  console.log(`    CPA:         cpa@demo.taxos.ai / password123`)
+  console.log(`    Other CPAs:  cpa1@taxos.ai ... cpa5@taxos.ai / password123`)
 }
 
 fakeSeed().catch((error) => {

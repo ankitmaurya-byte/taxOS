@@ -74,7 +74,7 @@ export async function inviteMember(req: Request, res: Response, next: NextFuncti
       templateId: templateId || null,
       permissions: sanitizeAssignablePermissions(permissionSet || {}, data.role),
       token: inviteToken,
-      expiresAt: getFutureIso(1), // 1-hour expiry
+      expiresAt: getFutureIso(24), // 24-hour expiry
     }).returning().get()
 
     const org = db.select().from(organizations).where(eq(organizations.id, req.user!.orgId!)).get()

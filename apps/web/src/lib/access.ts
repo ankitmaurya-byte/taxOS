@@ -11,7 +11,7 @@ interface AccessRule {
   permission?: PermissionKey
 }
 const ROUTE_RULES: Array<{ paths: string[]; rule: AccessRule }> = [
-  { paths: ['/dashboard'], rule: { roles: ['admin', 'cpa', 'team_member'] } },
+  { paths: ['/dashboard'], rule: { roles: ['admin', 'cpa', 'team_member'], permission: 'canViewDashboard' } },
   { paths: ['/home'], rule: { roles: ['founder', 'team_member'] } },
   { paths: ['/profile'], rule: { roles: ['admin', 'founder', 'team_member', 'cpa'] } },
   { paths: ['/profile/create-account'], rule: { roles: ['admin', 'founder'] } },
@@ -27,7 +27,7 @@ const ROUTE_RULES: Array<{ paths: string[]; rule: AccessRule }> = [
   { paths: ['/approvals'], rule: { roles: ['founder', 'team_member', 'admin'], permission: 'canApproveFilings' } },
   { paths: ['/claim-filings'], rule: { roles: ['cpa'] } },
   { paths: ['/audit'], rule: { roles: ['admin', 'founder', 'cpa', 'team_member'] } },
-  { paths: ['/team'], rule: { roles: ['founder'], permission: 'canManageTeam' } },
+  { paths: ['/team'], rule: { roles: ['founder', 'team_member'], permission: 'canManageTeam' } },
 
   // 🔥 keep this (admin still allowed here)
   { paths: ['/entities/:entityId'], rule: { roles: ['founder', 'admin'] } },
@@ -50,6 +50,8 @@ function pathMatches(pattern: string, pathname: string) {
 export function hasPermission(user: AccessUser | null | undefined, permission?: PermissionKey) {
   if (!permission) return true
   if (!user) return false
+  // Only team_members are gated by granular permissions; other roles have implicit full access
+  if (user.role !== 'team_member') return true
   return Boolean(user.permissions?.[permission])
 }
 
@@ -72,6 +74,12 @@ export function getDefaultPathForRole(role?: string | null) {
 export function getPostLoginPath(user: AccessUser | null | undefined) {
   if (!user) return '/login'
   if (user.role === 'founder' && user.status && user.status !== 'active') return '/onboarding'
+  // Team members without dashboard permission go to first accessible route
+  if (user.role === 'team_member' && !user.permissions?.canViewDashboard) {
+    if (user.permissions?.canViewFilings) return '/filings'
+    if (user.permissions?.canViewDocuments) return '/documents'
+    return '/home'
+  }
   return getDefaultPathForRole(user.role)
 }
 

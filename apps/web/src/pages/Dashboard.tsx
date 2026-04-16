@@ -31,6 +31,8 @@ export function DashboardPage() {
   const isAdmin = user?.role === 'admin'
   const isCpa = user?.role === 'cpa'
   const isTeamMember = user?.role === 'team_member'
+  const canViewFilings = !isTeamMember || Boolean(user?.permissions?.canViewFilings)
+  const canViewDocuments = !isTeamMember || Boolean(user?.permissions?.canViewDocuments)
 
   // Recent documents sorted by creation date (newest first)
   const recentDocs = [...documents]
@@ -151,13 +153,15 @@ export function DashboardPage() {
       {(isCpa || isTeamMember) && (
         <>
           <div className="grid gap-4 md:grid-cols-3">
-            <div
-              onClick={() => navigate('/filings')}
-              className="rounded-xl border border-[#E5E7EB] bg-white p-5 cursor-pointer hover:border-[#D1D5DB] transition-colors"
-            >
-              <p className="text-sm text-[#6B7280]">{isCpa ? 'Assigned filings' : 'Total filings'}</p>
-              <p className="mt-2 text-3xl font-semibold text-[#111827]">{filings.length}</p>
-            </div>
+            {canViewFilings && (
+              <div
+                onClick={() => navigate('/filings')}
+                className="rounded-xl border border-[#E5E7EB] bg-white p-5 cursor-pointer hover:border-[#D1D5DB] transition-colors"
+              >
+                <p className="text-sm text-[#6B7280]">{isCpa ? 'Assigned filings' : 'Total filings'}</p>
+                <p className="mt-2 text-3xl font-semibold text-[#111827]">{filings.length}</p>
+              </div>
+            )}
             {isCpa && (
               <div
                 onClick={() => navigate('/cpa/review')}
@@ -169,90 +173,98 @@ export function DashboardPage() {
                 </p>
               </div>
             )}
-            <div
-              onClick={() => navigate('/documents')}
-              className="rounded-xl border border-[#E5E7EB] bg-white p-5 cursor-pointer hover:border-[#D1D5DB] transition-colors"
-            >
-              <p className="text-sm text-[#6B7280]">Documents</p>
-              <p className="mt-2 text-3xl font-semibold text-[#111827]">{documents.length}</p>
-            </div>
-            <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
-              <p className="text-sm text-[#6B7280]">Ready for founder review</p>
-              <p className="mt-2 text-3xl font-semibold text-[#111827]">
-                {filings.filter((f: ApiFiling) => f.status === 'founder_approval').length}
-              </p>
-            </div>
+            {canViewDocuments && (
+              <div
+                onClick={() => navigate('/documents')}
+                className="rounded-xl border border-[#E5E7EB] bg-white p-5 cursor-pointer hover:border-[#D1D5DB] transition-colors"
+              >
+                <p className="text-sm text-[#6B7280]">Documents</p>
+                <p className="mt-2 text-3xl font-semibold text-[#111827]">{documents.length}</p>
+              </div>
+            )}
+            {canViewFilings && (
+              <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
+                <p className="text-sm text-[#6B7280]">Ready for founder review</p>
+                <p className="mt-2 text-3xl font-semibold text-[#111827]">
+                  {filings.filter((f: ApiFiling) => f.status === 'founder_approval').length}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Recent Documents */}
-          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-[#111827]">Recent Documents</h2>
-              <button
-                onClick={() => navigate('/documents')}
-                className="text-sm text-[#6C5CE7] hover:underline"
-              >
-                View all
-              </button>
-            </div>
-            <div className="space-y-3">
-              {recentDocs.length === 0 && !filingsLoading && (
-                <p className="text-sm text-[#6B7280]">No documents uploaded yet.</p>
-              )}
-              {recentDocs.map((doc: any) => (
-                <div
-                  key={doc.id}
+          {canViewDocuments && (
+            <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-[#111827]">Recent Documents</h2>
+                <button
                   onClick={() => navigate('/documents')}
-                  className="flex items-center gap-3 rounded-lg border border-[#E5E7EB] p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+                  className="text-sm text-[#6C5CE7] hover:underline"
                 >
-                  <FolderOpen size={18} className="text-[#6C5CE7] flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-[#111827] truncate">{doc.fileName}</p>
-                    <p className="text-xs text-[#6B7280]">{doc.mimeType} · {formatDate(doc.createdAt)}</p>
+                  View all
+                </button>
+              </div>
+              <div className="space-y-3">
+                {recentDocs.length === 0 && !filingsLoading && (
+                  <p className="text-sm text-[#6B7280]">No documents uploaded yet.</p>
+                )}
+                {recentDocs.map((doc: any) => (
+                  <div
+                    key={doc.id}
+                    onClick={() => navigate('/documents')}
+                    className="flex items-center gap-3 rounded-lg border border-[#E5E7EB] p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+                  >
+                    <FolderOpen size={18} className="text-[#6C5CE7] flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-[#111827] truncate">{doc.fileName}</p>
+                      <p className="text-xs text-[#6B7280]">{doc.mimeType} · {formatDate(doc.createdAt)}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {doc.confidenceScore != null && (
+                        <span className="text-xs text-[#6B7280]">{Math.round(doc.confidenceScore * 100)}%</span>
+                      )}
+                      {doc.reviewedByHuman && (
+                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">Reviewed</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {doc.confidenceScore != null && (
-                      <span className="text-xs text-[#6B7280]">{Math.round(doc.confidenceScore * 100)}%</span>
-                    )}
-                    {doc.reviewedByHuman && (
-                      <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">Reviewed</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Filings list */}
-          <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-[#111827]">{isCpa ? 'Assigned filings' : 'Filings'}</h2>
-              <button
-                onClick={() => navigate('/filings')}
-                className="text-sm text-[#6C5CE7] hover:underline"
-              >
-                View all
-              </button>
-            </div>
-            <div className="space-y-3">
-              {filings.slice(0, 8).map((filing: ApiFiling) => (
-                <div
-                  key={filing.id}
-                  onClick={() => navigate(`/filings/${filing.id}`)}
-                  className="flex items-center gap-3 rounded-lg border border-[#E5E7EB] p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+          {canViewFilings && (
+            <div className="rounded-xl border border-[#E5E7EB] bg-white p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-[#111827]">{isCpa ? 'Assigned filings' : 'Filings'}</h2>
+                <button
+                  onClick={() => navigate('/filings')}
+                  className="text-sm text-[#6C5CE7] hover:underline"
                 >
-                  <FileText size={18} className="text-[#6C5CE7] flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-[#111827]">{filing.formType} — {filing.formName}</p>
-                    <p className="text-xs text-[#6B7280]">Tax year {filing.taxYear || '—'}</p>
+                  View all
+                </button>
+              </div>
+              <div className="space-y-3">
+                {filings.slice(0, 8).map((filing: ApiFiling) => (
+                  <div
+                    key={filing.id}
+                    onClick={() => navigate(`/filings/${filing.id}`)}
+                    className="flex items-center gap-3 rounded-lg border border-[#E5E7EB] p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+                  >
+                    <FileText size={18} className="text-[#6C5CE7] flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-[#111827]">{filing.formType} — {filing.formName}</p>
+                      <p className="text-xs text-[#6B7280]">Tax year {filing.taxYear || '—'}</p>
+                    </div>
+                    <StatusBadge status={filing.status} />
                   </div>
-                  <StatusBadge status={filing.status} />
-                </div>
-              ))}
-              {!filings.length && !filingsLoading && <p className="text-sm text-[#6B7280]">No filings assigned.</p>}
-              {filingsLoading && <p className="text-sm text-[#6B7280]">Loading...</p>}
+                ))}
+                {!filings.length && !filingsLoading && <p className="text-sm text-[#6B7280]">No filings assigned.</p>}
+                {filingsLoading && <p className="text-sm text-[#6B7280]">Loading...</p>}
+              </div>
             </div>
-          </div>
+          )}
         </>
       )}
     </div>

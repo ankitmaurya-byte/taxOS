@@ -80,7 +80,7 @@ export async function createCpa(req: Request, res: Response, next: NextFunction)
       templateId: null,
       permissions: {},
       token: inviteToken,
-      expiresAt: getFutureIso(1), // 1-hour window
+      expiresAt: getFutureIso(24), // 24-hour window
     }).returning().get()
 
     await sendInviteEmail(data.email, inviteToken, 'TaxOS Admin')

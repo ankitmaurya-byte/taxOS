@@ -499,6 +499,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchFilings: async (params) => {
+    const user = get().user
+    if (user?.role === 'team_member' && !user.permissions?.canViewFilings) return
     set({ filingsLoading: true })
     try {
       const data = await api.filings.getAll(params) as Filing[]
@@ -509,11 +511,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchFiling: async (id) => {
+    const user = get().user
+    if (user?.role === 'team_member' && !user.permissions?.canViewFilings) return
     const data = await api.filings.get(id) as FilingDetail
     set((state) => ({ filingDetails: { ...state.filingDetails, [id]: data } }))
   },
 
   fetchApprovals: async () => {
+    const user = get().user
+    if (user?.role === 'team_member' && !user.permissions?.canApproveFilings) return
     set({ approvalsLoading: true })
     try {
       const data = await api.approvals.getAll() as Approval[]
@@ -524,6 +530,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchDocuments: async (params) => {
+    const user = get().user
+    if (user?.role === 'team_member' && !user.permissions?.canViewDocuments) return
     set({ documentsLoading: true })
     try {
       const data = await api.documents.getAll(params) as Document[]
@@ -563,6 +571,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchMembers: async () => {
+    const user = get().user
+    if (user?.role === 'team_member' && !user.permissions?.canManageTeam) return
     set({ membersLoading: true })
     try {
       const data = await api.members.getAll() as Member[]
@@ -576,7 +586,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ templatesLoading: true })
     try {
       const user = get().user
-      const data = user?.role === 'founder'
+      const canFetch = user?.role === 'founder' || (user?.role === 'team_member' && user.permissions?.canManageTeam)
+      const data = canFetch
         ? (await api.members.getTemplates() as Template[])
         : []
       set({ templates: data, templatesLoading: false })

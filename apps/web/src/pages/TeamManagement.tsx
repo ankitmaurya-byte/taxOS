@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useAuthStore } from '@/stores/auth'
+import { api } from '@/lib/api'
 import { Pagination, usePagination } from '@/components/ui/pagination'
 import {
   Search,
@@ -11,7 +12,54 @@ import {
   Mail,
   Check,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react'
+
+/* ─── Discard Confirmation Dialog ─── */
+function ConfirmDiscard({ label, onDiscard, onCancel }: { label: string; onDiscard: () => void; onCancel: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onCancel])
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-xs rounded-xl bg-white p-5 shadow-xl">
+        <p className="text-sm font-medium text-[#111827]">Discard {label}?</p>
+        <p className="mt-1 text-xs text-[#6B7280]">Your unsaved changes will be lost.</p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button onClick={onCancel} className="h-8 px-3 rounded-lg text-xs font-medium text-[#374151] hover:bg-[#F3F4F6] transition-colors">Cancel</button>
+          <button onClick={onDiscard} className="h-8 px-3 rounded-lg bg-[#B91C1C] text-xs font-medium text-white hover:bg-[#991B1B] transition-colors">Discard</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function useEscWithConfirm(isDirty: boolean, label: string, onClose: () => void) {
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        if (isDirty) setShowConfirm(true)
+        else onClose()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [isDirty, onClose])
+
+  const confirmProps = showConfirm ? {
+    label,
+    onDiscard: () => { setShowConfirm(false); onClose() },
+    onCancel: () => setShowConfirm(false),
+  } : null
+
+  return { showConfirm, confirmProps, requestClose: () => isDirty ? setShowConfirm(true) : onClose() }
+}
 
 const PAGE_SIZE = 15
 
@@ -232,7 +280,7 @@ function MemberCard({
     setSaving(true)
     try {
       await onUpdatePermissions(member.id, {
-        templateId: selectedTemplateId || undefined,
+        templateId: displayTemplateId || undefined,
         permissions: editPerms,
       })
     } finally {
@@ -246,6 +294,32 @@ function MemberCard({
     if (tpl?.permissions) {
       setEditPerms({ ...tpl.permissions })
     }
+  }
+
+  // Check if current permissions still match the selected template
+  const matchesSelectedTemplate = (() => {
+    if (!selectedTemplateId) return false
+    const tpl = templates.find((t: any) => t.id === selectedTemplateId)
+    if (!tpl?.permissions) return false
+    return PERMISSION_KEYS.every(k => Boolean(editPerms[k]) === Boolean(tpl.permissions[k]))
+  })()
+
+  // If perms were changed and no longer match, clear template selection
+  const effectiveTemplateId = matchesSelectedTemplate ? selectedTemplateId : ''
+
+  // Find if current perms match ANY template (for auto-detect)
+  const autoMatchedTemplateId = !effectiveTemplateId
+    ? templates.find((t: any) =>
+        t.permissions && PERMISSION_KEYS.every(k => Boolean(editPerms[k]) === Boolean(t.permissions[k]))
+      )?.id || ''
+    : ''
+
+  const displayTemplateId = effectiveTemplateId || autoMatchedTemplateId
+
+  const handlePermToggle = (key: string, checked: boolean) => {
+    const next = { ...editPerms, [key]: checked }
+    setEditPerms(next)
+    // Check if this change breaks template match — selectedTemplateId stays but effectiveTemplateId recalcs on render
   }
 
   const enabledCount = Object.values(perms).filter(Boolean).length
@@ -294,7 +368,7 @@ function MemberCard({
                   key={t.id}
                   onClick={() => handleApplyTemplate(t.id)}
                   className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-                    selectedTemplateId === t.id
+                    displayTemplateId === t.id
                       ? 'bg-[#6C5CE7] text-white'
                       : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F3F4F6]'
                   }`}
@@ -303,36 +377,52 @@ function MemberCard({
                   {t.isSystemTemplate && <span className="ml-1 opacity-60">(system)</span>}
                 </button>
               ))}
+              <span
+                className={`h-8 px-3 rounded-lg text-xs font-medium flex items-center ${
+                  !displayTemplateId
+                    ? 'bg-[#F59E0B] text-white'
+                    : 'bg-white text-[#9CA3AF] border border-[#E5E7EB]'
+                }`}
+              >
+                Custom
+              </span>
             </div>
           </div>
 
           {/* Permission toggles */}
           <div className="grid grid-cols-2 gap-2">
-            {PERMISSION_KEYS.map((key) => (
+            {PERMISSION_KEYS.map((key) => {
+              const checkedCount = PERMISSION_KEYS.filter(k => editPerms[k]).length
+              const isChecked = editPerms[key] || false
+              const isLockedOn = isChecked && checkedCount <= 2
+              return (
               <label
                 key={key}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 cursor-pointer transition-colors ${
-                  editPerms[key] ? 'bg-[#EDE9FD]' : 'bg-white border border-[#E5E7EB]'
-                }`}
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors ${
+                  isLockedOn ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                } ${isChecked ? 'bg-[#EDE9FD]' : 'bg-white border border-[#E5E7EB]'}`}
+                title={isLockedOn ? 'Minimum 2 permissions required' : undefined}
               >
                 <input
                   type="checkbox"
-                  checked={editPerms[key] || false}
-                  onChange={(e) => setEditPerms({ ...editPerms, [key]: e.target.checked })}
+                  checked={isChecked}
+                  disabled={isLockedOn}
+                  onChange={(e) => handlePermToggle(key, e.target.checked)}
                   className="sr-only"
                 />
                 <div className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
-                  editPerms[key]
-                    ? 'bg-[#6C5CE7] border-[#6C5CE7] text-white'
+                  isChecked
+                    ? isLockedOn ? 'bg-[#A5A0D6] border-[#A5A0D6] text-white' : 'bg-[#6C5CE7] border-[#6C5CE7] text-white'
                     : 'border-[#D1D5DB] bg-white'
                 }`}>
-                  {editPerms[key] && <Check size={12} />}
+                  {isChecked && <Check size={12} />}
                 </div>
-                <span className={`text-sm ${editPerms[key] ? 'text-[#111827] font-medium' : 'text-[#6B7280]'}`}>
+                <span className={`text-sm ${isChecked ? 'text-[#111827] font-medium' : 'text-[#6B7280]'}`}>
                   {PERMISSION_LABELS[key]}
                 </span>
               </label>
-            ))}
+              )
+            })}
           </div>
 
           <div className="mt-4 flex items-center justify-end gap-3">
@@ -405,8 +495,28 @@ function InviteModal({
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
+  // AI suggestion
+  const [aiSuggestion, setAiSuggestion] = useState<{ name: string; templateId: string } | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const fetchAiSuggestion = (value: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!value.trim()) { setAiSuggestion(null); return }
+    debounceRef.current = setTimeout(async () => {
+      setAiLoading(true)
+      try {
+        const res = await api.members.getTemplateRecommendation(value) as any
+        if (res?.template) setAiSuggestion({ name: res.recommendedName, templateId: res.template.id })
+        else setAiSuggestion(null)
+      } catch { setAiSuggestion(null) }
+      finally { setAiLoading(false) }
+    }, 400)
+  }
+
   const handleApplyTemplate = (id: string) => {
     setSelectedTemplateId(id)
+    setPermMode('template')
     const t = templates.find((tpl: any) => tpl.id === id)
     if (t?.permissions) setCustomPerms({ ...t.permissions })
   }
@@ -435,138 +545,161 @@ function InviteModal({
     }
   }
 
+  const isDirty = Boolean(email || useCase || selectedTemplateId || Object.values(customPerms).some(Boolean))
+  const { confirmProps, requestClose } = useEscWithConfirm(isDirty, 'invite', onClose)
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
-          <div>
-            <h2 className="text-lg font-semibold text-[#111827]">Invite Team Member</h2>
-            <p className="text-xs text-[#6B7280]">They'll receive an email with a link to join your organization.</p>
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
+            <div>
+              <h2 className="text-lg font-semibold text-[#111827]">Invite Team Member</h2>
+              <p className="text-xs text-[#6B7280]">They must accept within 24 hours.</p>
+            </div>
+            <button onClick={requestClose} className="p-1 text-[#9CA3AF] hover:text-[#374151]"><X size={18} /></button>
           </div>
-          <button onClick={onClose} className="p-1 text-[#9CA3AF] hover:text-[#374151]"><X size={18} /></button>
-        </div>
 
-        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* Email */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#374151]">Email address</label>
-            <div className="flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3 h-10 focus-within:ring-2 focus-within:ring-[#6C5CE7]">
-              <Mail size={16} className="text-[#9CA3AF]" />
+          <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+            {/* Email */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[#374151]">Email address</label>
+              <div className="flex items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-3 h-10 focus-within:ring-2 focus-within:ring-[#6C5CE7]">
+                <Mail size={16} className="text-[#9CA3AF]" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="colleague@company.com"
+                  className="flex-1 bg-transparent text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Use case with AI suggestion */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[#374151]">Role / use case</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="colleague@company.com"
-                className="flex-1 bg-transparent text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none"
+                type="text"
+                value={useCase}
+                onChange={(e) => { setUseCase(e.target.value); fetchAiSuggestion(e.target.value) }}
+                placeholder="e.g. Finance manager, Operations lead..."
+                className="h-10 w-full rounded-lg border border-[#E5E7EB] px-3 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7]"
               />
-            </div>
-          </div>
-
-          {/* Use case */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#374151]">Role / use case (optional)</label>
-            <input
-              type="text"
-              value={useCase}
-              onChange={(e) => setUseCase(e.target.value)}
-              placeholder="e.g. Finance manager, Operations lead..."
-              className="h-10 w-full rounded-lg border border-[#E5E7EB] px-3 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#6C5CE7]"
-            />
-          </div>
-
-          {/* Permission mode */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#374151]">Permissions</label>
-            <div className="flex gap-2 mb-3">
-              <button
-                onClick={() => setPermMode('template')}
-                className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-                  permMode === 'template' ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB]'
-                }`}
-              >
-                Use Template
-              </button>
-              <button
-                onClick={() => setPermMode('custom')}
-                className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-                  permMode === 'custom' ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB]'
-                }`}
-              >
-                Custom
-              </button>
+              {aiLoading && (
+                <p className="mt-1.5 text-xs text-[#9CA3AF] flex items-center gap-1"><Sparkles size={12} className="animate-pulse" /> Finding best template...</p>
+              )}
+              {aiSuggestion && !aiLoading && (
+                <button
+                  type="button"
+                  onClick={() => handleApplyTemplate(aiSuggestion.templateId)}
+                  className={`mt-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors w-full text-left ${
+                    selectedTemplateId === aiSuggestion.templateId
+                      ? 'border-[#6C5CE7] bg-[#EDE9FD] text-[#6C5CE7]'
+                      : 'border-[#E0E7FF] bg-[#F0F9FF] text-[#0369A1] hover:bg-[#E0F2FE]'
+                  }`}
+                >
+                  <Sparkles size={13} className="shrink-0" />
+                  <span>AI suggests: <strong>{aiSuggestion.name}</strong> template{selectedTemplateId === aiSuggestion.templateId ? ' (applied)' : ''}</span>
+                </button>
+              )}
             </div>
 
-            {permMode === 'template' && (
-              <div className="flex gap-2 flex-wrap">
-                {templates.map((t: any) => (
-                  <button
-                    key={t.id}
-                    onClick={() => handleApplyTemplate(t.id)}
-                    className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-                      selectedTemplateId === t.id
-                        ? 'bg-[#6C5CE7] text-white'
-                        : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F3F4F6]'
-                    }`}
-                  >
-                    {t.name}
-                  </button>
-                ))}
+            {/* Permission mode */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[#374151]">Permissions</label>
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => setPermMode('template')}
+                  className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
+                    permMode === 'template' ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB]'
+                  }`}
+                >
+                  Use Template
+                </button>
+                <button
+                  onClick={() => setPermMode('custom')}
+                  className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
+                    permMode === 'custom' ? 'bg-[#111827] text-white' : 'bg-white text-[#374151] border border-[#E5E7EB]'
+                  }`}
+                >
+                  Custom
+                </button>
+              </div>
+
+              {permMode === 'template' && (
+                <div className="flex gap-2 flex-wrap">
+                  {templates.map((t: any) => (
+                    <button
+                      key={t.id}
+                      onClick={() => handleApplyTemplate(t.id)}
+                      className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
+                        selectedTemplateId === t.id
+                          ? 'bg-[#6C5CE7] text-white'
+                          : 'bg-white text-[#374151] border border-[#E5E7EB] hover:bg-[#F3F4F6]'
+                      }`}
+                    >
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {permMode === 'custom' && (
+                <div className="grid grid-cols-2 gap-2">
+                  {PERMISSION_KEYS.map((key) => (
+                    <label
+                      key={key}
+                      className={`flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer text-sm transition-colors ${
+                        customPerms[key] ? 'bg-[#EDE9FD] text-[#111827]' : 'bg-[#F9FAFB] text-[#6B7280]'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={customPerms[key] || false}
+                        onChange={(e) => setCustomPerms({ ...customPerms, [key]: e.target.checked })}
+                        className="sr-only"
+                      />
+                      <div className={`flex h-4 w-4 items-center justify-center rounded border ${
+                        customPerms[key] ? 'bg-[#6C5CE7] border-[#6C5CE7] text-white' : 'border-[#D1D5DB]'
+                      }`}>
+                        {customPerms[key] && <Check size={10} />}
+                      </div>
+                      {PERMISSION_LABELS[key]}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                <AlertCircle size={14} /> {error}
               </div>
             )}
-
-            {permMode === 'custom' && (
-              <div className="grid grid-cols-2 gap-2">
-                {PERMISSION_KEYS.map((key) => (
-                  <label
-                    key={key}
-                    className={`flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer text-sm transition-colors ${
-                      customPerms[key] ? 'bg-[#EDE9FD] text-[#111827]' : 'bg-[#F9FAFB] text-[#6B7280]'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={customPerms[key] || false}
-                      onChange={(e) => setCustomPerms({ ...customPerms, [key]: e.target.checked })}
-                      className="sr-only"
-                    />
-                    <div className={`flex h-4 w-4 items-center justify-center rounded border ${
-                      customPerms[key] ? 'bg-[#6C5CE7] border-[#6C5CE7] text-white' : 'border-[#D1D5DB]'
-                    }`}>
-                      {customPerms[key] && <Check size={10} />}
-                    </div>
-                    {PERMISSION_LABELS[key]}
-                  </label>
-                ))}
+            {success && (
+              <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+                <Check size={14} /> Invite sent successfully!
               </div>
             )}
           </div>
 
-          {error && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              <AlertCircle size={14} /> {error}
-            </div>
-          )}
-          {success && (
-            <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
-              <Check size={14} /> Invite sent successfully!
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-end gap-3 border-t border-[#E5E7EB] px-6 py-4">
-          <button onClick={onClose} className="h-9 px-4 rounded-lg text-sm font-medium text-[#374151] hover:bg-[#F3F4F6]">
-            Cancel
-          </button>
-          <button
-            onClick={handleSend}
-            disabled={sending || success}
-            className="h-9 px-4 rounded-lg bg-[#6C5CE7] text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50"
-          >
-            {sending ? 'Sending...' : 'Send Invite'}
-          </button>
+          <div className="flex items-center justify-end gap-3 border-t border-[#E5E7EB] px-6 py-4">
+            <button onClick={requestClose} className="h-9 px-4 rounded-lg text-sm font-medium text-[#374151] hover:bg-[#F3F4F6]">
+              Cancel
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={sending || success}
+              className="h-9 px-4 rounded-lg bg-[#6C5CE7] text-sm font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50"
+            >
+              {sending ? 'Sending...' : 'Send Invite'}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+      {confirmProps && <ConfirmDiscard {...confirmProps} />}
+    </>
   )
 }
 
@@ -600,87 +733,93 @@ function TemplateModal({
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
-          <h2 className="text-lg font-semibold text-[#111827]">Role Templates</h2>
-          <button onClick={onClose} className="p-1 text-[#9CA3AF] hover:text-[#374151]"><X size={18} /></button>
-        </div>
+  const isDirty = showCreateForm && (Boolean(newName) || Object.values(newPerms).some(Boolean))
+  const { confirmProps, requestClose } = useEscWithConfirm(isDirty, 'template', onClose)
 
-        <div className="px-6 py-5 max-h-[70vh] overflow-y-auto space-y-4">
-          {/* Existing templates */}
-          {templates.map((t: any) => (
-            <div key={t.id} className="rounded-xl border border-[#E5E7EB] p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Shield size={16} className="text-[#6C5CE7]" />
-                  <span className="text-sm font-medium text-[#111827]">{t.name}</span>
-                  {t.isSystemTemplate && (
-                    <span className="rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[10px] text-[#6B7280]">System</span>
+  return (
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
+            <h2 className="text-lg font-semibold text-[#111827]">Role Templates</h2>
+            <button onClick={requestClose} className="p-1 text-[#9CA3AF] hover:text-[#374151]"><X size={18} /></button>
+          </div>
+
+          <div className="px-6 py-5 max-h-[70vh] overflow-y-auto space-y-4">
+            {/* Existing templates */}
+            {templates.map((t: any) => (
+              <div key={t.id} className="rounded-xl border border-[#E5E7EB] p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Shield size={16} className="text-[#6C5CE7]" />
+                    <span className="text-sm font-medium text-[#111827]">{t.name}</span>
+                    {t.isSystemTemplate && (
+                      <span className="rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[10px] text-[#6B7280]">System</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] uppercase tracking-wide text-[#9CA3AF]">{t.scope}</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {PERMISSION_KEYS.filter(k => t.permissions?.[k]).map(k => (
+                    <span key={k} className="rounded-full bg-[#EDE9FD] px-2 py-0.5 text-[10px] font-medium text-[#6C5CE7]">
+                      {PERMISSION_LABELS[k]}
+                    </span>
+                  ))}
+                  {PERMISSION_KEYS.filter(k => t.permissions?.[k]).length === 0 && (
+                    <span className="text-xs text-[#9CA3AF]">No permissions</span>
                   )}
                 </div>
-                <span className="text-[10px] uppercase tracking-wide text-[#9CA3AF]">{t.scope}</span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {PERMISSION_KEYS.filter(k => t.permissions?.[k]).map(k => (
-                  <span key={k} className="rounded-full bg-[#EDE9FD] px-2 py-0.5 text-[10px] font-medium text-[#6C5CE7]">
-                    {PERMISSION_LABELS[k]}
-                  </span>
-                ))}
-                {PERMISSION_KEYS.filter(k => t.permissions?.[k]).length === 0 && (
-                  <span className="text-xs text-[#9CA3AF]">No permissions</span>
-                )}
-              </div>
-            </div>
-          ))}
+            ))}
 
-          {/* Create new template form */}
-          {showCreateForm ? (
-            <div className="rounded-xl border-2 border-dashed border-[#6C5CE7] bg-[#FAFAFF] p-4 space-y-3">
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Template name (e.g. Ops Manager)"
-                className="h-9 w-full rounded-lg border border-[#E5E7EB] px-3 text-sm outline-none focus:ring-2 focus:ring-[#6C5CE7]"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                {PERMISSION_KEYS.map((key) => (
-                  <label key={key} className="flex items-center gap-2 text-sm text-[#374151] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={newPerms[key] || false}
-                      onChange={(e) => setNewPerms({ ...newPerms, [key]: e.target.checked })}
-                      className="h-4 w-4 rounded border-gray-300 text-[#6C5CE7] focus:ring-[#6C5CE7]"
-                    />
-                    {PERMISSION_LABELS[key]}
-                  </label>
-                ))}
+            {/* Create new template form */}
+            {showCreateForm ? (
+              <div className="rounded-xl border-2 border-dashed border-[#6C5CE7] bg-[#FAFAFF] p-4 space-y-3">
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Template name (e.g. Ops Manager)"
+                  className="h-9 w-full rounded-lg border border-[#E5E7EB] px-3 text-sm outline-none focus:ring-2 focus:ring-[#6C5CE7]"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  {PERMISSION_KEYS.map((key) => (
+                    <label key={key} className="flex items-center gap-2 text-sm text-[#374151] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newPerms[key] || false}
+                        onChange={(e) => setNewPerms({ ...newPerms, [key]: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300 text-[#6C5CE7] focus:ring-[#6C5CE7]"
+                      />
+                      {PERMISSION_LABELS[key]}
+                    </label>
+                  ))}
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setShowCreateForm(false)} className="h-8 px-3 rounded-lg text-xs text-[#374151] hover:bg-[#F3F4F6]">Cancel</button>
+                  <button onClick={handleCreate} disabled={!newName.trim() || creating} className="h-8 px-3 rounded-lg bg-[#6C5CE7] text-xs font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50">
+                    {creating ? 'Creating...' : 'Create Template'}
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setShowCreateForm(false)} className="h-8 px-3 rounded-lg text-xs text-[#374151] hover:bg-[#F3F4F6]">Cancel</button>
-                <button onClick={handleCreate} disabled={!newName.trim() || creating} className="h-8 px-3 rounded-lg bg-[#6C5CE7] text-xs font-medium text-white hover:bg-[#5B4BD5] disabled:opacity-50">
-                  {creating ? 'Creating...' : 'Create Template'}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#E5E7EB] py-4 text-sm text-[#6B7280] hover:border-[#6C5CE7] hover:text-[#6C5CE7] transition-colors"
-            >
-              <Plus size={16} /> Create new template
+            ) : (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#E5E7EB] py-4 text-sm text-[#6B7280] hover:border-[#6C5CE7] hover:text-[#6C5CE7] transition-colors"
+              >
+                <Plus size={16} /> Create new template
+              </button>
+            )}
+          </div>
+
+          <div className="flex justify-end border-t border-[#E5E7EB] px-6 py-4">
+            <button onClick={requestClose} className="h-9 px-4 rounded-lg bg-[#6C5CE7] text-sm font-medium text-white hover:bg-[#5B4BD5]">
+              Done
             </button>
-          )}
-        </div>
-
-        <div className="flex justify-end border-t border-[#E5E7EB] px-6 py-4">
-          <button onClick={onClose} className="h-9 px-4 rounded-lg bg-[#6C5CE7] text-sm font-medium text-white hover:bg-[#5B4BD5]">
-            Done
-          </button>
+          </div>
         </div>
       </div>
-    </div>
+      {confirmProps && <ConfirmDiscard {...confirmProps} />}
+    </>
   )
 }

@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpCircle, ChevronRight } from "lucide-react";
+import { HelpCircle, ChevronRight, Shield, Users, UserCheck, Briefcase } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { getPostLoginPath } from "@/lib/access";
 
@@ -74,18 +74,25 @@ function MarketingPanel() {
   );
 }
 
+const DEMO_ACCOUNTS = [
+  { key: 'admin', label: 'Admin', email: 'superadmin@taxos.ai', password: 'admin1234', icon: Shield, color: 'text-[#991B1B]', bg: 'bg-[#FEF2F2]', border: 'border-[#FECACA]', hover: 'hover:bg-[#FEE2E2]' },
+  { key: 'founder', label: 'Founder', email: 'founder@demo.taxos.ai', password: 'password123', icon: Briefcase, color: 'text-[#6C5CE7]', bg: 'bg-[#F5F3FF]', border: 'border-[#DDD6FE]', hover: 'hover:bg-[#EDE9FE]' },
+  { key: 'team', label: 'Team Member', email: 'team@demo.taxos.ai', password: 'password123', icon: Users, color: 'text-[#0369A1]', bg: 'bg-[#F0F9FF]', border: 'border-[#BAE6FD]', hover: 'hover:bg-[#E0F2FE]' },
+  { key: 'cpa', label: 'CPA', email: 'cpa@demo.taxos.ai', password: 'password123', icon: UserCheck, color: 'text-[#166534]', bg: 'bg-[#F0FDF4]', border: 'border-[#BBF7D0]', hover: 'hover:bg-[#DCFCE7]' },
+] as const;
+
 export function LoginPage() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [email, setEmail] = useState(() => {
     return localStorage.getItem("login_email") || "superadmin@taxos.ai";
   });
-
   const [password, setPassword] = useState(() => {
     return localStorage.getItem("login_password") || "admin1234";
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [quickLoading, setQuickLoading] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -95,12 +102,26 @@ export function LoginPage() {
       await login(email, password);
       localStorage.setItem("login_email", email);
       localStorage.setItem("login_password", password);
-
       navigate(getPostLoginPath(useAuthStore.getState().user));
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleQuickLogin = async (account: typeof DEMO_ACCOUNTS[number]) => {
+    setError("");
+    setQuickLoading(account.key);
+    try {
+      await login(account.email, account.password);
+      localStorage.setItem("login_email", account.email);
+      localStorage.setItem("login_password", account.password);
+      navigate(getPostLoginPath(useAuthStore.getState().user));
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setQuickLoading(null);
     }
   };
 
@@ -164,12 +185,34 @@ export function LoginPage() {
               >
                 {loading ? "Signing in..." : "Sign in"}
               </button>
-
-              <p className="mt-5 text-xs text-[#8B84A8] leading-5">
-                Demo: Founder → demo@taxos.ai / demo1234 · Admin →
-                admin@taxos.ai / admin1234 · Super Admin → superadmin@taxos.ai /
-                admin1234 · Others → password123
-              </p>
+              <div className="mt-6 rounded-xl border border-[#E4E0F5] bg-[#F8F7FF] p-4">
+                <p className="text-sm font-medium text-[#4E4970] mb-3">
+                  Quick Login
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {DEMO_ACCOUNTS.map((account) => {
+                    const Icon = account.icon;
+                    const isLoading = quickLoading === account.key;
+                    return (
+                      <button
+                        key={account.key}
+                        type="button"
+                        disabled={isLoading || loading}
+                        onClick={() => handleQuickLogin(account)}
+                        className={`flex items-center gap-2.5 rounded-lg border ${account.border} ${account.bg} ${account.hover} px-3 py-2.5 text-left transition-colors disabled:opacity-50`}
+                      >
+                        <Icon size={16} className={account.color} />
+                        <div className="min-w-0">
+                          <p className={`text-xs font-semibold ${account.color}`}>
+                            {isLoading ? 'Signing in...' : `Login as ${account.label}`}
+                          </p>
+                          <p className="text-[11px] text-[#8B84A8] truncate">{account.email}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </form>
           </div>
         </div>
