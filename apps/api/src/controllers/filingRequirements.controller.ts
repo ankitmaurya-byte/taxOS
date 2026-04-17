@@ -9,6 +9,7 @@ import {
 } from '../db/schema'
 import { AppError, withContext } from '../lib/errors'
 import { auditLogger } from '../lib/auditLog'
+import { ensureCpaHasOrgAccess } from '../lib/rbac'
 import {
   CLOUDINARY_SIZE_LIMIT,
   cloudinaryConfigured,
@@ -23,10 +24,18 @@ const documentAgent = new DocumentAgent()
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function loadRequirement(req: Request) {
-  const filing = db.select().from(filings)
-    .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
-    .get()
+  // CPAs are members of the admin org but are assigned to client orgs, so we
+  // can\'t filter by req.user.orgId for them — fall back to an org-access check.
+  const filingId = req.params.id as string
+  const filing = req.user!.role === 'cpa'
+    ? db.select().from(filings).where(eq(filings.id, filingId)).get()
+    : db.select().from(filings)
+        .where(and(eq(filings.id, filingId), eq(filings.orgId, req.user!.orgId)))
+        .get()
   if (!filing) throw new AppError('Filing not found', 404)
+  if (req.user!.role === 'cpa' && !ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+    throw new AppError('CPA not authorised for this organisation', 403)
+  }
 
   const requirement = db.select().from(filingDocumentRequirements)
     .where(and(
@@ -111,10 +120,16 @@ function touchRequirement(requirementId: string, patch: Partial<{
 
 export function listRequirements(req: Request, res: Response, next: NextFunction) {
   try {
-    const filing = db.select().from(filings)
-      .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
-      .get()
+    const filingId = req.params.id as string
+    const filing = req.user!.role === 'cpa'
+      ? db.select().from(filings).where(eq(filings.id, filingId)).get()
+      : db.select().from(filings)
+          .where(and(eq(filings.id, filingId), eq(filings.orgId, req.user!.orgId)))
+          .get()
     if (!filing) throw new AppError('Filing not found', 404)
+    if (req.user!.role === 'cpa' && !ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+      throw new AppError('CPA not authorised for this organisation', 403)
+    }
 
     const rows = db.select().from(filingDocumentRequirements)
       .where(eq(filingDocumentRequirements.filingId, filing.id))
@@ -404,6 +419,9 @@ export function markAllRequirementsViewed(req: Request, res: Response, next: Nex
       .where(eq(filings.id, req.params.id as string))
       .get()
     if (!filing) throw new AppError('Filing not found', 404)
+    if (!ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+      throw new AppError('CPA not authorised for this organisation', 403)
+    }
 
     const now = new Date().toISOString()
     db.update(filingDocumentRequirements)
