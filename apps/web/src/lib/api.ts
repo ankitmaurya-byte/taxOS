@@ -304,6 +304,80 @@ const resumeFiling = (id: string) =>
 const stopFiling = (id: string) =>
   request<{ message: string }>(`/filings/${id}/stop`, { method: 'POST' }, { successMessage: 'Workflow stopped.' })
 
+// ─── Filing Document Requirements ────────────────────────────────────────────
+
+const listFilingRequirements = (filingId: string) =>
+  request<any[]>(`/filings/${filingId}/requirements`)
+
+const uploadFilingRequirement = async (
+  filingId: string,
+  slot: string,
+  file: File,
+  opts?: { onProgress?: (pct: number) => void },
+) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await apiClient.post(`/filings/${filingId}/requirements/${slot}/upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => {
+      if (!opts?.onProgress || !e.total) return
+      opts.onProgress(Math.round((e.loaded / e.total) * 100))
+    },
+  })
+  return response.data
+}
+
+const importFilingRequirementFromVault = (filingId: string, slot: string, documentId: string) =>
+  request<{ document: any }>(`/filings/${filingId}/requirements/${slot}/import-from-vault`, {
+    method: 'POST',
+    data: { documentId },
+  }, { successMessage: 'Imported from vault.' })
+
+const skipFilingRequirement = (filingId: string, slot: string, reason: string) =>
+  request<{ ok: true }>(`/filings/${filingId}/requirements/${slot}/skip`, {
+    method: 'POST',
+    data: { reason },
+  }, { successMessage: 'Requirement skipped.' })
+
+const unskipFilingRequirement = (filingId: string, slot: string) =>
+  request<{ ok: true }>(`/filings/${filingId}/requirements/${slot}/unskip`, { method: 'POST' })
+
+const retryFilingRequirementUpload = async (
+  filingId: string,
+  slot: string,
+  file: File,
+  opts?: { onProgress?: (pct: number) => void },
+) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await apiClient.post(`/filings/${filingId}/requirements/${slot}/retry-upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => {
+      if (!opts?.onProgress || !e.total) return
+      opts.onProgress(Math.round((e.loaded / e.total) * 100))
+    },
+  })
+  return response.data
+}
+
+const retryFilingRequirementExtract = async (filingId: string, slot: string, file?: File) => {
+  if (file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await apiClient.post(`/filings/${filingId}/requirements/${slot}/retry-extract`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  }
+  return request<{ ok: true }>(`/filings/${filingId}/requirements/${slot}/retry-extract`, { method: 'POST' })
+}
+
+const markFilingRequirementViewed = (filingId: string, slot: string) =>
+  request<{ ok: true }>(`/filings/${filingId}/requirements/${slot}/view`, { method: 'POST' })
+
+const markAllFilingRequirementsViewed = (filingId: string) =>
+  request<{ ok: true }>(`/filings/${filingId}/requirements/mark-all-viewed`, { method: 'POST' }, { successMessage: 'All requirements marked viewed.' })
+
 const escalateToCpa = (id: string) =>
   request<{ message: string; notifiedCpaCount: number }>(`/filings/${id}/escalate-cpa`, { method: 'POST' }, { successMessage: 'Filing escalated to CPA.' })
 
@@ -699,6 +773,15 @@ export const api = {
   stopFiling,
   escalateToCpa,
   escalateToFounder,
+  listFilingRequirements,
+  uploadFilingRequirement,
+  importFilingRequirementFromVault,
+  skipFilingRequirement,
+  unskipFilingRequirement,
+  retryFilingRequirementUpload,
+  retryFilingRequirementExtract,
+  markFilingRequirementViewed,
+  markAllFilingRequirementsViewed,
 
   // Deadlines
   getDeadlines,
@@ -840,6 +923,15 @@ export const api = {
     stop: stopFiling,
     escalateToCpa,
     escalateToFounder,
+    listRequirements: listFilingRequirements,
+    uploadRequirement: uploadFilingRequirement,
+    importRequirementFromVault: importFilingRequirementFromVault,
+    skipRequirement: skipFilingRequirement,
+    unskipRequirement: unskipFilingRequirement,
+    retryRequirementUpload: retryFilingRequirementUpload,
+    retryRequirementExtract: retryFilingRequirementExtract,
+    markRequirementViewed: markFilingRequirementViewed,
+    markAllRequirementsViewed: markAllFilingRequirementsViewed,
   },
   deadlines: {
     getAll: getDeadlines,

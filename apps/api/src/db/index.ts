@@ -97,6 +97,24 @@ function ensureNewTables() {
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`,
+    `CREATE TABLE IF NOT EXISTS filing_document_requirements (
+      id TEXT PRIMARY KEY NOT NULL,
+      filing_id TEXT NOT NULL REFERENCES filings(id),
+      slot_key TEXT NOT NULL,
+      label TEXT NOT NULL,
+      description TEXT,
+      required INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      document_id TEXT REFERENCES documents(id),
+      skipped INTEGER NOT NULL DEFAULT 0,
+      skip_reason TEXT,
+      viewed_by_cpa INTEGER NOT NULL DEFAULT 0,
+      viewed_at TEXT,
+      viewed_by_user_id TEXT REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_filing_doc_req_filing ON filing_document_requirements(filing_id)`,
     `CREATE TABLE IF NOT EXISTS document_contexts (
       id TEXT PRIMARY KEY NOT NULL,
       document_id TEXT NOT NULL REFERENCES documents(id),

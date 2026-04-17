@@ -12,7 +12,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { eq } from 'drizzle-orm'
 import { db } from '../db'
-import { filings, entities, documents, approvalQueue } from '../db/schema'
+import { filings, entities, documents, approvalQueue, filingDocumentRequirements } from '../db/schema'
 import { IntakeAgent } from '../agents/intake'
 import { DeadlineAgent } from '../agents/deadline'
 import { DocumentAgent } from '../agents/document'
@@ -141,12 +141,26 @@ export async function extractDocument(req: Request, res: Response, next: NextFun
 
 // ─── POST /api/agents/prefill/run ────────────────────
 // HITL gating (low-confidence → CPA queue) lives inside the agent.
+function assertRequiredDocsSatisfied(filingId: string) {
+  const reqs = db.select().from(filingDocumentRequirements)
+    .where(eq(filingDocumentRequirements.filingId, filingId))
+    .all()
+  const unmet = reqs.filter((r: any) => r.required && !r.skipped && !r.documentId)
+  if (unmet.length > 0) {
+    throw new AppError(
+      `Upload or skip every required document first (${unmet.length} pending).`,
+      400,
+    )
+  }
+}
+
 export async function runPrefill(req: Request, res: Response, next: NextFunction) {
   try {
     const { filingId } = requireBody(req, ['filingId'])
     const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
     if (!filing) throw new AppError('Filing not found', 404)
     assertAgentAllowed(filing, 'prefill agent', ['intake', 'ai_prep'])
+    assertRequiredDocsSatisfied(filingId)
 
     const result = await prefillAgent.prefillForm(filingId, req.user!.orgId)
     res.json(result)
@@ -161,6 +175,7 @@ export async function runAuditRisk(req: Request, res: Response, next: NextFuncti
     const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
     if (!filing) throw new AppError('Filing not found', 404)
     assertAgentAllowed(filing, 'audit risk agent', ['intake', 'ai_prep', 'cpa_review', 'founder_approval'])
+    assertRequiredDocsSatisfied(filingId)
 
     const result = await auditRiskAgent.scoreRisk(filingId, req.user!.orgId)
     res.json(result)

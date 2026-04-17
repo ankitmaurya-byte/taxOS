@@ -263,6 +263,28 @@ export const documentContexts = sqliteTable('document_contexts', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 })
 
+// ─── Filing Document Requirements ─────────────────────
+// Per-filing checklist of required/optional supporting documents. Generated on
+// filing creation from the formType → template mapping in
+// apps/api/src/lib/documentRequirements.ts.
+export const filingDocumentRequirements = sqliteTable('filing_document_requirements', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  filingId: text('filing_id').references(() => filings.id).notNull(),
+  slotKey: text('slot_key').notNull(),
+  label: text('label').notNull(),
+  description: text('description'),
+  required: integer('required', { mode: 'boolean' }).default(true).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  documentId: text('document_id').references(() => documents.id),
+  skipped: integer('skipped', { mode: 'boolean' }).default(false).notNull(),
+  skipReason: text('skip_reason'),
+  viewedByCpa: integer('viewed_by_cpa', { mode: 'boolean' }).default(false).notNull(),
+  viewedAt: text('viewed_at'),
+  viewedByUserId: text('viewed_by_user_id').references(() => users.id),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+})
+
 // ─── Approval Queue ───────────────────────────────────
 export const approvalQueue = sqliteTable('approval_queue', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),

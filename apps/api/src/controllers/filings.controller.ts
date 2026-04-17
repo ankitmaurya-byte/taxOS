@@ -43,10 +43,12 @@ import {
   cpaRejections,
   documents,
   entities,
+  filingDocumentRequirements,
   filingReviewLocks,
   filings,
   users,
 } from '../db/schema'
+import { getRequirementsForFormType } from '../lib/documentRequirements'
 import { createFilingSchema, updateFilingStatusSchema, type FilingStatus } from 'shared'
 import { auditLogger } from '../lib/auditLog'
 import { ensureCpaHasOrgAccess } from '../lib/rbac'
@@ -183,6 +185,20 @@ export async function createFiling(req: Request, res: Response, next: NextFuncti
       status: 'intake',
     }).returning().get()
 
+    // Seed per-form document requirement checklist
+    const templates = getRequirementsForFormType(filing.formType)
+    for (let i = 0; i < templates.length; i++) {
+      const t = templates[i]
+      db.insert(filingDocumentRequirements).values({
+        filingId: filing.id,
+        slotKey: t.slot,
+        label: t.label,
+        description: t.description ?? null,
+        required: t.required,
+        sortOrder: i,
+      }).run()
+    }
+
     auditLogger.log({
       orgId: req.user!.orgId,
       filingId: filing.id,
@@ -268,7 +284,74 @@ export function getFiling(req: Request, res: Response) {
     ? db.select().from(entities).where(eq(entities.id, filing.entityId)).get() ?? null
     : null
 
-  res.json({ ...filing, entity, conversations, documents: docs, approvals, reviewLock: reviewLockWithName, myNotification, rejectionRemarks, notifiedCpas, approvedBy })
+  // Lazy-backfill requirements for filings that pre-date this feature.
+  const existingCount = db.select({ id: filingDocumentRequirements.id })
+    .from(filingDocumentRequirements)
+    .where(eq(filingDocumentRequirements.filingId, filingId))
+    .all().length
+  if (existingCount === 0) {
+    const templates = getRequirementsForFormType(filing.formType)
+    for (let i = 0; i < templates.length; i++) {
+      const t = templates[i]
+      db.insert(filingDocumentRequirements).values({
+        filingId,
+        slotKey: t.slot,
+        label: t.label,
+        description: t.description ?? null,
+        required: t.required,
+        sortOrder: i,
+      }).run()
+    }
+  }
+
+  // Requirements + linked docs
+  const reqRows = db.select().from(filingDocumentRequirements)
+    .where(eq(filingDocumentRequirements.filingId, filingId))
+    .orderBy(filingDocumentRequirements.sortOrder)
+    .all()
+
+  const requirements = reqRows.map((r: any) => {
+    const doc = r.documentId ? docs.find((d: any) => d.id === r.documentId) : null
+    return {
+      id: r.id,
+      slotKey: r.slotKey,
+      label: r.label,
+      description: r.description,
+      required: Boolean(r.required),
+      sortOrder: r.sortOrder,
+      skipped: Boolean(r.skipped),
+      skipReason: r.skipReason,
+      viewedByCpa: Boolean(r.viewedByCpa),
+      viewedAt: r.viewedAt,
+      viewedByUserId: r.viewedByUserId,
+      document: doc || null,
+      updatedAt: r.updatedAt,
+    }
+  })
+
+  const requiredReqs = requirements.filter((r: any) => r.required)
+  const optionalReqsWithDoc = requirements.filter((r: any) => !r.required && r.document)
+  const reqSatisfied = (r: any) => r.skipped || Boolean(r.document)
+  const allRequiredSatisfied = requiredReqs.every(reqSatisfied)
+  const reviewableReqs = [...requiredReqs, ...optionalReqsWithDoc]
+  const allViewedByCpa = reviewableReqs.length > 0
+    && reviewableReqs.every((r: any) => r.skipped || r.viewedByCpa)
+
+  res.json({
+    ...filing,
+    entity,
+    conversations,
+    documents: docs,
+    approvals,
+    reviewLock: reviewLockWithName,
+    myNotification,
+    rejectionRemarks,
+    notifiedCpas,
+    approvedBy,
+    requirements,
+    allRequiredSatisfied,
+    allViewedByCpa,
+  })
 }
 
 // ─── PUT /api/filings/:id/status ──────────────────────────────────────────────
@@ -466,6 +549,20 @@ export async function cpaApproveFiling(req: Request, res: Response, next: NextFu
     }
     if (filing.status !== 'cpa_review') {
       throw new AppError('Filing is not in cpa_review stage', 400)
+    }
+
+    // Enforce: every required + every uploaded optional requirement must be
+    // marked viewed by the CPA before approval.
+    const reqRows = db.select().from(filingDocumentRequirements)
+      .where(eq(filingDocumentRequirements.filingId, filingId))
+      .all()
+    const reviewable = reqRows.filter((r: any) => r.required || r.documentId)
+    const unseen = reviewable.filter((r: any) => !r.skipped && !r.viewedByCpa)
+    if (unseen.length > 0) {
+      throw new AppError(
+        `Mark all document requirements as viewed before approving (${unseen.length} remaining).`,
+        400,
+      )
     }
 
     const now = new Date().toISOString()
@@ -762,6 +859,19 @@ export function escalateToCpa(req: Request, res: Response) {
     .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
     .get()
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
+
+  // Gate: every required requirement must be satisfied (uploaded OR skipped)
+  const reqRows = db.select().from(filingDocumentRequirements)
+    .where(eq(filingDocumentRequirements.filingId, filing.id))
+    .all()
+  const required = reqRows.filter((r: any) => r.required)
+  const unmet = required.filter((r: any) => !r.skipped && !r.documentId)
+  if (unmet.length > 0) {
+    return res.status(400).json({
+      error: `Upload or skip every required document before escalating to CPA (${unmet.length} remaining).`,
+      unmetSlots: unmet.map((r: any) => r.slotKey),
+    })
+  }
 
   const { notifiedCpaIds } = escalateFilingToCpa({
     filingId: filing.id,

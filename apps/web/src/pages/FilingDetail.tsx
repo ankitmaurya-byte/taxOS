@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 import { promptDialog, confirmDialog } from '@/stores/dialogs'
 import { MessageContent } from '@/components/MessageContent'
+import { FilingDocumentChecklist } from '@/components/filings/FilingDocumentChecklist'
 
 // Strip [COLLECTED: key=value] markers from displayed message text
 function cleanMessageContent(content: string): string {
@@ -143,13 +144,16 @@ export function FilingDetailPage() {
   const isPaused = filing?.paused === true || filing?.paused === 1
   const isStopped = (filing as any)?.stopped === true || (filing as any)?.stopped === 1
   const isFrozen = isPaused || isStopped
+  const requirements = ((filing as any)?.requirements || []) as any[]
+  const allRequiredSatisfied: boolean = Boolean((filing as any)?.allRequiredSatisfied ?? (requirements.length === 0))
+  const allViewedByCpa: boolean = Boolean((filing as any)?.allViewedByCpa)
 
   // Agent action visibility — per status AND per role
   // Intake: all agent actions available
   const canStartIntake = !isFrozen && (status === 'intake' || status === 'ai_prep') && !intakeConversation && (isFounder || isCpa)
-  const canRunPrefill = !isFrozen && status === 'ai_prep' && (isFounder || isCpa)
+  const canRunPrefill = !isFrozen && status === 'ai_prep' && (isFounder || isCpa) && allRequiredSatisfied
   // Founder sees audit risk in ai_prep / founder_approval; CPA only in cpa_review
-  const canRunAuditRisk = !isFrozen && (
+  const canRunAuditRisk = !isFrozen && allRequiredSatisfied && (
     (isFounder && (status === 'ai_prep' || status === 'founder_approval'))
     || (isCpa && status === 'cpa_review')
   )
@@ -159,7 +163,7 @@ export function FilingDetailPage() {
   const canResume = isPaused && !isStopped && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
   // Stop: founder, any non-terminal status, only when not already stopped
   const canStopWorkflow = !isStopped && !isTerminal && isFounder
-  const canEscalate = !isFrozen && (status === 'intake' || status === 'ai_prep') && isFounder
+  const canEscalate = !isFrozen && (status === 'intake' || status === 'ai_prep') && isFounder && allRequiredSatisfied
   // Post-prefill high-confidence shortcut: team_member/founder can skip CPA review and push filing to founder approval.
   const aiConfidenceScore = (filing?.aiConfidenceScore as number | null | undefined) ?? null
   const cpaReviewSkipped = filing?.cpaReviewSkipped === true || filing?.cpaReviewSkipped === 1
@@ -187,7 +191,7 @@ export function FilingDetailPage() {
   const reviewLock = filing?.reviewLock as { cpaUserId: string; cpaName: string; cpaEmail: string; status: string } | null
   // CPA approve only if CPA has claimed this filing
   // CPA approve: disabled while paused (lock stays) and always when stopped
-  const canCpaApprove = !isFrozen && status === 'cpa_review' && isCpa && reviewLock?.cpaUserId === user?.id
+  const canCpaApprove = !isFrozen && status === 'cpa_review' && isCpa && reviewLock?.cpaUserId === user?.id && allViewedByCpa
   // CPA can claim if cpa_review and not yet claimed — disabled while paused/stopped
   const canCpaClaim = !isFrozen && status === 'cpa_review' && isCpa && !reviewLock
   // Rejection remarks
@@ -839,6 +843,17 @@ const renderValue = (value: any): React.ReactNode => {
                 Pause holds the CPA lock; Stop releases it and voids approvals.
               </p>
             </div>
+          )}
+
+          {/* Document checklist — shown for everyone except on archived/submitted */}
+          {requirements.length > 0 && !isTerminal && (
+            <FilingDocumentChecklist
+              filingId={id!}
+              requirements={requirements as any}
+              isTerminal={isTerminal}
+              isFrozen={isFrozen}
+              onChange={() => { if (id) fetchFiling(id) }}
+            />
           )}
 
           {/* Paused/Stopped banner */}
