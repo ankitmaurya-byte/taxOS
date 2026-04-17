@@ -243,12 +243,14 @@ export function EntityDetailPage() {
                         <span className="text-[#64748d]">
                           {doc.mimeType?.includes('pdf') ? 'PDF' : doc.mimeType?.includes('sheet') || doc.mimeType?.includes('csv') ? 'Spreadsheet' : 'Document'}
                         </span>
-                        {doc.reviewedByHuman ? (
+                        {doc.extractionStatus === 'done' ? (
                           <span className="inline-flex items-center gap-1 font-medium text-[#108c3d]">
-                            <CheckCircle2 size={12} /> Reviewed
+                            <CheckCircle2 size={12} /> Extracted
                           </span>
+                        ) : doc.extractionStatus === 'failed' ? (
+                          <span className="font-medium text-[#ea2261]">Extract failed</span>
                         ) : (
-                          <span className="font-medium text-[#9b6829]">Needs review</span>
+                          <span className="font-medium text-[#9b6829]">Processing</span>
                         )}
                       </div>
                     </a>

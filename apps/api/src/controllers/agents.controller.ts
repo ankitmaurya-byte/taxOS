@@ -98,7 +98,22 @@ export async function runDeadlines(req: Request, res: Response, next: NextFuncti
 export async function extractDocument(req: Request, res: Response, next: NextFunction) {
   try {
     const { documentId } = requireBody(req, ['documentId'])
-    const result = await documentAgent.extract(documentId, req.user!.orgId)
+    const doc = db.select().from(documents).where(eq(documents.id, documentId)).get()
+    if (!doc) throw new AppError('Document not found', 404)
+    if (!doc.storageUrl || doc.uploadStatus !== 'uploaded') {
+      throw new AppError(
+        'Original file is not available on the server. Upload it again to run extraction.',
+        409,
+      )
+    }
+
+    const { fetchFromCloudinary } = await import('../lib/cloudinary')
+    const buffer = await fetchFromCloudinary(doc.storageUrl)
+    const result = await documentAgent.extract(documentId, req.user!.orgId, {
+      buffer,
+      mimeType: doc.mimeType,
+      fileName: doc.fileName,
+    })
 
     if (result.overallConfidence < 0.75) {
       const doc = db.select().from(documents).where(eq(documents.id, documentId)).get()

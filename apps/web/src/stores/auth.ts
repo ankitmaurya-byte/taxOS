@@ -396,8 +396,9 @@ interface AuthState {
   deleteEntity: (id: string) => Promise<void>
   resolveApproval: (id: string, status: 'approved' | 'rejected', reason?: string) => Promise<void>
   escalateApproval: (id: string) => Promise<void>
-  uploadDocument: (file: File, filingId?: string) => Promise<void>
-  markDocumentReviewed: (id: string) => Promise<void>
+  uploadDocument: (file: File, filingId?: string, opts?: { onProgress?: (pct: number) => void }) => Promise<any>
+  retryDocumentUpload: (id: string, file: File, opts?: { onProgress?: (pct: number) => void }) => Promise<void>
+  retryDocumentExtract: (id: string, file?: File) => Promise<void>
   deleteDocument: (id: string) => Promise<void>
   createCpa: (data: { email: string }) => Promise<void>
   assignCpaOrganization: (id: string, organizationId: string) => Promise<void>
@@ -800,13 +801,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await get().fetchApprovals()
   },
 
-  uploadDocument: async (file, filingId) => {
-    await api.documents.upload(file, filingId)
+  uploadDocument: async (file, filingId, opts) => {
+    const doc = await api.documents.upload(file, filingId, opts)
+    await get().fetchDocuments()
+    return doc
+  },
+
+  retryDocumentUpload: async (id, file, opts) => {
+    await api.documents.retryUpload(id, file, opts)
     await get().fetchDocuments()
   },
 
-  markDocumentReviewed: async (id) => {
-    await api.documents.markReviewed(id)
+  retryDocumentExtract: async (id, file) => {
+    await api.documents.retryExtract(id, file)
     await get().fetchDocuments()
   },
 

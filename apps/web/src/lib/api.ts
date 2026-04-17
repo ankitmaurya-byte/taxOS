@@ -341,19 +341,55 @@ const getDocuments = (params?: Record<string, string>) => {
 const getDocument = (id: string) =>
   request<any>(`/documents/${id}`)
 
-const uploadDocument = async (file: File, filingId?: string) => {
+const uploadDocument = async (
+  file: File,
+  filingId?: string,
+  opts?: { onProgress?: (pct: number) => void },
+) => {
   const formData = new FormData()
   formData.append('file', file)
   if (filingId) formData.append('filingId', filingId)
   const response = await apiClient.post('/documents/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => {
+      if (!opts?.onProgress || !e.total) return
+      opts.onProgress(Math.round((e.loaded / e.total) * 100))
+    },
   })
-  notify({ title: 'Success', message: `${file.name} uploaded successfully.`, tone: 'success' })
   return response.data
 }
 
-const markDocumentReviewed = (id: string) =>
-  request<{ message: string }>(`/documents/${id}/review`, { method: 'PUT' }, { successMessage: 'Document marked as reviewed.' })
+const retryDocumentUpload = async (
+  id: string,
+  file: File,
+  opts?: { onProgress?: (pct: number) => void },
+) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await apiClient.post(`/documents/${id}/retry-upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => {
+      if (!opts?.onProgress || !e.total) return
+      opts.onProgress(Math.round((e.loaded / e.total) * 100))
+    },
+  })
+  return response.data
+}
+
+const retryDocumentExtract = async (id: string, file?: File) => {
+  if (file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await apiClient.post(`/documents/${id}/retry-extract`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  }
+  return request<{ message: string }>(`/documents/${id}/retry-extract`, { method: 'POST' })
+}
+
+const getDocumentDownload = (id: string) =>
+  request<{ url: string; fileName: string }>(`/documents/${id}/download`)
 
 const deleteDocumentApi = (id: string) =>
   request<{ message: string }>(`/documents/${id}`, { method: 'DELETE' }, { successMessage: 'Document deleted.' })
@@ -401,15 +437,23 @@ const moveDocumentApi = (docId: string, payload: { vaultId?: string; folderId?: 
     data: payload,
   }, { successMessage: 'Document moved.' })
 
-const uploadDocumentToVault = async (file: File, vaultId: string, folderId?: string) => {
+const uploadDocumentToVault = async (
+  file: File,
+  vaultId: string,
+  folderId?: string,
+  opts?: { onProgress?: (pct: number) => void },
+) => {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('vaultId', vaultId)
   if (folderId) formData.append('folderId', folderId)
   const response = await apiClient.post('/documents/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => {
+      if (!opts?.onProgress || !e.total) return
+      opts.onProgress(Math.round((e.loaded / e.total) * 100))
+    },
   })
-  notify({ title: 'Success', message: `${file.name} uploaded to vault.`, tone: 'success' })
   return response.data
 }
 
@@ -664,7 +708,9 @@ export const api = {
   getDocuments,
   getDocument,
   uploadDocument,
-  markDocumentReviewed,
+  retryDocumentUpload,
+  retryDocumentExtract,
+  getDocumentDownload,
   deleteDocumentApi,
 
   // Vaults
@@ -803,7 +849,9 @@ export const api = {
     getAll: getDocuments,
     get: getDocument,
     upload: uploadDocument,
-    markReviewed: markDocumentReviewed,
+    retryUpload: retryDocumentUpload,
+    retryExtract: retryDocumentExtract,
+    getDownload: getDocumentDownload,
     delete: deleteDocumentApi,
   },
   vaults: {

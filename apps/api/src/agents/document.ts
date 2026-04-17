@@ -2,8 +2,6 @@ import { BaseAgent } from './base'
 import { db } from '../db'
 import { documents, documentContexts } from '../db/schema'
 import { eq } from 'drizzle-orm'
-import fs from 'fs'
-import path from 'path'
 import { AgentOutputError } from './lib/json'
 import {
   DocumentContext,
@@ -57,34 +55,34 @@ const TEXT_MIME = new Set(['text/csv', 'text/plain', 'application/json'])
 const MAX_TEXT_CHARS = 50_000
 const CONTEXT_RAW_CAP = 100_000
 
+export interface ExtractionSource {
+  buffer: Buffer
+  mimeType: string
+  fileName: string
+}
+
 export class DocumentAgent extends BaseAgent {
-  async extract(documentId: string, orgId: string): Promise<DocumentExtraction> {
+  /**
+   * Extract structured data from an in-memory buffer and persist the result
+   * onto the `documents` row.
+   */
+  async extract(documentId: string, orgId: string, source: ExtractionSource): Promise<DocumentExtraction> {
     const doc = db.select().from(documents).where(eq(documents.id, documentId)).get()
     if (!doc) throw new Error('Document not found')
 
-    if (!isVisionMime(doc.mimeType)) {
-      const placeholder = buildLowConfidenceExtraction(doc.fileName, doc.mimeType)
+    if (!isVisionMime(source.mimeType)) {
+      const placeholder = buildLowConfidenceExtraction(source.fileName, source.mimeType)
       await this.persistExtraction(documentId, placeholder, orgId, doc.filingId)
       return placeholder
     }
 
-    const filePath = resolveStoragePath(doc.storageUrl)
-    if (!fs.existsSync(filePath)) {
-      const placeholder = buildLowConfidenceExtraction(doc.fileName, 'missing-file')
-      await this.persistExtraction(documentId, placeholder, orgId, doc.filingId, {
-        reasoning: 'Stored file missing on disk; manual review required.',
-      })
-      return placeholder
-    }
-
-    const fileBuffer = fs.readFileSync(filePath)
-    const base64 = fileBuffer.toString('base64')
+    const base64 = source.buffer.toString('base64')
 
     let extraction: DocumentExtraction
     try {
       extraction = await this.generateJson(
         [
-          { inlineData: { mimeType: doc.mimeType, data: base64 } },
+          { inlineData: { mimeType: source.mimeType, data: base64 } },
           { text: EXTRACTION_PROMPT },
         ],
         DocumentExtractionSchema,
@@ -95,11 +93,11 @@ export class DocumentAgent extends BaseAgent {
           orgId,
           filingId: doc.filingId,
           action: 'document_extraction_failed',
-          reasoning: `Gemini output parsing failed for "${doc.fileName}": ${err.message}`,
+          reasoning: `Gemini output parsing failed for "${source.fileName}": ${err.message}`,
           outputs: { documentId, rawOutput: err.rawText.slice(0, 500) },
           confidenceScore: 0,
         })
-        const placeholder = buildLowConfidenceExtraction(doc.fileName, 'parse-failed')
+        const placeholder = buildLowConfidenceExtraction(source.fileName, 'parse-failed')
         await this.persistExtraction(documentId, placeholder, orgId, doc.filingId)
         return placeholder
       }
@@ -110,41 +108,46 @@ export class DocumentAgent extends BaseAgent {
     return extraction
   }
 
-  async extractContext(documentId: string, orgId: string, vaultId?: string | null): Promise<DocumentContext> {
+  /**
+   * Extract a richer textual context (used by the AI advisor) from a buffer.
+   */
+  async extractContext(
+    documentId: string,
+    orgId: string,
+    source: ExtractionSource,
+    vaultId?: string | null,
+  ): Promise<DocumentContext> {
     const doc = db.select().from(documents).where(eq(documents.id, documentId)).get()
     if (!doc) throw new Error('Document not found')
 
-    const filePath = resolveStoragePath(doc.storageUrl)
-    const fileExists = fs.existsSync(filePath)
-
     let context: DocumentContext
 
-    if (isVisionMime(doc.mimeType) && fileExists) {
-      const base64 = fs.readFileSync(filePath).toString('base64')
+    if (isVisionMime(source.mimeType)) {
+      const base64 = source.buffer.toString('base64')
       context = await this.safeContextJson(
         [
-          { inlineData: { mimeType: doc.mimeType, data: base64 } },
+          { inlineData: { mimeType: source.mimeType, data: base64 } },
           { text: CONTEXT_EXTRACTION_PROMPT },
         ],
-        doc.fileName,
+        source.fileName,
       )
-    } else if (TEXT_MIME.has(doc.mimeType) && fileExists) {
-      const rawContent = fs.readFileSync(filePath, 'utf-8')
+    } else if (TEXT_MIME.has(source.mimeType)) {
+      const rawContent = source.buffer.toString('utf-8')
       context = await this.safeContextJson(
         [{ text: `Document content:\n\n${rawContent.slice(0, MAX_TEXT_CHARS)}\n\n${CONTEXT_EXTRACTION_PROMPT}` }],
-        doc.fileName,
+        source.fileName,
       )
       context.rawText = rawContent.slice(0, CONTEXT_RAW_CAP)
-    } else if ((doc.mimeType.includes('spreadsheet') || doc.mimeType.includes('excel')) && fileExists) {
-      const rawContent = fs.readFileSync(filePath).toString('utf-8').slice(0, MAX_TEXT_CHARS)
+    } else if (source.mimeType.includes('spreadsheet') || source.mimeType.includes('excel')) {
+      const rawContent = source.buffer.toString('utf-8').slice(0, MAX_TEXT_CHARS)
       context = {
         rawText: rawContent,
-        summary: `Spreadsheet file: ${doc.fileName}`,
+        summary: `Spreadsheet file: ${source.fileName}`,
         keyEntities: [],
         metadata: { documentType: 'spreadsheet' },
       }
     } else {
-      context = buildFallbackContext(doc.fileName)
+      context = buildFallbackContext(source.fileName)
     }
 
     db.delete(documentContexts).where(eq(documentContexts.documentId, documentId)).run()
@@ -161,7 +164,7 @@ export class DocumentAgent extends BaseAgent {
     await this.log({
       orgId,
       action: 'document_context_extracted',
-      reasoning: `Extracted context from "${doc.fileName}" for AI advisor use`,
+      reasoning: `Extracted context from "${source.fileName}" for AI advisor use`,
       outputs: {
         documentId,
         summaryLength: context.summary.length,
@@ -208,10 +211,6 @@ export class DocumentAgent extends BaseAgent {
 function isVisionMime(mime: string): boolean {
   if (VISION_MIME.has(mime)) return true
   return mime.startsWith('image/')
-}
-
-function resolveStoragePath(storageUrl: string): string {
-  return path.join(__dirname, '../../', storageUrl)
 }
 
 function buildLowConfidenceExtraction(fileName: string, reason: string): DocumentExtraction {

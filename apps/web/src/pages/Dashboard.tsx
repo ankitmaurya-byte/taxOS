@@ -223,8 +223,8 @@ export function DashboardPage() {
                       {doc.confidenceScore != null && (
                         <span className="text-xs text-[#64748d]">{Math.round(doc.confidenceScore * 100)}%</span>
                       )}
-                      {doc.reviewedByHuman && (
-                        <span className="rounded-sm bg-[rgba(21,190,83,0.12)] px-2 py-0.5 text-[10px] font-medium text-[#108c3d]">Reviewed</span>
+                      {doc.extractionStatus === 'done' && (
+                        <span className="rounded-sm bg-[rgba(21,190,83,0.12)] px-2 py-0.5 text-[10px] font-medium text-[#108c3d]">Extracted</span>
                       )}
                     </div>
                   </div>

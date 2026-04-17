@@ -293,8 +293,18 @@ export function AdminFilingDetail() {
                   <p className="text-sm font-medium text-[#061b31]">{doc.fileName}</p>
                   <p className="text-xs text-[#64748d]">{doc.mimeType} &bull; {formatDate(doc.createdAt)}</p>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded ${doc.reviewedByHuman ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                  {doc.reviewedByHuman ? 'Reviewed' : 'Pending Review'}
+                <span className={`text-xs px-2 py-0.5 rounded ${
+                  doc.extractionStatus === 'done'
+                    ? 'bg-green-100 text-green-700'
+                    : doc.extractionStatus === 'failed'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {doc.extractionStatus === 'done'
+                    ? 'Extracted'
+                    : doc.extractionStatus === 'failed'
+                      ? 'Extract failed'
+                      : 'Processing'}
                 </span>
               </div>
             ))}

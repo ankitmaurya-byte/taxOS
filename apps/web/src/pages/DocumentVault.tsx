@@ -1,10 +1,15 @@
 // Used in: App.tsx — route /documents/vault (full document vault view)
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 import { ConfidenceBadge } from '@/components/agents/ConfidenceBadge'
 import { formatDate } from '@/lib/utils'
+import { notify } from '@/stores/notifications'
+import {
+  UploadStatusPill,
+  ExtractionStatusPill,
+} from '@/components/documents/DocumentStatus'
 import {
   ChevronRight,
   Plus,
@@ -19,7 +24,28 @@ import {
   Vault,
   ArrowLeft,
   CheckCircle2,
+  Download,
+  Eye,
+  RefreshCw,
+  Loader2,
+  CloudUpload,
 } from 'lucide-react'
+
+interface UploadTicket {
+  id: string
+  fileName: string
+  size: number
+  progress: number
+  phase: 'uploading' | 'queued' | 'done' | 'failed'
+  error?: string
+  file: File
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
 
 interface VaultData {
   id: string; orgId: string; name: string; description: string | null
@@ -54,7 +80,11 @@ export function DocumentVault() {
   const [selectedVault, setSelectedVault] = useState<VaultData | null>(null)
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [uploadLoading, setUploadLoading] = useState(false)
+  const [uploadTickets, setUploadTickets] = useState<UploadTicket[]>([])
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [retryExtractIds, setRetryExtractIds] = useState<Set<string>>(new Set())
+  const retryUploadInputRef = useRef<HTMLInputElement | null>(null)
+  const retryTargetId = useRef<string | null>(null)
   const [showCreateVault, setShowCreateVault] = useState(false)
   const [showCreateFolder, setShowCreateFolder] = useState(false)
   const [vaultName, setVaultName] = useState('')
@@ -75,7 +105,119 @@ export function DocumentVault() {
   const handleDeleteVault = async (id: string) => { await api.deleteVault(id); if (selectedVault?.id === id) { setSelectedVault(null); setSelectedFolderId(null) } fetchVaults() }
   const handleCreateFolder = async () => { if (!selectedVault || !folderName.trim()) return; await api.createFolder(selectedVault.id, { name: folderName.trim(), parentId: selectedFolderId || undefined }); setFolderName(''); setShowCreateFolder(false); fetchVaultDetail(selectedVault.id) }
   const handleDeleteFolder = async (folderId: string) => { if (!selectedVault) return; await api.deleteFolder(selectedVault.id, folderId); if (selectedFolderId === folderId) setSelectedFolderId(null); fetchVaultDetail(selectedVault.id) }
-  const handleUpload = async (files: FileList | File[]) => { if (!selectedVault) return; setUploadLoading(true); try { for (const file of Array.from(files)) await api.uploadDocumentToVault(file, selectedVault.id, selectedFolderId || undefined); fetchVaultDetail(selectedVault.id) } finally { setUploadLoading(false) } }
+  const runTicketUpload = async (ticket: UploadTicket, vaultId: string, folderId?: string) => {
+    setUploadTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, phase: 'uploading', progress: 0 } : t))
+    try {
+      await api.uploadDocumentToVault(ticket.file, vaultId, folderId, {
+        onProgress: (pct) => {
+          setUploadTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, progress: pct } : t))
+        },
+      })
+      setUploadTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, phase: 'done', progress: 100 } : t))
+      fetchVaultDetail(vaultId)
+      window.setTimeout(() => setUploadTickets(prev => prev.filter(t => t.id !== ticket.id)), 2000)
+    } catch (err: any) {
+      setUploadTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, phase: 'failed', error: err?.message || 'Upload failed' } : t))
+    }
+  }
+
+  const handleUpload = (files: FileList | File[]) => {
+    if (!selectedVault) return
+    const list = Array.from(files)
+    const newTickets: UploadTicket[] = list.map(file => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name}`,
+      fileName: file.name,
+      size: file.size,
+      progress: 0,
+      phase: 'queued',
+      file,
+    }))
+    setUploadTickets(prev => [...prev, ...newTickets])
+    for (const ticket of newTickets) {
+      runTicketUpload(ticket, selectedVault.id, selectedFolderId || undefined)
+    }
+  }
+
+  // Poll while any doc in the vault is still mid-flight
+  useEffect(() => {
+    if (!selectedVault) return
+    const active = (selectedVault.documents || []).some((d: any) =>
+      d.uploadStatus === 'uploading'
+      || d.extractionStatus === 'extracting'
+      || d.extractionStatus === 'processing'
+      || d.extractionStatus === 'pending',
+    )
+    if (!active) return
+    const handle = window.setInterval(() => { fetchVaultDetail(selectedVault.id) }, 2500)
+    return () => window.clearInterval(handle)
+  }, [selectedVault, fetchVaultDetail])
+
+  const canOpenDoc = (doc: any) => Boolean(doc?.storageUrl && doc.uploadStatus === 'uploaded')
+
+  const handleOpen = (doc: any) => {
+    if (!canOpenDoc(doc)) {
+      notify({ title: 'Not available', message: 'File exceeds 1 MB — only extracted context is kept.', tone: 'info' })
+      return
+    }
+    window.open(doc.storageUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleDownload = async (doc: any) => {
+    if (downloadingId) {
+      notify({ title: 'Another download in progress', message: 'Please wait.', tone: 'info' })
+      return
+    }
+    if (!canOpenDoc(doc)) {
+      notify({ title: 'Not available', message: 'File was not stored on Cloudinary.', tone: 'info' })
+      return
+    }
+    setDownloadingId(doc.id)
+    try {
+      const { url, fileName } = await api.documents.getDownload(doc.id)
+      const a = window.document.createElement('a')
+      a.href = url
+      a.download = fileName
+      a.rel = 'noopener noreferrer'
+      a.click()
+    } catch (err: any) {
+      notify({ title: 'Download failed', message: err?.message || 'Could not start download.', tone: 'error' })
+    } finally {
+      window.setTimeout(() => setDownloadingId(null), 500)
+    }
+  }
+
+  const triggerRetryUpload = (docId: string) => {
+    retryTargetId.current = docId
+    retryUploadInputRef.current?.click()
+  }
+
+  const handleRetryUploadPicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    const docId = retryTargetId.current
+    e.target.value = ''
+    retryTargetId.current = null
+    if (!file || !docId || !selectedVault) return
+    try {
+      await api.documents.retryUpload(docId, file)
+      notify({ title: 'Retrying upload', message: `${file.name} is being re-uploaded.`, tone: 'success' })
+      fetchVaultDetail(selectedVault.id)
+    } catch (err: any) {
+      notify({ title: 'Retry failed', message: err?.message || 'Could not retry upload.', tone: 'error' })
+    }
+  }
+
+  const handleRetryExtract = async (docId: string) => {
+    setRetryExtractIds(prev => new Set(prev).add(docId))
+    try {
+      await api.documents.retryExtract(docId)
+      notify({ title: 'Retrying extraction', message: 'Extraction restarted.', tone: 'success' })
+      if (selectedVault) fetchVaultDetail(selectedVault.id)
+    } catch (err: any) {
+      notify({ title: 'Retry failed', message: err?.message || 'Could not retry extraction.', tone: 'error' })
+    } finally {
+      setRetryExtractIds(prev => { const n = new Set(prev); n.delete(docId); return n })
+    }
+  }
 
   const getFileConfig = (mimeType: string) => FILE_ICONS[mimeType] || { icon: FileText, color: 'text-[#64748d]', bg: 'bg-[#f6f9fc]', label: 'FILE' }
   const currentFolders = selectedVault?.folders.filter(f => selectedFolderId ? f.parentId === selectedFolderId : !f.parentId) || []
@@ -140,8 +282,55 @@ export function DocumentVault() {
             }}
           />
           <Upload size={28} className="text-[#b9b9f9] mx-auto mb-2" strokeWidth={1.5} />
-          <p className="text-[14px] text-[#64748d]">{uploadLoading ? 'Uploading...' : 'Click to upload or drop files here'}</p>
+          <p className="text-[14px] text-[#64748d]">Click to upload or drop files here</p>
+          <p className="text-[11px] text-[#64748d] mt-1">Up to 25 MB. Files ≤ 1 MB are stored on Cloudinary; larger files become AI context only.</p>
         </label>
+
+        {/* Hidden input for retry-upload file picker */}
+        <input ref={retryUploadInputRef} type="file" className="hidden" onChange={handleRetryUploadPicked} />
+
+        {/* Upload tickets */}
+        {uploadTickets.length > 0 && (
+          <div className="mb-6 space-y-2">
+            {uploadTickets.map(ticket => (
+              <div key={ticket.id} className="rounded-md border border-[#e5edf5] bg-white p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <CloudUpload size={16} className="text-[#533afd] flex-shrink-0" strokeWidth={1.8} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-medium text-[#061b31] truncate">{ticket.fileName}</p>
+                      <p className="text-[11px] text-[#64748d]">
+                        {formatBytes(ticket.size)} ·{' '}
+                        {ticket.phase === 'uploading' && `Uploading… ${ticket.progress}%`}
+                        {ticket.phase === 'queued' && 'Queued'}
+                        {ticket.phase === 'done' && 'Uploaded — server is extracting'}
+                        {ticket.phase === 'failed' && (ticket.error || 'Upload failed')}
+                      </p>
+                      {(ticket.phase === 'uploading' || ticket.phase === 'queued') && (
+                        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[#f6f9fc]">
+                          <div className="h-full bg-[#533afd] transition-all" style={{ width: `${ticket.progress}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {ticket.phase === 'failed' && selectedVault && (
+                      <button
+                        onClick={() => runTicketUpload(ticket, selectedVault.id, selectedFolderId || undefined)}
+                        className="inline-flex h-7 items-center gap-1 rounded-sm border border-[#b9b9f9] bg-white px-2 text-[12px] font-medium text-[#533afd] hover:bg-[rgba(83,58,253,0.05)]"
+                      >
+                        <RefreshCw size={12} /> Retry
+                      </button>
+                    )}
+                    {ticket.phase !== 'uploading' && (
+                      <button onClick={() => setUploadTickets(prev => prev.filter(t => t.id !== ticket.id))} className="p-1 text-[#64748d] hover:text-[#061b31]"><X size={13} /></button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Folders */}
         {currentFolders.length > 0 && (
@@ -174,26 +363,87 @@ export function DocumentVault() {
                   <tr>
                     <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Name</th>
                     <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Uploaded</th>
-                    <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Tags</th>
+                    <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Upload</th>
+                    <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Extraction</th>
                     <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Confidence</th>
-                    <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide text-center">Status</th>
+                    <th className="px-4 py-3 w-28" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5edf5]">
-                  {currentDocs.map(doc => {
+                  {currentDocs.map((doc: any) => {
                     const c = getFileConfig(doc.mimeType); const Icon = c.icon
+                    const canOpen = canOpenDoc(doc)
+                    const isDownloading = downloadingId === doc.id
+                    const uploadFailed = doc.uploadStatus === 'failed'
+                    const extractFailed = doc.extractionStatus === 'failed'
+                    const extractRetrying = retryExtractIds.has(doc.id)
                     return (
                       <tr key={doc.id} className="hover:bg-[#f6f9fc] transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className={`flex h-8 w-8 items-center justify-center rounded-sm flex-shrink-0 ${c.bg}`}><Icon size={16} className={c.color} strokeWidth={1.8} /></div>
-                            <div className="min-w-0"><p className="text-[13px] font-normal text-[#061b31] truncate">{doc.fileName}</p><p className="text-[11px] text-[#64748d]">{c.label}</p></div>
+                            <div className="min-w-0">
+                              <p className="text-[13px] font-normal text-[#061b31] truncate">{doc.fileName}</p>
+                              <p className="text-[11px] text-[#64748d]">{c.label}{doc.fileSize ? ` · ${formatBytes(doc.fileSize)}` : ''}</p>
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-[12px] text-[#64748d] font-tnum">{formatDate(doc.createdAt)}</td>
-                        <td className="px-4 py-3">{doc.aiTags?.length > 0 ? <span className="inline-flex px-[6px] py-[1px] rounded-sm text-[10px] font-light bg-[rgba(83,58,253,0.08)] text-[#533afd]">{doc.aiTags[0]}</span> : <span className="text-[12px] text-[#64748d]">—</span>}</td>
-                        <td className="px-4 py-3">{doc.confidenceScore != null ? <ConfidenceBadge score={doc.confidenceScore} /> : <span className="inline-flex items-center gap-1 text-[10px] text-[#9b6829]"><span className="w-1.5 h-1.5 rounded-full bg-[#9b6829] animate-pulse" /> Extracting</span>}</td>
-                        <td className="px-4 py-3 text-center">{doc.extractedData ? <span className="inline-flex items-center gap-1 text-[10px] font-light text-[#108c3d]"><CheckCircle2 size={11} /> Ready</span> : <span className="text-[10px] text-[#64748d]">Processing</span>}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <UploadStatusPill status={doc.uploadStatus} error={doc.uploadError} />
+                            {uploadFailed && (
+                              <button
+                                onClick={() => triggerRetryUpload(doc.id)}
+                                className="inline-flex h-6 items-center gap-1 rounded-sm border border-[#b9b9f9] px-1.5 text-[11px] font-medium text-[#533afd] hover:bg-[rgba(83,58,253,0.05)]"
+                                title={doc.uploadError || 'Retry upload'}
+                              >
+                                <RefreshCw size={10} /> Retry
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <ExtractionStatusPill status={doc.extractionStatus} error={doc.extractionError} />
+                            {extractFailed && (
+                              <button
+                                onClick={() => handleRetryExtract(doc.id)}
+                                disabled={extractRetrying}
+                                className="inline-flex h-6 items-center gap-1 rounded-sm border border-[#b9b9f9] px-1.5 text-[11px] font-medium text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] disabled:opacity-60"
+                                title={doc.extractionError || 'Retry extraction'}
+                              >
+                                {extractRetrying ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
+                                Retry
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {doc.confidenceScore != null && doc.confidenceScore !== -1
+                            ? <ConfidenceBadge score={doc.confidenceScore} />
+                            : <span className="text-[11px] text-[#64748d]">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-1">
+                            <button
+                              onClick={() => handleOpen(doc)}
+                              disabled={!canOpen}
+                              title={canOpen ? 'Open file' : 'File not stored (> 1 MB)'}
+                              className="p-1 text-[#64748d] hover:text-[#061b31] rounded-sm hover:bg-[#f6f9fc] disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <Eye size={14} strokeWidth={1.8} />
+                            </button>
+                            <button
+                              onClick={() => handleDownload(doc)}
+                              disabled={!canOpen || isDownloading || Boolean(downloadingId && downloadingId !== doc.id)}
+                              title={canOpen ? (downloadingId && downloadingId !== doc.id ? 'Another download in progress' : 'Download') : 'File not stored (> 1 MB)'}
+                              className="p-1 text-[#64748d] hover:text-[#061b31] rounded-sm hover:bg-[#f6f9fc] disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={1.8} />}
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     )
                   })}

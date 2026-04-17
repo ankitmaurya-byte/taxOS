@@ -228,11 +228,22 @@ export const documents = sqliteTable('documents', {
   vaultId: text('vault_id').references(() => vaults.id),
   folderId: text('folder_id').references(() => folders.id),
   fileName: text('file_name').notNull(),
-  storageUrl: text('storage_url').notNull(),
+  // storageUrl is the Cloudinary secure_url when uploaded; null when the file
+  // was too large (> CLOUDINARY_SIZE_LIMIT) and only exists as extracted context.
+  storageUrl: text('storage_url'),
+  cloudinaryPublicId: text('cloudinary_public_id'),
+  cloudinaryResourceType: text('cloudinary_resource_type'),
+  fileSize: integer('file_size'),
   mimeType: text('mime_type').notNull(),
   extractedData: text('extracted_data', { mode: 'json' }).$type<Record<string, unknown>>(),
   aiTags: text('ai_tags', { mode: 'json' }).$type<string[]>().default([]),
   confidenceScore: real('confidence_score'),
+  // 'pending' | 'uploading' | 'uploaded' | 'skipped' | 'failed'
+  uploadStatus: text('upload_status').default('pending'),
+  // 'pending' | 'extracting' | 'processing' | 'done' | 'failed'
+  extractionStatus: text('extraction_status').default('pending'),
+  uploadError: text('upload_error'),
+  extractionError: text('extraction_error'),
   reviewedByHuman: integer('reviewed_by_human', { mode: 'boolean' }).default(false),
   uploadedById: text('uploaded_by_id').references(() => users.id).notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),

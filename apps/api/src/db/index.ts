@@ -150,6 +150,13 @@ function ensureDocumentVaultColumns() {
   const missingColumns = [
     ['vault_id', "ALTER TABLE documents ADD COLUMN vault_id TEXT REFERENCES vaults(id)"],
     ['folder_id', "ALTER TABLE documents ADD COLUMN folder_id TEXT REFERENCES folders(id)"],
+    ['cloudinary_public_id', "ALTER TABLE documents ADD COLUMN cloudinary_public_id TEXT"],
+    ['cloudinary_resource_type', "ALTER TABLE documents ADD COLUMN cloudinary_resource_type TEXT"],
+    ['file_size', "ALTER TABLE documents ADD COLUMN file_size INTEGER"],
+    ['upload_status', "ALTER TABLE documents ADD COLUMN upload_status TEXT DEFAULT 'pending'"],
+    ['extraction_status', "ALTER TABLE documents ADD COLUMN extraction_status TEXT DEFAULT 'pending'"],
+    ['upload_error', "ALTER TABLE documents ADD COLUMN upload_error TEXT"],
+    ['extraction_error', "ALTER TABLE documents ADD COLUMN extraction_error TEXT"],
   ] as const
 
   for (const [columnName, statement] of missingColumns) {
@@ -159,9 +166,78 @@ function ensureDocumentVaultColumns() {
   }
 }
 
+function ensureDocumentStorageUrlNullable() {
+  const tableExists = sqlite
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'documents'")
+    .get() as { name: string } | undefined
+  if (!tableExists) return
+
+  const storageCol = (sqlite.prepare('PRAGMA table_info(documents)').all() as Array<{ name: string; notnull: number }>)
+    .find((c) => c.name === 'storage_url')
+  if (!storageCol || storageCol.notnull === 0) return
+
+  // Rebuild the documents table without the NOT NULL constraint on storage_url.
+  // Files that exceed the Cloudinary 1 MB cap are intentionally stored without
+  // a storage URL — only the extracted context is persisted.
+  sqlite.pragma('foreign_keys = OFF')
+  sqlite.exec('BEGIN')
+  try {
+    sqlite.exec(`
+      CREATE TABLE documents__new (
+        id TEXT PRIMARY KEY NOT NULL,
+        filing_id TEXT REFERENCES filings(id),
+        org_id TEXT NOT NULL REFERENCES organizations(id),
+        vault_id TEXT REFERENCES vaults(id),
+        folder_id TEXT REFERENCES folders(id),
+        file_name TEXT NOT NULL,
+        storage_url TEXT,
+        cloudinary_public_id TEXT,
+        cloudinary_resource_type TEXT,
+        file_size INTEGER,
+        mime_type TEXT NOT NULL,
+        extracted_data TEXT,
+        ai_tags TEXT DEFAULT '[]',
+        confidence_score REAL,
+        upload_status TEXT DEFAULT 'pending',
+        extraction_status TEXT DEFAULT 'pending',
+        upload_error TEXT,
+        extraction_error TEXT,
+        reviewed_by_human INTEGER DEFAULT 0,
+        uploaded_by_id TEXT NOT NULL REFERENCES users(id),
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+      INSERT INTO documents__new (
+        id, filing_id, org_id, vault_id, folder_id, file_name, storage_url,
+        cloudinary_public_id, cloudinary_resource_type, file_size, mime_type,
+        extracted_data, ai_tags, confidence_score, upload_status, extraction_status,
+        upload_error, extraction_error, reviewed_by_human, uploaded_by_id, created_at
+      )
+      SELECT
+        id, filing_id, org_id, vault_id, folder_id, file_name, storage_url,
+        cloudinary_public_id, cloudinary_resource_type, file_size, mime_type,
+        extracted_data, ai_tags, confidence_score, upload_status, extraction_status,
+        upload_error, extraction_error, reviewed_by_human, uploaded_by_id, created_at
+      FROM documents;
+      DROP TABLE documents;
+      ALTER TABLE documents__new RENAME TO documents;
+    `)
+    sqlite.exec('COMMIT')
+    sqlite.pragma('foreign_keys = ON')
+    // Normalise legacy empty-string sentinels that were used when the column
+    // was NOT NULL — frontend relies on null to mean "no blob stored".
+    sqlite.prepare(`UPDATE documents SET storage_url = NULL WHERE storage_url = ''`).run()
+    console.log('[migration] rebuilt documents table — storage_url is now nullable')
+  } catch (err) {
+    sqlite.exec('ROLLBACK')
+    sqlite.pragma('foreign_keys = ON')
+    throw err
+  }
+}
+
 ensureEntityColumns()
 ensureNewTables()
 ensureDocumentVaultColumns()
+ensureDocumentStorageUrlNullable()
 ensureFilingColumns()
 
 export const db = drizzle(sqlite, { schema })
