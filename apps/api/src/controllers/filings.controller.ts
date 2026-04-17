@@ -157,15 +157,52 @@ export function listFilings(req: Request, res: Response) {
     ? db.select().from(filings).where(eq(filings.orgId, orgIds[0]))
     : db.select().from(filings).where(inArray(filings.orgId, orgIds))
 
-  const results = query
+  let results = query
     .orderBy(desc(filings.updatedAt))
     .all()
-    .filter(f => {
-      if (status && f.status !== status) return false
-      if (entityId && f.entityId !== entityId) return false
-      if (year && f.taxYear !== Number(year)) return false
-      return true
-    })
+
+  // CPAs only see filings they are *related* to:
+  //   - received a claim notification
+  //   - have an active or completed review lock
+  //   - rejected the filing
+  //   - are the assigned CPA on the filing
+  if (req.user!.role === 'cpa') {
+    const cpaUserId = req.user!.userId
+    const notifiedIds = new Set(
+      db.select({ filingId: cpaNotifications.filingId })
+        .from(cpaNotifications)
+        .where(eq(cpaNotifications.cpaUserId, cpaUserId))
+        .all()
+        .map(r => r.filingId),
+    )
+    const lockedIds = new Set(
+      db.select({ filingId: filingReviewLocks.filingId })
+        .from(filingReviewLocks)
+        .where(eq(filingReviewLocks.cpaUserId, cpaUserId))
+        .all()
+        .map(r => r.filingId),
+    )
+    const rejectedIds = new Set(
+      db.select({ filingId: cpaRejections.filingId })
+        .from(cpaRejections)
+        .where(eq(cpaRejections.cpaUserId, cpaUserId))
+        .all()
+        .map(r => r.filingId),
+    )
+    results = results.filter(f =>
+      f.cpaAssignedId === cpaUserId
+      || notifiedIds.has(f.id)
+      || lockedIds.has(f.id)
+      || rejectedIds.has(f.id),
+    )
+  }
+
+  results = results.filter(f => {
+    if (status && f.status !== status) return false
+    if (entityId && f.entityId !== entityId) return false
+    if (year && f.taxYear !== Number(year)) return false
+    return true
+  })
 
   const locks = db.select().from(filingReviewLocks).all()
   res.json(results.map(item => ({

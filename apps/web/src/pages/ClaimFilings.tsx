@@ -1,5 +1,5 @@
 // Used in: App.tsx — route /claim-filings (CPA claims unclaimed filings)
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { StatusBadge } from '@/components/ui/status-badge'
@@ -11,13 +11,16 @@ import {
   ChevronRight,
   Inbox,
   ShieldCheck,
+  Plus,
 } from 'lucide-react'
 
+const PAGE_SIZE = 10
+
 export function ClaimFilings() {
-  const user = useAuthStore(s => s.user)
   const filingsList = useAuthStore(s => s.filings)
   const fetchFilings = useAuthStore(s => s.fetchFilings)
   const claimFilingReview = useAuthStore(s => s.claimFilingReview)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     fetchFilings()
@@ -27,6 +30,8 @@ export function ClaimFilings() {
   const claimable = filingsList.filter(
     (f: any) => f.status === 'cpa_review' && !f.reviewLock
   )
+  const visibleClaimable = claimable.slice(0, visibleCount)
+  const hasMore = visibleCount < claimable.length
 
   return (
     <div className="space-y-6 p-6 max-w-5xl mx-auto">
@@ -65,7 +70,7 @@ export function ClaimFilings() {
         </div>
       ) : (
         <div className="space-y-2">
-          {claimable.map((filing: any) => (
+          {visibleClaimable.map((filing: any) => (
             <div
               key={filing.id}
               className="flex items-center gap-4 rounded-md border border-[rgba(155,104,41,0.25)] bg-[rgba(155,104,41,0.06)] px-5 py-4 transition-all hover:shadow-sm hover:border-[#b9b9f9]"
@@ -120,6 +125,19 @@ export function ClaimFilings() {
               </div>
             </div>
           ))}
+
+          {hasMore && (
+            <div className="flex items-center justify-center pt-2">
+              <button
+                onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-[6px] border border-[#e5edf5] bg-white text-sm text-[#273951] hover:bg-[#f6f9fc] transition-colors"
+              >
+                <Plus size={14} />
+                Load {Math.min(PAGE_SIZE, claimable.length - visibleCount)} more
+                <span className="text-[#64748d] font-tnum">· {visibleCount}/{claimable.length}</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

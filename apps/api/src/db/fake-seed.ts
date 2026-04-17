@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt'
 import path from 'path'
 import crypto from 'crypto'
 import * as schema from './schema'
+import { getRequirementsForFormType } from '../lib/documentRequirements'
 
 const dbPath = process.env.DATABASE_URL || path.join(__dirname, '../../taxos.db')
 const sqlite = new Database(dbPath)
@@ -251,17 +252,19 @@ function genFilingData(hasPrefill: boolean) {
 }
 
 // ─── CONFIG (10x scale) ─────────────────────────────
-const NUM_ORGS = 80
-const NUM_CPAS = 50
-const USERS_PER_ORG = { min: 5, max: 15 }
-const ENTITIES_PER_ORG = { min: 3, max: 10 }
-const DEADLINES_PER_ENTITY = { min: 4, max: 10 }
-const FILINGS_PER_ORG = { min: 10, max: 30 }
-const DOCS_PER_ORG = { min: 20, max: 60 }
-const AUDIT_LOGS_PER_ORG = { min: 40, max: 100 }
-const CONVERSATIONS_PER_ORG = { min: 8, max: 25 }
-const VAULTS_PER_ORG = { min: 2, max: 5 }
-const FOLDERS_PER_VAULT = { min: 2, max: 6 }
+const NUM_ORGS = 100
+const NUM_CPAS = 80
+const USERS_PER_ORG = { min: 8, max: 22 }
+const ENTITIES_PER_ORG = { min: 5, max: 15 }
+const DEADLINES_PER_ENTITY = { min: 6, max: 14 }
+const FILINGS_PER_ORG = { min: 25, max: 60 }
+const DOCS_PER_ORG = { min: 40, max: 120 }
+const AUDIT_LOGS_PER_ORG = { min: 80, max: 220 }
+const CONVERSATIONS_PER_ORG = { min: 15, max: 45 }
+const VAULTS_PER_ORG = { min: 3, max: 7 }
+const FOLDERS_PER_VAULT = { min: 3, max: 8 }
+const AI_CHATS_PER_USER = { min: 0, max: 5 }
+const ORG_CHAT_MSGS_PER_ORG = { min: 25, max: 80 }
 
 async function fakeSeed() {
   console.log('🌱 Starting fake data seed (10x scale)...\n')
@@ -332,7 +335,46 @@ async function fakeSeed() {
       chunk_index INTEGER DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE IF NOT EXISTS filing_document_requirements (
+      id TEXT PRIMARY KEY NOT NULL,
+      filing_id TEXT NOT NULL,
+      slot_key TEXT NOT NULL,
+      label TEXT NOT NULL,
+      description TEXT,
+      required INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      document_id TEXT,
+      skipped INTEGER NOT NULL DEFAULT 0,
+      skip_reason TEXT,
+      viewed_by_cpa INTEGER NOT NULL DEFAULT 0,
+      viewed_at TEXT,
+      viewed_by_user_id TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS ai_chat_conversations (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      org_id TEXT,
+      title TEXT NOT NULL DEFAULT 'Untitled',
+      messages TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
   `)
+
+  // Ensure documents has the newer columns (Cloudinary + status tracking)
+  const addCol = (ddl: string) => { try { sqlite.exec(ddl) } catch {} }
+  addCol(`ALTER TABLE documents ADD COLUMN cloudinary_public_id TEXT`)
+  addCol(`ALTER TABLE documents ADD COLUMN cloudinary_resource_type TEXT`)
+  addCol(`ALTER TABLE documents ADD COLUMN file_size INTEGER`)
+  addCol(`ALTER TABLE documents ADD COLUMN upload_status TEXT DEFAULT 'pending'`)
+  addCol(`ALTER TABLE documents ADD COLUMN extraction_status TEXT DEFAULT 'pending'`)
+  addCol(`ALTER TABLE documents ADD COLUMN upload_error TEXT`)
+  addCol(`ALTER TABLE documents ADD COLUMN extraction_error TEXT`)
+  // Ensure filings has paused/stopped
+  addCol(`ALTER TABLE filings ADD COLUMN paused INTEGER NOT NULL DEFAULT 0`)
+  addCol(`ALTER TABLE filings ADD COLUMN stopped INTEGER NOT NULL DEFAULT 0`)
 
   // Ensure vault/folder columns on documents
   try { sqlite.exec(`ALTER TABLE documents ADD COLUMN vault_id TEXT`) } catch {}
@@ -341,6 +383,8 @@ async function fakeSeed() {
   // ─── Clean existing data ──────────────────────────
   console.log('Cleaning existing tables...')
   sqlite.exec(`
+    DELETE FROM ai_chat_conversations;
+    DELETE FROM filing_document_requirements;
     DELETE FROM document_contexts;
     DELETE FROM folders;
     DELETE FROM vaults;
@@ -374,7 +418,7 @@ async function fakeSeed() {
   const allCpas: { id: string; orgId: string; role: string; email: string; status: string; name: string }[] = []
   const allEntities: { id: string; orgId: string; entityType: string }[] = []
   const allDeadlines: { id: string; entityId: string; formType: string; formName: string }[] = []
-  const allFilings: { id: string; orgId: string; entityId: string; status: string; cpaAssignedId: string | null }[] = []
+  const allFilings: { id: string; orgId: string; entityId: string; status: string; cpaAssignedId: string | null; formType: string }[] = []
   const allTemplates: { id: string; orgId: string | null }[] = []
   const orgCpaMap = new Map<string, string[]>()
   const allVaults: { id: string; orgId: string }[] = []
@@ -603,10 +647,10 @@ async function fakeSeed() {
   // ─── 8. Invites ───────────────────────────────────
   console.log('Creating invites...')
   let inviteCount = 0
-  for (const orgId of allOrgs.slice(0, 40)) {
+  for (const orgId of allOrgs.slice(0, Math.floor(allOrgs.length * 0.75))) {
     const founder = allUsers.find(u => u.orgId === orgId && u.role === 'founder')
     if (!founder) continue
-    for (let j = 0; j < rand(2, 6); j++) {
+    for (let j = 0; j < rand(3, 10); j++) {
       const name = genName()
       let email = genEmail(name, 'invited.com')
       while (usedEmails.has(email)) email = genEmail(name + rand(1, 999), 'invited.com')
@@ -721,10 +765,19 @@ async function fakeSeed() {
         ? genFilingData(true)
         : genFilingData(false)
 
+      // Pause / stop states — rare, only meaningful on non-terminal statuses.
+      const canPause = ['cpa_review', 'founder_approval'].includes(status)
+      const canStop = !['submitted', 'archived'].includes(status)
+      const paused = canPause && rand(0, 14) === 0
+      const stopped = !paused && canStop && rand(0, 29) === 0
+
+      const chosenFormType = deadline?.formType || pick(formTypes).type
+      const chosenFormName = deadline?.formName || pick(formTypes).name
+
       db.insert(schema.filings).values({
         id: filingId, entityId: entity.id, deadlineId: deadline?.id, orgId,
-        formType: deadline?.formType || pick(formTypes).type,
-        formName: deadline?.formName || pick(formTypes).name,
+        formType: chosenFormType,
+        formName: chosenFormName,
         status, cpaAssignedId: cpaId, filingData: filingData as any,
         aiConfidenceScore: ['ai_prep', 'cpa_review', 'founder_approval', 'submitted'].includes(status) ? randFloat(0.6, 0.99) : null,
         aiSummary: ['ai_prep', 'cpa_review', 'founder_approval', 'submitted'].includes(status)
@@ -736,9 +789,11 @@ async function fakeSeed() {
         founderApprovedAt: ['submitted', 'archived'].includes(status) ? pastDate(30) : null,
         submittedAt: status === 'submitted' ? pastDate(15) : null,
         taxYear,
+        paused,
+        stopped,
       }).run()
 
-      allFilings.push({ id: filingId, orgId, entityId: entity.id, status, cpaAssignedId: cpaId })
+      allFilings.push({ id: filingId, orgId, entityId: entity.id, status, cpaAssignedId: cpaId, formType: chosenFormType })
     }
   }
   console.log(`  → ${allFilings.length} filings`)
@@ -793,7 +848,7 @@ async function fakeSeed() {
 
   // ─── 13. Documents ────────────────────────────────
   console.log('Creating documents...')
-  const allDocIds: { id: string; orgId: string; vaultId: string | null }[] = []
+  const allDocIds: { id: string; orgId: string; vaultId: string | null; extractionStatus: string; filingId: string | null; fileName: string; mimeType: string }[] = []
   let docCount = 0
   for (const orgId of allOrgs) {
     const orgUsers = allUsers.filter(u => u.orgId === orgId)
@@ -805,29 +860,103 @@ async function fakeSeed() {
       const uploader = pick(orgUsers)
       const filing = orgFilings.length > 0 && rand(0, 1) ? pick(orgFilings) : null
       const fileName = pick(docNames)
+      const mimeType = pick(mimeTypes)
       // ~70% of docs go into a vault
       const vault = orgVaults.length > 0 && rand(0, 9) < 7 ? pick(orgVaults) : null
       const vaultFolders = vault ? orgFolders.filter(f => f.vaultId === vault.id) : []
       const folder = vaultFolders.length > 0 && rand(0, 1) ? pick(vaultFolders) : null
+
+      // Realistic size distribution: most ≤ 1 MB (go to Cloudinary), some larger.
+      const sizeBucket = rand(0, 99)
+      const fileSize = sizeBucket < 70
+        ? rand(20_000, 900_000)           // ≤ 1 MB → uploaded to Cloudinary
+        : sizeBucket < 90
+          ? rand(1_100_000, 5_000_000)    // > 1 MB → skipped
+          : rand(5_000_000, 18_000_000)   // way over limit → skipped
+
+      const isLarge = fileSize > 1024 * 1024
+
+      // Upload status: large files skipped; small files mostly uploaded, a few failed.
+      const uploadRoll = rand(0, 99)
+      const uploadStatus = isLarge
+        ? 'skipped'
+        : uploadRoll < 92
+          ? 'uploaded'
+          : uploadRoll < 97
+            ? 'failed'
+            : 'uploading'
+      const uploadError = uploadStatus === 'failed'
+        ? pick([
+            'Cloudinary rate limit exceeded',
+            'Network timeout during upload',
+            'Invalid mime type rejected by CDN',
+            'Upstream 502 from cloudinary',
+          ])
+        : null
+
+      // Extraction status: mostly done when upload succeeded; some failures/in-flight.
+      const extractRoll = rand(0, 99)
+      const extractionStatus = extractRoll < 75
+        ? 'done'
+        : extractRoll < 85
+          ? 'failed'
+          : extractRoll < 92
+            ? 'extracting'
+            : extractRoll < 97
+              ? 'processing'
+              : 'pending'
+      const extractionError = extractionStatus === 'failed'
+        ? pick([
+            'Gemini output parsing failed',
+            'Document vision model unavailable',
+            'PDF appears corrupted or password-protected',
+            'Extraction timed out after 30s',
+          ])
+        : null
+
+      const publicId = uploadStatus === 'uploaded'
+        ? `taxos/documents/${fileName.replace(/\.[^.]+$/, '')}_${rand(100000, 999999)}`
+        : null
+      const resourceType = uploadStatus === 'uploaded'
+        ? (mimeType.startsWith('image/') ? 'image' : 'raw')
+        : null
+      const storageUrl = uploadStatus === 'uploaded'
+        ? `https://res.cloudinary.com/demo/${resourceType}/upload/v${rand(1600000000, 1730000000)}/${publicId}.${pick(['pdf', 'png', 'jpg'])}`
+        : '' // sentinel for "not uploaded" — column is NOT NULL in legacy schema
 
       const docId = uuid()
       db.insert(schema.documents).values({
         id: docId, filingId: filing?.id, orgId, fileName,
         vaultId: vault?.id || null,
         folderId: folder?.id || null,
-        storageUrl: `/uploads/${orgId}/${uuid()}-${fileName}`,
-        mimeType: pick(mimeTypes),
-        extractedData: rand(0, 1) ? {
+        storageUrl,
+        cloudinaryPublicId: publicId,
+        cloudinaryResourceType: resourceType,
+        fileSize,
+        mimeType,
+        extractedData: extractionStatus === 'done' && rand(0, 9) < 8 ? {
           documentType: pick(['W-2', '1099', 'Bank Statement', 'P&L', 'Balance Sheet', 'Invoice']),
           extractedFields: { totalAmount: rand(1000, 5000000), date: pastDate(365).split('T')[0], entity: genCompanyName() },
           confidence: randFloat(0.7, 0.99),
         } : null,
         aiTags: pickN(aiTags, rand(1, 4)) as any,
-        confidenceScore: randFloat(0.5, 0.99),
-        reviewedByHuman: pick([true, false, false]),
+        confidenceScore: extractionStatus === 'done' ? randFloat(0.5, 0.99) : null,
+        uploadStatus,
+        extractionStatus,
+        uploadError,
+        extractionError,
+        reviewedByHuman: false,
         uploadedById: uploader.id,
       }).run()
-      allDocIds.push({ id: docId, orgId, vaultId: vault?.id || null })
+      allDocIds.push({
+        id: docId,
+        orgId,
+        vaultId: vault?.id || null,
+        extractionStatus,
+        filingId: filing?.id || null,
+        fileName,
+        mimeType,
+      })
       docCount++
     }
   }
@@ -837,8 +966,8 @@ async function fakeSeed() {
   console.log('Creating document contexts...')
   let contextCount = 0
   for (const doc of allDocIds) {
-    // ~80% of docs get context extracted
-    if (rand(0, 9) < 2) continue
+    // Only docs whose extraction completed get a saved context row.
+    if (doc.extractionStatus !== 'done') continue
     const summary = pick(docSummaries)
     const entities = pick(docKeyEntities)
     const revenue = rand(50000, 10000000)
@@ -864,6 +993,101 @@ async function fakeSeed() {
     contextCount++
   }
   console.log(`  → ${contextCount} document contexts`)
+
+  // ─── 13c. Filing Document Requirements ───────────────
+  // For every filing: generate a checklist from its formType. Attach existing
+  // docs linked to that filing to the first N slots; mark some as skipped with
+  // a remark; flip viewedByCpa=true for filings that have advanced to / past
+  // CPA review.
+  console.log('Creating filing document requirements...')
+  const skipReasonPool = [
+    'Not applicable for this tax year.',
+    'Document is still being prepared by the bookkeeper.',
+    'Information included in the prior-year return.',
+    'No activity in this category this year.',
+    'Will be provided directly to the CPA out of band.',
+  ]
+  let reqCount = 0
+  let reqSkippedCount = 0
+  let reqLinkedCount = 0
+  let reqViewedCount = 0
+  for (const filing of allFilings) {
+    const templates = getRequirementsForFormType(filing.formType)
+    // Pool of docs already tied to this filing
+    const filingDocs = allDocIds.filter(d => d.filingId === filing.id)
+    // Shuffle so different templates grab different docs
+    const docPool = [...filingDocs].sort(() => Math.random() - 0.5)
+
+    const canLinkDocs = ['ai_prep', 'cpa_review', 'founder_approval', 'submitted', 'archived'].includes(filing.status)
+    const shouldMarkViewed = ['founder_approval', 'submitted', 'archived'].includes(filing.status)
+      || (filing.status === 'cpa_review' && filing.cpaAssignedId)
+
+    for (let i = 0; i < templates.length; i++) {
+      const t = templates[i]
+      let linkedDocId: string | null = null
+      let skipped = false
+      let skipReason: string | null = null
+      let viewedByCpa = false
+      let viewedAt: string | null = null
+      let viewedByUserId: string | null = null
+
+      if (canLinkDocs) {
+        // Required slots: ~80% linked, ~10% skipped, rest pending.
+        // Optional slots: ~40% linked, ~5% skipped.
+        const roll = rand(0, 99)
+        if (t.required) {
+          if (roll < 80 && docPool.length > 0) {
+            linkedDocId = docPool.shift()!.id
+            reqLinkedCount++
+          } else if (roll < 90) {
+            skipped = true
+            skipReason = pick(skipReasonPool)
+            reqSkippedCount++
+          }
+        } else {
+          if (roll < 40 && docPool.length > 0) {
+            linkedDocId = docPool.shift()!.id
+            reqLinkedCount++
+          } else if (roll < 45) {
+            skipped = true
+            skipReason = pick(skipReasonPool)
+            reqSkippedCount++
+          }
+        }
+      }
+
+      // CPA view state — only if the filing is at / past cpa_review
+      if (shouldMarkViewed && (linkedDocId || skipped || t.required)) {
+        // Mark most of them viewed; leave a few unviewed at cpa_review to
+        // simulate in-progress review.
+        const viewChance = filing.status === 'cpa_review' ? 70 : 95
+        if (rand(0, 99) < viewChance) {
+          viewedByCpa = true
+          viewedAt = pastDate(20)
+          viewedByUserId = filing.cpaAssignedId
+          reqViewedCount++
+        }
+      }
+
+      db.insert(schema.filingDocumentRequirements).values({
+        id: uuid(),
+        filingId: filing.id,
+        slotKey: t.slot,
+        label: t.label,
+        description: t.description ?? null,
+        required: t.required,
+        sortOrder: i,
+        documentId: linkedDocId,
+        skipped,
+        skipReason,
+        viewedByCpa,
+        viewedAt: viewedAt ?? undefined,
+        viewedByUserId: viewedByUserId ?? undefined,
+      }).run()
+      reqCount++
+    }
+  }
+  console.log(`  → ${reqCount} requirement rows (${reqLinkedCount} linked, ${reqSkippedCount} skipped, ${reqViewedCount} CPA-viewed)`)
 
   // ─── 14. Approval Queue ───────────────────────────
   console.log('Creating approval queue entries...')
@@ -1116,7 +1340,7 @@ async function fakeSeed() {
   // Founder Network messages — all founders post
   let founderMsgCount = 0
   const founders = allUsers.filter(u => u.role === 'founder')
-  for (let i = 0; i < Math.min(founders.length * 3, 200); i++) {
+  for (let i = 0; i < Math.min(founders.length * 8, 1500); i++) {
     const sender = pick(founders)
     sqlite.prepare(`INSERT INTO founder_chat_messages (id, sender_id, message, created_at) VALUES (?, ?, ?, ?)`).run(
       uuid(), sender.id, pick(founderChatPool), pastDate(60)
@@ -1128,7 +1352,7 @@ async function fakeSeed() {
   // CPA Network messages — all CPAs post
   let cpaMsgCount = 0
   const activeCpas = allCpas.filter(c => c.status === 'active')
-  for (let i = 0; i < Math.min(activeCpas.length * 4, 200); i++) {
+  for (let i = 0; i < Math.min(activeCpas.length * 10, 1200); i++) {
     const sender = pick(activeCpas)
     sqlite.prepare(`INSERT INTO cpa_chat_messages (id, sender_id, message, created_at) VALUES (?, ?, ?, ?)`).run(
       uuid(), sender.id, pick(cpaChatPool), pastDate(45)
@@ -1142,7 +1366,7 @@ async function fakeSeed() {
   for (const orgId of allOrgs) {
     const orgMembers = allUsers.filter(u => u.orgId === orgId)
     if (orgMembers.length === 0) continue
-    const numMsgs = rand(10, 40)
+    const numMsgs = rand(ORG_CHAT_MSGS_PER_ORG.min, ORG_CHAT_MSGS_PER_ORG.max)
     for (let i = 0; i < numMsgs; i++) {
       const sender = pick(orgMembers)
       sqlite.prepare(`INSERT INTO org_chat_messages (id, org_id, sender_id, message, created_at) VALUES (?, ?, ?, ?, ?)`).run(
@@ -1153,10 +1377,46 @@ async function fakeSeed() {
   }
   console.log(`  → ${orgMsgCount} org chat messages`)
 
+  // ─── 20b. AI Chat (Inkle AI) conversations ───────────
+  console.log('Creating AI chat conversations...')
+  const aiChatPrompts = [
+    { q: 'What tax forms do I need to file as a Delaware C-Corp?', a: 'A Delaware C-Corp typically files Form 1120 federally, plus state-level corporate income tax in every state where you have nexus. You\'ll also file a Delaware Annual Franchise Tax Report. If you have foreign shareholders, a Form 5472 may apply.' },
+    { q: 'How do I calculate the R&D tax credit?', a: 'The R&D credit under Section 41 is calculated as 20% of qualified research expenses (QREs) above a base amount, or via the Alternative Simplified Credit (ASC) at 14% of QREs above 50% of the prior 3-year average. Most startups use ASC for simplicity.' },
+    { q: 'Can I deduct my home office if I work from home full-time?', a: 'For a C-Corp or S-Corp, you can reimburse home office expenses through an accountable plan. For a single-member LLC, use Form 8829 — the simplified method is $5/sqft up to 300 sqft.' },
+    { q: 'What is the deadline for 1099-NEC filings?', a: 'Form 1099-NEC must be filed with the IRS and furnished to recipients by January 31. There is no automatic extension for this form — penalties start immediately at $50 per form.' },
+    { q: 'How do I handle foreign subsidiary income on my corporate return?', a: 'You generally report Subpart F income and GILTI on Form 5471 schedules. GILTI is calculated as net CFC income minus a 10% deemed return on tangible assets. It flows through to your 1120 via Schedule I.' },
+    { q: 'What is Section 174 capitalization and how does it affect me?', a: 'Post-TCJA (starting 2022), you must capitalize and amortize R&E expenses over 5 years (15 years for foreign research). This applies even if you historically deducted them currently. It may significantly increase your taxable income.' },
+    { q: 'How do quarterly estimated tax payments work for C-Corps?', a: 'C-Corps must pay 25% of the required annual payment by the 15th day of the 4th, 6th, 9th, and 12th months. The required payment is the lesser of 100% of current year or 100% of prior year tax (110% if prior year AGI > $1M).' },
+    { q: 'Do I need to file a BOI report?', a: 'Most domestic entities created before Jan 1, 2024 had until Jan 1, 2025 to file. New entities file within 30 days of formation. Recent court rulings have changed enforcement — check current FinCEN guidance before filing.' },
+    { q: 'Can I deduct stock-based compensation?', a: 'Yes, but the timing and amount of the deduction depend on the award type. ISOs generally produce no deduction. NSOs and RSUs produce a deduction equal to the employee\'s ordinary income in the year of vesting or exercise.' },
+    { q: 'What records do I need to keep for a tax audit?', a: 'Keep source documents (receipts, invoices, bank statements), filed returns, supporting schedules, and correspondence for at least 3 years after filing (7 years if you had a loss carryforward). Digital copies are acceptable.' },
+  ]
+  let aiChatCount = 0
+  for (const user of allUsers) {
+    // CPAs + admins don\'t typically have per-org AI chats.
+    if (user.role === 'cpa' || user.role === 'admin') continue
+    const num = rand(AI_CHATS_PER_USER.min, AI_CHATS_PER_USER.max)
+    for (let j = 0; j < num; j++) {
+      const exchanges = pickN(aiChatPrompts, rand(1, 4))
+      const baseDate = pastDate(45)
+      const messages: Array<{ role: string; content: string; timestamp: string }> = []
+      for (const ex of exchanges) {
+        messages.push({ role: 'user', content: ex.q, timestamp: baseDate })
+        messages.push({ role: 'assistant', content: ex.a, timestamp: baseDate })
+      }
+      const title = exchanges[0].q.length > 60 ? exchanges[0].q.slice(0, 57) + '...' : exchanges[0].q
+      sqlite.prepare(
+        `INSERT INTO ai_chat_conversations (id, user_id, org_id, title, messages, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(uuid(), user.id, user.orgId, title, JSON.stringify(messages), baseDate, pastDate(15))
+      aiChatCount++
+    }
+  }
+  console.log(`  → ${aiChatCount} AI chat conversations`)
+
   // ─── 21. Email Verification Tokens ────────────────
   console.log('Creating email verification tokens...')
   let tokenCount = 0
-  for (const user of allUsers.slice(-50)) {
+  for (const user of allUsers.slice(-250)) {
     db.insert(schema.emailVerificationTokens).values({
       id: uuid(), userId: user.id,
       token: crypto.randomBytes(32).toString('hex'),
@@ -1180,12 +1440,14 @@ async function fakeSeed() {
   console.log(`  Folders:              ${folderCount}`)
   console.log(`  Documents:            ${docCount}`)
   console.log(`  Document Contexts:    ${contextCount}`)
+  console.log(`  Filing Requirements:  ${reqCount} (${reqLinkedCount} linked · ${reqSkippedCount} skipped · ${reqViewedCount} CPA-viewed)`)
   console.log(`  Approval Queue:       ${approvalCount}`)
   console.log(`  Filing Review Locks:  ${lockCount}`)
   console.log(`  CPA Notifications:    ${notifCount}`)
   console.log(`  CPA Rejections:       ${rejCount}`)
   console.log(`  Audit Log Entries:    ${auditCount}`)
   console.log(`  Agent Conversations:  ${convCount}`)
+  console.log(`  AI Chat Sessions:     ${aiChatCount}`)
   console.log(`  Founder Chat Msgs:    ${founderMsgCount}`)
   console.log(`  CPA Chat Msgs:        ${cpaMsgCount}`)
   console.log(`  Org Chat Msgs:        ${orgMsgCount}`)

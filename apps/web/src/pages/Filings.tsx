@@ -35,6 +35,11 @@ export function FilingsPage() {
   const [showStatusFilter, setShowStatusFilter] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const YEAR_PAGE_SIZE = 10
+  const [visibleByYear, setVisibleByYear] = useState<Record<number, number>>({})
+
+  // Reset per-year pagination whenever any filter changes
+  useEffect(() => { setVisibleByYear({}) }, [searchQuery, statusFilter, selectedYear, activeFilter, pendingOnMe])
 
   // Available years from filings data
   const availableYears = Array.from(new Set(filings.map((f: any) => f.taxYear || 2025))).sort(
@@ -116,11 +121,11 @@ export function FilingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-normal tracking-tight text-[#061b31] mb-5" style={{ fontWeight: 300 }}>Filings</h1>
+      <h1 className="text-[26px] text-[#061b31] mb-5" style={{ fontWeight: 300, letterSpacing: '-0.26px', lineHeight: 1.12 }}>Filings</h1>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Year dropdown filter */}
           <div className="relative">
             <button
@@ -259,66 +264,73 @@ export function FilingsPage() {
         </div>
 
         {/* Pending on me toggle — filters to founder_approval status only */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={() => navigate('/filings/room')}
-            className="flex items-center gap-1.5 h-9 px-4 border border-[#e5edf5] text-[#273951] rounded-lg text-sm font-medium hover:bg-[#f6f9fc] transition-colors"
+            title="Workflow View"
+            className="flex items-center gap-1.5 h-9 px-3 sm:px-4 border border-[#e5edf5] text-[#273951] rounded-[6px] text-sm font-normal hover:bg-[#f6f9fc] transition-colors"
           >
-            Workflow View
+            <FolderOpen size={14} />
+            <span className="hidden sm:inline">Workflow View</span>
           </button>
           <button
             onClick={() => setPendingOnMe(!pendingOnMe)}
-            className={`flex items-center gap-2 h-9 px-4 rounded-md text-sm font-medium border transition-colors ${
+            title="Pending on me"
+            className={`flex items-center gap-2 h-9 px-3 sm:px-4 rounded-[6px] text-sm font-normal border transition-colors ${
               pendingOnMe
-                ? 'bg-[#EDE9FD] text-[#533afd] border-[#533afd]'
-                : 'bg-[#f6f9fc] text-[#273951] border-[#e5edf5]'
+                ? 'bg-[rgba(83,58,253,0.08)] text-[#533afd] border-[#533afd]'
+                : 'bg-white text-[#273951] border-[#e5edf5] hover:bg-[#f6f9fc]'
             }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${pendingOnMe ? 'bg-[#533afd]' : 'bg-[#64748d]'}`}
             />
-            Pending on me
+            <span className="hidden sm:inline">Pending on me</span>
           </button>
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] transition-colors"
+            title="Create filing"
+            className="flex items-center gap-1.5 h-9 px-3 sm:px-4 bg-[#533afd] text-white rounded-[6px] text-sm font-normal hover:bg-[#4434d4] transition-colors"
           >
             <Plus size={16} />
-            Create filing
+            <span className="hidden sm:inline">Create filing</span>
           </button>
         </div>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
         {stats.map((stat) => (
           <button
             key={stat.key}
             onClick={() => setActiveFilter(stat.key)}
-            className={`text-left bg-white border rounded-[10px] px-5 py-4 transition-colors ${
+            className={`text-left bg-white border rounded-[6px] px-4 sm:px-5 py-3 sm:py-4 transition-colors ${
               activeFilter === stat.key
-                ? 'border-2 border-[#533afd] bg-[#FAFAFA]'
-                : 'border-[#e5edf5] hover:border-[#e5edf5]'
+                ? 'border-[#533afd] bg-[rgba(83,58,253,0.04)]'
+                : 'border-[#e5edf5] hover:border-[#b9b9f9]'
             }`}
           >
-            <p className="text-xs font-medium text-[#64748d] mb-1">{stat.label}</p>
-            <p className="text-2xl font-normal text-[#061b31] font-tnum" style={{ fontWeight: 300 }}>{stat.count}</p>
+            <p className="text-[11px] font-normal text-[#64748d] mb-1">{stat.label}</p>
+            <p className="text-[24px] text-[#061b31] font-tnum leading-none" style={{ fontWeight: 300, letterSpacing: '-0.26px' }}>{stat.count}</p>
           </button>
         ))}
       </div>
 
       {/* Filing Table */}
-      <div className="bg-white border border-[#e5edf5] rounded-md">
+      <div
+        className="bg-white border border-[#e5edf5] rounded-[6px] overflow-hidden"
+        style={{ boxShadow: 'rgba(23,23,23,0.08) 0px 15px 35px 0px' }}
+      >
         {/* Header */}
-        <div className="flex items-center px-4 py-2.5 border-b border-[#e5edf5]">
-          <div className="flex-1 text-[11px] font-semibold text-[#64748d] uppercase tracking-wider">
+        <div className="flex items-center px-4 py-2.5 border-b border-[#e5edf5] bg-[#f6f9fc]">
+          <div className="flex-1 text-[11px] font-medium text-[#64748d] uppercase tracking-wider">
             Filing
           </div>
-          <div className="w-40 text-[11px] font-semibold text-[#64748d] uppercase tracking-wider">
+          <div className="hidden sm:block w-28 md:w-40 text-[11px] font-medium text-[#64748d] uppercase tracking-wider">
             Deadline
           </div>
-          <div className="w-60 text-[11px] font-semibold text-[#64748d] uppercase tracking-wider text-right">
+          <div className="w-40 sm:w-56 md:w-64 text-[11px] font-medium text-[#64748d] uppercase tracking-wider text-right">
             Status
           </div>
         </div>
@@ -339,8 +351,13 @@ export function FilingsPage() {
               Tax year {year}
             </button>
 
-            {expandedYears[year] &&
-              grouped[year].map((filing) => (
+            {expandedYears[year] && (() => {
+              const rows = grouped[year]
+              const visible = visibleByYear[year] ?? YEAR_PAGE_SIZE
+              const shown = rows.slice(0, visible)
+              const remaining = rows.length - shown.length
+              return <>
+                {shown.map((filing) => (
                 <div
                   key={filing.id}
                   className="group flex items-center px-4 py-3 border-b border-[#f6f9fc] hover:bg-[#f6f9fc] cursor-pointer transition-colors"
@@ -384,40 +401,57 @@ export function FilingsPage() {
                   </div>
 
                   {/* Deadline */}
-                  <div className="w-40 flex items-center gap-1.5 text-[13px] text-[#061b31]">
+                  <div className="hidden sm:flex w-28 md:w-28 items-center gap-1.5 text-[13px] text-[#061b31] font-tnum">
                     <Calendar size={14} className="text-[#64748d]" />
                     {filing.createdAt ? formatDate(filing.createdAt) : '—'}
                   </div>
 
                   {/* Status + hover quick actions */}
-                  <div className="w-64 flex items-center justify-end gap-2">
+                  <div className="w-20 sm:w-64 md:w-96 flex items-center justify-end gap-1 sm:gap-2">
                     <div className="hidden group-hover:flex items-center gap-0.5">
                       <button
                         title="View filing"
                         onClick={(e) => { e.stopPropagation(); navigate(`/filings/${filing.id}`) }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#64748d] hover:text-[#533afd] hover:bg-[#EDE9FD] transition-colors"
+                        className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-[4px] text-[11px] font-normal text-[#64748d] hover:text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] transition-colors"
                       >
-                        <Eye size={13} /> View
+                        <Eye size={13} />
+                        <span className="hidden lg:inline">View</span>
                       </button>
                       <button
                         title="Upload document"
                         onClick={(e) => { e.stopPropagation(); navigate(`/documents`) }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#64748d] hover:text-[#533afd] hover:bg-[#EDE9FD] transition-colors"
+                        className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-[4px] text-[11px] font-normal text-[#64748d] hover:text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] transition-colors"
                       >
-                        <Upload size={13} /> Upload
+                        <Upload size={13} />
+                        <span className="hidden lg:inline">Upload</span>
                       </button>
                       <button
                         title="Open filing room"
                         onClick={(e) => { e.stopPropagation(); navigate(`/filings/room/${filing.id}`) }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#64748d] hover:text-[#533afd] hover:bg-[#EDE9FD] transition-colors"
+                        className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-[4px] text-[11px] font-normal text-[#64748d] hover:text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] transition-colors"
                       >
-                        <FolderOpen size={13} /> Room
+                        <FolderOpen size={13} />
+                        <span className="hidden lg:inline">Room</span>
                       </button>
                     </div>
                     <StatusBadge status={filing.status} />
                   </div>
                 </div>
               ))}
+                {remaining > 0 && (
+                  <div className="flex items-center justify-center px-4 py-3 border-b border-[#f6f9fc]">
+                    <button
+                      onClick={() => setVisibleByYear(prev => ({ ...prev, [year]: (prev[year] ?? YEAR_PAGE_SIZE) + YEAR_PAGE_SIZE }))}
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[4px] border border-[#e5edf5] bg-white text-[12px] text-[#273951] hover:bg-[#f6f9fc] transition-colors"
+                    >
+                      <Plus size={12} />
+                      Load {Math.min(YEAR_PAGE_SIZE, remaining)} more
+                      <span className="text-[#64748d] font-tnum">· {shown.length}/{rows.length}</span>
+                    </button>
+                  </div>
+                )}
+              </>
+            })()}
           </div>
         ))}
 
