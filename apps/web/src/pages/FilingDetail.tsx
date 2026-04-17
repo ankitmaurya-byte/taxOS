@@ -534,7 +534,7 @@ const renderValue = (value: any): React.ReactNode => {
         </div>
 
         {/* Main content */}
-        <div className="flex-1 bg-white mx-8 mb-8 rounded-md border border-[#e5edf5] flex flex-col items-center justify-center p-8">
+        <div className="flex-1 bg-white mx-3 sm:mx-8 mb-8 rounded-md border border-[#e5edf5] flex flex-col items-center justify-center p-4 sm:p-8">
           {/* Stage progress */}
           <div className="flex items-center gap-0 mb-10 w-full max-w-md">
             {stages.map((stage, i) => (
@@ -574,7 +574,7 @@ const renderValue = (value: any): React.ReactNode => {
           </p>
 
           {/* Details grid */}
-          <div className="grid grid-cols-2 gap-x-12 gap-y-3 text-[13px] mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-12 gap-y-3 text-[13px] mb-8">
             <span className="text-[#64748d]">Reviewing by:</span>
             <span className="text-[#061b31]">
               {reviewLock
@@ -1001,7 +1001,7 @@ const renderValue = (value: any): React.ReactNode => {
                 <ShieldCheck size={14} />
                 Audit Risk Assessment
               </h3>
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <div className="rounded-lg bg-[#f6f9fc] px-3 py-2.5">
                   <span className="text-xs text-[#64748d]">Risk Score</span>
                   <p className={`text-lg font-normal font-tnum ${
@@ -1128,7 +1128,7 @@ const renderValue = (value: any): React.ReactNode => {
           {Object.keys(collectedData).length > 0 && (
             <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-white p-4 text-left">
               <h3 className="text-sm font-normal text-[#061b31] mb-3" style={{ fontWeight: 400 }}>Collected Data</h3>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {Object.entries(collectedData).map(([key, value]) => (
                   <div key={key} className="flex items-center justify-between rounded-lg bg-[#f6f9fc] px-3 py-2.5">
                     <span className="text-xs font-medium text-[#64748d]">{formatKey(key)}</span>
@@ -1460,7 +1460,7 @@ function FormPreviewModal({
           {/* Key Dates */}
           <div>
             <h3 className="text-sm font-normal text-[#061b31] mb-2" style={{ fontWeight: 400 }}>Key Dates</h3>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-8 gap-y-2 text-sm">
               <span className="text-[#64748d]">Created:</span>
               <span className="text-[#061b31]">{formatDate(filing.createdAt)}</span>
               <span className="text-[#64748d]">Last Updated:</span>

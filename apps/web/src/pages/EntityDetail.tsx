@@ -129,8 +129,8 @@ export function EntityDetailPage() {
         <ChevronRight size={14} className="text-[#64748d]" />
       </div>
 
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-normal text-[#061b31] uppercase" style={{ fontWeight: 300 }}>{entity.legalName}</h1>
+      <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31] uppercase" style={{ fontWeight: 300 }}>{entity.legalName}</h1>
         {entity.status !== 'dissolved' && (
           <button
             onClick={async () => {
@@ -287,7 +287,7 @@ function OverviewTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
     <div className="space-y-4">
       {/* Top info row */}
       <div className="bg-white border border-[#e5edf5] rounded-md p-5">
-        <div className="grid grid-cols-3 gap-6 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-5">
           <div>
             <p className="text-xs text-[#64748d] mb-1">Business name</p>
             <p className="text-sm font-medium text-[#061b31] uppercase">
@@ -525,7 +525,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
         {/* Add Director Form */}
         {showDirectorForm && (
           <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
-            <div className="grid grid-cols-2 gap-4 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
               <div>
                 <label className="block text-xs text-[#64748d] mb-1">Name</label>
                 <Input
@@ -624,7 +624,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
         {/* Add Officer Form */}
         {showOfficerForm && (
           <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
-            <div className="grid grid-cols-2 gap-4 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
               <div>
                 <label className="block text-xs text-[#64748d] mb-1">Name</label>
                 <Input
@@ -785,7 +785,7 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
       {/* Add Shareholder Form */}
       {showForm && (
         <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
-          <div className="grid grid-cols-2 gap-4 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Name</label>
               <Input
@@ -1084,7 +1084,7 @@ function SensitiveDataTab({ entity, onUpdate }: { entity: any; onUpdate: (data: 
       {/* Add Sensitive Data Form */}
       {showForm && (
         <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
-          <div className="grid grid-cols-2 gap-4 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Name</label>
               <Input

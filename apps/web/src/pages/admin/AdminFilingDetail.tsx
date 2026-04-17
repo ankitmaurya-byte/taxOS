@@ -81,7 +81,7 @@ export function AdminFilingDetail() {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-5xl mx-auto">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8 max-w-5xl mx-auto">
       {/* Breadcrumb */}
       <div className="text-sm text-[#64748d]">
         <Link to="/admin/filings" className="text-[#533afd] hover:underline">Admin Filings</Link>
@@ -90,9 +90,9 @@ export function AdminFilingDetail() {
       </div>
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#061b31]">{filing.formName}</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#061b31]">{filing.formName}</h1>
           <p className="text-sm text-[#64748d] mt-1">Form {filing.formType} &bull; Tax Year: {filing.taxYear || '—'}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export function AdminFilingDetail() {
       </div>
 
       {/* Metadata */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Organization', value: filing.org?.name || '—' },
           { label: 'Entity', value: filing.entity?.legalName || '—' },
@@ -163,7 +163,7 @@ export function AdminFilingDetail() {
       )}
 
       {/* Filing Data */}
-      <div className="bg-white border border-[#e5edf5] rounded-md p-6 shadow-sm">
+      <div className="bg-white border border-[#e5edf5] rounded-md p-4 sm:p-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-[#061b31]">Filing Data</h2>
           {!editingData && (
@@ -242,7 +242,7 @@ export function AdminFilingDetail() {
 
       {/* Agent Conversations */}
       {filing.conversations?.length > 0 && (
-        <div className="bg-white border border-[#e5edf5] rounded-md p-6 shadow-sm">
+        <div className="bg-white border border-[#e5edf5] rounded-md p-4 sm:p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-[#061b31] mb-4">AI Conversations ({filing.conversations.length})</h2>
           <div className="space-y-3">
             {filing.conversations.map((conv: any) => (
@@ -284,7 +284,7 @@ export function AdminFilingDetail() {
 
       {/* Documents */}
       {filing.documents?.length > 0 && (
-        <div className="bg-white border border-[#e5edf5] rounded-md p-6 shadow-sm">
+        <div className="bg-white border border-[#e5edf5] rounded-md p-4 sm:p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-[#061b31] mb-4">Documents ({filing.documents.length})</h2>
           <div className="space-y-2">
             {filing.documents.map((doc: any) => (

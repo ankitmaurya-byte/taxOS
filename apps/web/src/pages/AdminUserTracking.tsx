@@ -66,15 +66,15 @@ export function AdminUserTracking() {
   function handleStatusFilter(v: string | null) { setStatusFilter(v); setPage(1) }
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto relative">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8 max-w-7xl mx-auto relative">
+      <div className="flex justify-between items-center flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#061b31]">User Management</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-[#061b31]">User Management</h1>
           <p className="mt-1 text-sm text-[#64748d]">Full control over founders, team members, and CPAs.</p>
         </div>
         <button
           onClick={() => setShowInviteCpa(true)}
-          className="px-4 py-2 bg-[#533afd] text-white rounded-lg font-medium hover:bg-[#5a4bce] transition-colors"
+          className="px-3 sm:px-4 py-2 bg-[#533afd] text-white rounded-lg font-medium hover:bg-[#5a4bce] transition-colors"
         >
           + Invite CPA
         </button>
@@ -218,8 +218,8 @@ export function AdminUserTracking() {
       />
 
       {showInviteCpa && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-md w-[400px] shadow-xl">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-5 sm:p-6 rounded-md w-full max-w-[400px] max-w-[calc(100vw-1.5rem)] shadow-xl">
             <h2 className="text-xl font-semibold mb-1">Invite CPA</h2>
             <p className="text-sm text-[#64748d] mb-5">The CPA will receive an email invitation to set up their account.</p>
             <div className="space-y-4">

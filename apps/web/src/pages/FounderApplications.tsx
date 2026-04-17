@@ -59,14 +59,14 @@ export function FounderApplicationsPage() {
   const rejectedCount = founderApplications.filter((a: any) => a.status === 'rejected').length
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8">
       <div>
-        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Founder Applications</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Founder Applications</h1>
         <p className="mt-1 text-sm text-[#64748d]">Review Certificate of Incorporation details before creating the organization.</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs text-[#64748d]">Pending</p>
           <p className="mt-1 text-2xl font-normal text-[#9b6829] font-tnum" style={{ fontWeight: 300 }}>{pendingCount}</p>
@@ -82,7 +82,7 @@ export function FounderApplicationsPage() {
       </div>
 
       {/* Search + Status filter */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d]" />
           <input
@@ -128,8 +128,8 @@ export function FounderApplicationsPage() {
 
       <div className="space-y-4">
         {paginated.map((application: any) => (
-          <div key={application.id} className="rounded-md border border-[#e5edf5] bg-white p-6">
-            <div className="flex items-start justify-between gap-4">
+          <div key={application.id} className="rounded-md border border-[#e5edf5] bg-white p-4 sm:p-6">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <h2 className="text-lg font-medium text-[#061b31]">{application.organizationName}</h2>
                 <p className="text-sm text-[#64748d]">{application.name} · {application.email}</p>
@@ -150,7 +150,7 @@ export function FounderApplicationsPage() {
             </div>
 
             {application.status === 'pending' && (
-              <div className="mt-5 flex gap-3">
+              <div className="mt-5 flex gap-3 flex-wrap">
                 <button
                   onClick={() => handleReview(application.id, 'approved')}
                   disabled={reviewing === application.id}
@@ -188,7 +188,7 @@ export function FounderApplicationsPage() {
 
       {rejectPopupId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-md bg-white p-6 shadow-xl">
+          <div className="w-full max-w-sm max-w-[calc(100vw-1.5rem)] rounded-md bg-white p-5 sm:p-6 shadow-xl">
             <h3 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Reject Application</h3>
             <p className="mt-1 text-sm text-[#64748d]">Please provide a reason for rejecting this application.</p>
             <textarea

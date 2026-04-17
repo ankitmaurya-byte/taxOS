@@ -36,7 +36,7 @@ export function GetHelpPanel({ onClose }: GetHelpPanelProps) {
       <div
         role="dialog"
         aria-label="Get help"
-        className="absolute right-0 top-full mt-2 w-[520px] bg-white border border-[#e5edf5] rounded-md z-50 overflow-hidden"
+        className="absolute right-0 top-full mt-2 w-[min(calc(100vw-1.5rem),520px)] bg-white border border-[#e5edf5] rounded-md z-50 overflow-hidden"
         style={{ boxShadow: 'rgba(50,50,93,0.25) 0px 30px 45px -30px, rgba(0,0,0,0.1) 0px 18px 36px -18px' }}
       >
         <div className="flex border-b border-[#e5edf5]">

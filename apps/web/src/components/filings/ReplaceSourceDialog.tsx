@@ -30,7 +30,7 @@ export function ReplaceSourceDialog({
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-xl border border-[#e5edf5] bg-white shadow-[0_24px_56px_rgba(17,24,39,0.18)] p-5">
+      <div className="relative w-full max-w-md max-w-[calc(100vw-1.5rem)] rounded-xl border border-[#e5edf5] bg-white shadow-[0_24px_56px_rgba(17,24,39,0.18)] p-4 sm:p-5">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 p-1 rounded-lg text-[#64748d] hover:bg-[#f6f9fc] hover:text-[#273951]"

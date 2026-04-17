@@ -31,14 +31,14 @@ function FounderHome() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Welcome {firstName}</h1>
+      <h1 className="mb-6 text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Welcome {firstName}</h1>
 
-      <div className="mb-6 rounded-md border border-[#e5edf5] bg-white p-6">
-        <div className="mb-5 flex items-center justify-between">
+      <div className="mb-6 rounded-md border border-[#e5edf5] bg-white p-4 sm:p-6">
+        <div className="mb-5 flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-base font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Founder Action Centre</h2>
           <Link to="/action-centre" className="flex items-center gap-1 text-[13px] font-medium text-[#533afd] hover:text-[#4434d4]">View all <ArrowRight size={13} /></Link>
         </div>
-        <div className="flex min-h-[200px]">
+        <div className="flex flex-col md:flex-row min-h-[200px]">
           <div className="flex flex-1 flex-col items-center justify-center">
             {actionItems.length === 0 ? (
               <div className="text-center">
@@ -66,7 +66,8 @@ function FounderHome() {
               </div>
             )}
           </div>
-          <div className="mx-6 w-px bg-[#e5edf5]" />
+          <div className="mx-6 w-px bg-[#e5edf5] hidden md:block" />
+          <div className="my-4 h-px bg-[#e5edf5] md:hidden" />
           <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
             {filingsLoading ? (
               <p className="text-sm text-[#64748d]">Loading pipeline…</p>
@@ -130,9 +131,9 @@ function FounderHome() {
       </div>
 
       <div className="mb-6 overflow-hidden rounded-lg border border-[#e5edf5] bg-white">
-        <div className="border-b border-[#e5edf5] px-6 py-5"><h2 className="text-base font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Filing Status</h2></div>
+        <div className="border-b border-[#e5edf5] px-4 sm:px-6 py-4 sm:py-5"><h2 className="text-base font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Filing Status</h2></div>
         <div className="grid lg:grid-cols-[1.05fr_1fr]">
-          <div className="border-b border-[#e5edf5] p-6 lg:border-b-0 lg:border-r">
+          <div className="border-b border-[#e5edf5] p-4 sm:p-6 lg:border-b-0 lg:border-r">
             <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
               <div className="mb-3 text-5xl font-normal tracking-tight text-[#2D2850] font-tnum" style={{ fontWeight: 300 }}>{completed.length}/{filings.length}</div>
               <p className="text-[15px] text-[#5B5878]">Filings completed</p>
@@ -152,11 +153,11 @@ function FounderHome() {
               ))}
             </div>
           </div>
-          <div className="p-6">
-            <div className="mb-5 inline-flex rounded-lg border border-[#e5edf5] bg-[#f6f9fc] p-1">
-              <button onClick={() => setFilingTab('not_started')} className={`min-w-[130px] rounded-md px-4 py-2 text-sm font-medium transition-colors ${filingTab === 'not_started' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>Not started {notStarted.length}</button>
-              <button onClick={() => setFilingTab('all')} className={`min-w-[100px] rounded-md px-4 py-2 text-sm font-medium transition-colors ${filingTab === 'all' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>All {activeFilings.length}</button>
-              <button onClick={() => setFilingTab('archived')} className={`min-w-[110px] rounded-md px-4 py-2 text-sm font-medium transition-colors ${filingTab === 'archived' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>Archived {archivedFilings.length}</button>
+          <div className="p-4 sm:p-6">
+            <div className="mb-5 inline-flex flex-wrap rounded-lg border border-[#e5edf5] bg-[#f6f9fc] p-1 max-w-full overflow-x-auto">
+              <button onClick={() => setFilingTab('not_started')} className={`min-w-[110px] sm:min-w-[130px] rounded-md px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${filingTab === 'not_started' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>Not started {notStarted.length}</button>
+              <button onClick={() => setFilingTab('all')} className={`min-w-[90px] sm:min-w-[100px] rounded-md px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${filingTab === 'all' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>All {activeFilings.length}</button>
+              <button onClick={() => setFilingTab('archived')} className={`min-w-[100px] sm:min-w-[110px] rounded-md px-3 sm:px-4 py-2 text-sm font-medium transition-colors ${filingTab === 'archived' ? 'bg-white text-[#2D2850] shadow-sm' : 'text-[#7B7897] hover:text-[#2D2850]'}`}>Archived {archivedFilings.length}</button>
             </div>
             {visibleFilings.length === 0 ? (
               <div className="flex min-h-[280px] flex-col items-center justify-center rounded-lg border border-dashed border-[#e5edf5] bg-[#FCFCFD] px-6 text-center">
@@ -213,11 +214,11 @@ function TeamMemberHome() {
   return (
     <div className="space-y-6 p-1">
       <div>
-        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Welcome back, {user?.name?.split(' ')[0]}</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Welcome back, {user?.name?.split(' ')[0]}</h1>
         <p className="mt-1 text-sm text-[#64748d]">Your workspace is filtered to the modules your founder enabled for you.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         {cards.map((card) => (
           <button key={card.label} onClick={() => navigate(card.action)} className="rounded-md border border-[#e5edf5] bg-white p-5 text-left transition-colors hover:border-[#D8D1F7]">
             <p className="text-sm text-[#64748d]">{card.label}</p>
@@ -227,9 +228,9 @@ function TeamMemberHome() {
         ))}
       </div>
 
-      <div className="rounded-md border border-[#e5edf5] bg-white p-6">
+      <div className="rounded-md border border-[#e5edf5] bg-white p-4 sm:p-6">
         <h2 className="text-lg font-medium text-[#061b31]">Permissions available to you</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2">
           {Object.entries(user?.permissions || {}).map(([key, value]) => (
             <div key={key} className="flex items-center justify-between rounded-lg bg-[#f6f9fc] px-4 py-3">
               <span className="text-sm text-[#273951]">{key}</span>

@@ -127,7 +127,7 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-screen bg-[#FCFBFF] lg:grid-cols-[1.08fr_0.92fr]">
-      <div className="flex min-h-screen flex-col px-6 py-6 lg:px-16 lg:py-10">
+      <div className="flex min-h-screen flex-col px-4 sm:px-6 py-6 lg:px-16 lg:py-10">
         <div className="flex items-center justify-between">
           <div className="text-3xl font-semibold tracking-[-0.03em] text-[#533afd]">
             inkle
@@ -142,7 +142,7 @@ export function LoginPage() {
 
         <div className="flex flex-1 items-center">
           <div className="w-full max-w-md">
-            <h1 className="text-3xl font-semibold tracking-[-0.02em] text-[#061b31]">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em] text-[#061b31]">
               Sign in
             </h1>
             <p className="mt-2 text-sm text-[#64748d]">
@@ -192,7 +192,7 @@ export function LoginPage() {
                 <p className="text-sm font-medium text-[#273951] mb-3">
                   Quick Login
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {DEMO_ACCOUNTS.map((account) => {
                     const Icon = account.icon;
                     const isLoading = quickLoading === account.key;

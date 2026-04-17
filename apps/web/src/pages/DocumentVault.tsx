@@ -252,11 +252,11 @@ export function DocumentVault() {
           ))}
         </div>
 
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
           <div className="flex items-center gap-3">
             <button onClick={() => { setSelectedVault(null); setSelectedFolderId(null) }} className="p-2 rounded-sm hover:bg-[#f6f9fc] text-[#64748d] transition-colors"><ArrowLeft size={18} strokeWidth={1.8} /></button>
             <div>
-              <h1 className="text-[26px] font-light tracking-[-0.26px] text-[#061b31]">{selectedVault.name}</h1>
+              <h1 className="text-xl sm:text-[26px] font-light tracking-[-0.26px] text-[#061b31]">{selectedVault.name}</h1>
               {selectedVault.description && <p className="text-[13px] text-[#64748d] mt-0.5">{selectedVault.description}</p>}
             </div>
           </div>
@@ -268,7 +268,7 @@ export function DocumentVault() {
 
         {/* Drop zone — click anywhere opens file picker */}
         <label
-          className="block rounded-sm border-2 border-dashed border-[#e5edf5] hover:border-[#b9b9f9] bg-white p-6 text-center mb-6 cursor-pointer transition-colors"
+          className="block rounded-sm border-2 border-dashed border-[#e5edf5] hover:border-[#b9b9f9] bg-white p-4 sm:p-6 text-center mb-6 cursor-pointer transition-colors"
           onDragOver={e => e.preventDefault()}
           onDrop={e => { e.preventDefault(); if (e.dataTransfer.files.length) handleUpload(e.dataTransfer.files) }}
         >
@@ -482,7 +482,7 @@ export function DocumentVault() {
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[26px] font-light tracking-[-0.26px] text-[#061b31]">Document Vaults</h1>
+          <h1 className="text-xl sm:text-[26px] font-light tracking-[-0.26px] text-[#061b31]">Document Vaults</h1>
           <p className="text-[13px] text-[#64748d] mt-1">Organize documents by vault. All extracted data feeds into AI advisor.</p>
         </div>
         {isFounder && (

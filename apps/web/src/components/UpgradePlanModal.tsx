@@ -37,10 +37,10 @@ export function UpgradePlanModal({ onClose }: UpgradePlanModalProps) {
       <div
         role="dialog"
         aria-modal="true"
-        className="relative w-full max-w-[850px] overflow-hidden rounded-lg border border-[#e5edf5] bg-white"
+        className="relative w-full max-w-[850px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-lg border border-[#e5edf5] bg-white max-h-[calc(100dvh-2rem)] overflow-y-auto"
         style={{ boxShadow: 'rgba(50,50,93,0.25) 0px 30px 45px -30px, rgba(0,0,0,0.1) 0px 18px 36px -18px' }}
       >
-        <div className="flex items-center justify-between border-b border-[#e5edf5] px-10 py-4">
+        <div className="flex items-center justify-between border-b border-[#e5edf5] px-4 sm:px-10 py-4">
           <h2 className="text-[20px] text-[#061b31]" style={{ fontWeight: 300, letterSpacing: '-0.2px' }}>Upgrade Your Plan</h2>
           <button
             type="button"
@@ -52,7 +52,7 @@ export function UpgradePlanModal({ onClose }: UpgradePlanModalProps) {
           </button>
         </div>
 
-        <div className="grid gap-6 p-10 pt-5 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 p-4 sm:p-10 sm:pt-5 grid-cols-1 lg:grid-cols-2">
           <PlanCard
             title="Free"
             subtitle="Check deadlines and set reminders"

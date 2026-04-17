@@ -49,8 +49,8 @@ export function AddressBookPage() {
   if (!searchParams.get('view')) {
     return (
       <div>
-        <h1 className="text-2xl font-normal text-[#061b31] mb-6" style={{ fontWeight: 300 }}>Address Book</h1>
-        <div className="grid grid-cols-3 gap-4">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31] mb-6" style={{ fontWeight: 300 }}>Address Book</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {VIEW_TABS.map((tab) => (
             <button
               key={tab.key}
@@ -88,9 +88,9 @@ export function AddressBookPage() {
       </div>
 
       {/* Header with entity selector */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>{viewLabel}</h1>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>{viewLabel}</h1>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Entity selector dropdown */}
           <EntitySelector
             entities={entities}
@@ -263,7 +263,7 @@ function AddressesView() {
           <h3 className="text-sm font-normal text-[#061b31] mb-3" style={{ fontWeight: 400 }}>
             {editIndex !== null ? 'Edit Address' : 'New Address'}
           </h3>
-          <div className="grid grid-cols-2 gap-4 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Street</label>
               <Input
@@ -327,8 +327,8 @@ function AddressesView() {
       )}
 
       {/* Table */}
-      <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white border border-[#e5edf5] rounded-md overflow-x-auto">
+        <table className="w-full min-w-[480px]">
           <thead>
             <tr className="bg-[#f6f9fc]">
               <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
@@ -411,7 +411,7 @@ function BankAccountsView() {
       {showForm && (
         <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
           <h3 className="text-sm font-normal text-[#061b31] mb-3" style={{ fontWeight: 400 }}>New Bank Account</h3>
-          <div className="grid grid-cols-2 gap-4 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Bank Name</label>
               <Input
@@ -476,8 +476,8 @@ function BankAccountsView() {
         </button>
       )}
 
-      <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white border border-[#e5edf5] rounded-md overflow-x-auto">
+        <table className="w-full min-w-[480px]">
           <thead>
             <tr className="bg-[#f6f9fc]">
               <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">
@@ -554,7 +554,7 @@ function AuthorizedPersonsView() {
       {showForm && (
         <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
           <h3 className="text-sm font-normal text-[#061b31] mb-3" style={{ fontWeight: 400 }}>New Authorized Person</h3>
-          <div className="grid grid-cols-2 gap-4 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Name</label>
               <Input
@@ -616,8 +616,8 @@ function AuthorizedPersonsView() {
         </button>
       )}
 
-      <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white border border-[#e5edf5] rounded-md overflow-x-auto">
+        <table className="w-full min-w-[480px]">
           <thead>
             <tr className="bg-[#f6f9fc]">
               <th className="text-left text-xs font-medium text-[#64748d] uppercase px-4 py-3">

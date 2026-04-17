@@ -264,7 +264,7 @@ export function FilingDocumentChecklist({ filingId, requirements, isTerminal, is
       <input ref={replaceInputRef} type="file" className="hidden" onChange={(e) => handleInputChange(e, handleReplace)} />
       <input ref={retryUploadInputRef} type="file" className="hidden" onChange={(e) => handleInputChange(e, handleRetryUpload)} />
 
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5edf5]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5edf5] flex-wrap gap-2">
         <div>
           <h3 className="text-sm font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Document Checklist</h3>
           <p className="text-xs text-[#64748d] mt-0.5">

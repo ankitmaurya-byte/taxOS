@@ -71,14 +71,14 @@ export function AdminOrganizationDetails() {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
         <Link to="/admin/organizations" className="text-sm text-[#533afd] hover:underline mb-2 inline-block">
           &larr; Back to Organizations
         </Link>
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-[#061b31]">{org.name}</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#061b31]">{org.name}</h1>
             <p className="mt-1 text-sm text-[#64748d]">Legal: {org.legalName || 'N/A'} &bull; Plan: {org.plan}</p>
           </div>
           <button
@@ -94,7 +94,7 @@ export function AdminOrganizationDetails() {
       {isEditingOrg && (
         <div className="bg-white border border-[#e5edf5] rounded-md p-5 space-y-3 shadow-sm">
           <h2 className="text-sm font-semibold text-[#061b31]">Edit Organization</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Display Name</label>
               <input
@@ -139,7 +139,7 @@ export function AdminOrganizationDetails() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Users */}
-        <div className="rounded-md border border-[#e5edf5] bg-white p-6 shadow-sm">
+        <div className="rounded-md border border-[#e5edf5] bg-white p-4 sm:p-6 shadow-sm">
           <h2 className="text-lg font-semibold mb-4 text-[#061b31]">Associated Users</h2>
           <div className="space-y-3">
             {org.users?.map((u: any) => (
@@ -156,7 +156,7 @@ export function AdminOrganizationDetails() {
         </div>
 
         {/* Entities */}
-        <div className="rounded-md border border-[#e5edf5] bg-white p-6 shadow-sm">
+        <div className="rounded-md border border-[#e5edf5] bg-white p-4 sm:p-6 shadow-sm">
           <h2 className="text-lg font-semibold mb-4 text-[#061b31]">Entities</h2>
           <div className="space-y-3">
             {org.entities?.map((e: any) => (
@@ -240,7 +240,7 @@ export function AdminOrganizationDetails() {
       </div>
 
       {/* Filings */}
-      <div className="rounded-md border border-[#e5edf5] bg-white p-6 shadow-sm">
+      <div className="rounded-md border border-[#e5edf5] bg-white p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold mb-4 text-[#061b31]">Filings</h2>
         {org.filings?.length === 0
           ? <p className="text-sm text-[#64748d]">No filings.</p>

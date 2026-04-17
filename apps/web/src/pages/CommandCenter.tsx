@@ -46,9 +46,9 @@ export function CommandCenter() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Command Center</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Command Center</h1>
           <p className="mt-1 text-sm text-[#64748d]">Track active work and start new filings from one place.</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
@@ -76,9 +76,9 @@ export function CommandCenter() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
         {/* Filing Pipeline Kanban */}
-        <div className="col-span-2">
+        <div className="lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>Filing Pipeline</CardTitle>

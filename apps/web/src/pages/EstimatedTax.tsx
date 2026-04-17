@@ -88,9 +88,9 @@ export function EstimatedTaxPage() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between gap-4">
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Estimated Tax</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Estimated Tax</h1>
           <p className="mt-1 text-sm text-[#64748d]">Track live filing activity and upcoming deadline pressure by entity.</p>
         </div>
 
@@ -118,7 +118,7 @@ export function EstimatedTaxPage() {
       ) : (
         <div className="space-y-8">
           <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="rounded-lg border border-[#e5edf5] bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-[#e5edf5] bg-white p-4 sm:p-6 shadow-sm">
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-[#64748d]">Selected entity</p>
@@ -181,7 +181,7 @@ export function EstimatedTaxPage() {
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-lg border border-[#e5edf5] bg-white p-6 shadow-sm">
+              <div className="rounded-lg border border-[#e5edf5] bg-white p-4 sm:p-6 shadow-sm">
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#EDE9FD] text-[#533afd]">
                     <CalendarClock size={18} />
@@ -217,7 +217,7 @@ export function EstimatedTaxPage() {
                 )}
               </div>
 
-              <div className="rounded-lg border border-[#e5edf5] bg-white p-6 shadow-sm">
+              <div className="rounded-lg border border-[#e5edf5] bg-white p-4 sm:p-6 shadow-sm">
                 <h3 className="text-base font-normal text-[#061b31]" style={{ fontWeight: 400 }}>What TaxOS is using</h3>
                 <div className="mt-4 space-y-4">
                   {[
@@ -237,7 +237,7 @@ export function EstimatedTaxPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#e5edf5] bg-white p-6 shadow-sm">
+          <div className="rounded-lg border border-[#e5edf5] bg-white p-4 sm:p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Estimated-tax related activity</h2>

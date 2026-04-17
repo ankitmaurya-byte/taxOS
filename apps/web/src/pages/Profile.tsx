@@ -153,8 +153,8 @@ export function ProfilePage() {
   const selectedTz = TIMEZONES.find((tz) => tz.value === timezone)
 
   return (
-    <div className="mx-auto max-w-[900px] px-6 py-8">
-      <h1 className="mb-6 text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Profile Settings</h1>
+    <div className="mx-auto max-w-[900px] px-3 sm:px-6 py-4 sm:py-8">
+      <h1 className="mb-6 text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Profile Settings</h1>
 
       {/* Profile header */}
       <div className="mb-6 flex items-center gap-4">
@@ -168,7 +168,7 @@ export function ProfilePage() {
       </div>
 
       {/* Form card */}
-      <div className="rounded-lg border border-[#e5edf5] bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-[#e5edf5] bg-white p-4 sm:p-6 shadow-sm">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {/* First name */}
           <FormInput

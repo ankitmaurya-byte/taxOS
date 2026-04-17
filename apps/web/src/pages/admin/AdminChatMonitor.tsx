@@ -364,14 +364,14 @@ export function AdminChatMonitor() {
   ]
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-5">
+    <div className="p-3 sm:p-5 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Chat Monitor</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Chat Monitor</h1>
         <p className="mt-1 text-sm text-[#64748d]">Read-only view of all chat channels across the platform.</p>
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-[#f6f9fc] p-1 rounded-md w-fit">
+      <div className="flex gap-1 bg-[#f6f9fc] p-1 rounded-md w-fit max-w-full overflow-x-auto">
         {tabs.map(t => (
           <button
             key={t.id}
@@ -385,7 +385,7 @@ export function AdminChatMonitor() {
         ))}
       </div>
 
-      <div className="grid grid-cols-[260px_1fr] gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-3 lg:gap-5">
         {/* Left: user filter panel */}
         <div className="bg-white border border-[#e5edf5] rounded-md p-4 h-fit">
           <h3 className="text-sm font-normal text-[#273951] mb-3" style={{ fontWeight: 400 }}>

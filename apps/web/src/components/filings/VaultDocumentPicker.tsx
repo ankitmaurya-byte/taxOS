@@ -82,8 +82,8 @@ export function VaultDocumentPicker({
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-3xl rounded-xl border border-[#e5edf5] bg-white shadow-[0_24px_56px_rgba(17,24,39,0.18)] flex flex-col max-h-[85vh]">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5edf5]">
+      <div className="relative w-full max-w-3xl max-w-[calc(100vw-1.5rem)] rounded-xl border border-[#e5edf5] bg-white shadow-[0_24px_56px_rgba(17,24,39,0.18)] flex flex-col max-h-[85vh]">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-[#e5edf5]">
           <div>
             <h2 className="text-base font-medium text-[#061b31]">{title}</h2>
             <p className="text-xs text-[#64748d] mt-0.5">
@@ -129,8 +129,8 @@ export function VaultDocumentPicker({
               <thead className="sticky top-0 bg-[#f6f9fc] border-b border-[#e5edf5] z-10">
                 <tr>
                   <th className="px-4 py-2.5 text-[11px] font-medium text-[#64748d] uppercase tracking-wide">Name</th>
-                  <th className="px-4 py-2.5 text-[11px] font-medium text-[#64748d] uppercase tracking-wide">Uploaded</th>
-                  <th className="px-4 py-2.5 text-[11px] font-medium text-[#64748d] uppercase tracking-wide">Tags</th>
+                  <th className="px-4 py-2.5 text-[11px] font-medium text-[#64748d] uppercase tracking-wide hidden sm:table-cell">Uploaded</th>
+                  <th className="px-4 py-2.5 text-[11px] font-medium text-[#64748d] uppercase tracking-wide hidden md:table-cell">Tags</th>
                   <th className="px-4 py-2.5 w-28" />
                 </tr>
               </thead>
@@ -160,8 +160,8 @@ export function VaultDocumentPicker({
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 text-[12px] text-[#64748d] font-tnum">{formatDate(doc.createdAt)}</td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-4 py-2.5 text-[12px] text-[#64748d] font-tnum hidden sm:table-cell">{formatDate(doc.createdAt)}</td>
+                      <td className="px-4 py-2.5 hidden md:table-cell">
                         {doc.aiTags?.length > 0 ? (
                           <span className="inline-flex px-[6px] py-[1px] rounded-sm text-[10px] font-light bg-[rgba(83,58,253,0.08)] text-[#533afd]">
                             {doc.aiTags[0]}{doc.aiTags.length > 1 ? ` +${doc.aiTags.length - 1}` : ''}

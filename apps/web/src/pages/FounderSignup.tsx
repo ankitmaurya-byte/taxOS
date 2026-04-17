@@ -44,7 +44,7 @@ export function FounderSignupPage() {
 
   return (
     <div className="grid min-h-screen bg-white lg:grid-cols-[1.08fr_0.92fr]">
-      <div className="flex min-h-screen flex-col px-6 py-6 lg:px-16 lg:py-10">
+      <div className="flex min-h-screen flex-col px-4 sm:px-6 py-4 sm:py-6 lg:px-16 lg:py-10">
         <div className="flex items-center justify-between">
           <div className="text-[26px] font-light tracking-[-0.26px] text-[#533afd]">inkle</div>
           <a
@@ -57,7 +57,7 @@ export function FounderSignupPage() {
 
         <div className="flex flex-1 items-center">
           <div className="w-full max-w-md">
-            <h1 className="text-[26px] font-light tracking-[-0.26px] text-[#061b31]">Create your founder account</h1>
+            <h1 className="text-xl sm:text-[26px] font-light tracking-[-0.26px] text-[#061b31]">Create your founder account</h1>
             <p className="mt-2 text-[14px] text-[#64748d]">
               Already have an account? <Link to="/login" className="font-normal text-[#533afd] hover:underline">Sign in <ChevronRight className="inline" size={13} /></Link>
             </p>

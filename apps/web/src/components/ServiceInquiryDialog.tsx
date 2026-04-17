@@ -53,9 +53,9 @@ export function ServiceInquiryDialog({ open, title, serviceName, onClose }: Serv
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-md rounded-lg border border-[#e5edf5] bg-white shadow-[rgba(50,50,93,0.25)_0px_30px_45px_-30px,rgba(0,0,0,0.1)_0px_18px_36px_-18px]"
+        className="relative w-full max-w-md max-w-[calc(100vw-1.5rem)] rounded-lg border border-[#e5edf5] bg-white shadow-[rgba(50,50,93,0.25)_0px_30px_45px_-30px,rgba(0,0,0,0.1)_0px_18px_36px_-18px]"
       >
-        <div className="flex items-center justify-between border-b border-[#e5edf5] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[#e5edf5] px-4 sm:px-6 py-3 sm:py-4">
           <h2 className="text-[17px] text-[#061b31]" style={{ fontWeight: 400 }}>{title}</h2>
           <button
             type="button"
@@ -66,7 +66,7 @@ export function ServiceInquiryDialog({ open, title, serviceName, onClose }: Serv
             <X size={16} />
           </button>
         </div>
-        <form className="px-6 py-5 space-y-4" onSubmit={handleSubmit}>
+        <form className="px-4 sm:px-6 py-4 sm:py-5 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
             <label htmlFor="inquiry-name" className="text-[13px] text-[#273951]">Your name</label>
             <input

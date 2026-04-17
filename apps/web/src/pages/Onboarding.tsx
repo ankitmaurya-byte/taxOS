@@ -25,7 +25,7 @@ function Frame({ children, testimonialIndex = 0 }: { children: React.ReactNode; 
     <div className="min-h-screen bg-white">
       <div className="grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
         {/* Left */}
-        <div className="flex flex-col bg-white px-6 py-6 lg:px-16 lg:py-10">
+        <div className="flex flex-col bg-white px-4 sm:px-6 py-4 sm:py-6 lg:px-16 lg:py-10">
           <div className="mb-10 flex items-center justify-between">
             <div className="text-[26px] font-light tracking-[-0.26px] text-[#533afd]">inkle</div>
             <div className="flex items-center gap-5 text-[#64748d]">

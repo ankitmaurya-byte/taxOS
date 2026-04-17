@@ -388,7 +388,7 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
   const handleSend = () => sendMessage(input)
 
   return (
-    <div className="fixed right-0 top-0 h-full w-[420px] bg-white border-l border-[#e5edf5] shadow-2xl z-50 flex">
+    <div className="fixed right-0 top-0 h-full w-full sm:w-[420px] max-w-[100vw] bg-white border-l border-[#e5edf5] shadow-2xl z-50 flex">
       {/* Left sidebar icons */}
       <div className="w-12 border-r border-[#e5edf5] flex flex-col items-center py-4 gap-2 bg-[#f6f9fc]">
         <button

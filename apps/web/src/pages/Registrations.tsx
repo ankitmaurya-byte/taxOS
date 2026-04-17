@@ -97,8 +97,8 @@ export function RegistrationsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Registrations</h1>
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Registrations</h1>
         {entities.length > 1 && (
           <select
             value={selectedId || entities[0]?.id}
@@ -120,7 +120,7 @@ export function RegistrationsPage() {
         <>
           {/* Federal */}
           <h2 className="text-base font-normal text-[#061b31] mb-4" style={{ fontWeight: 400 }}>Federal Registrations</h2>
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
             {federalItems.map((item) => (
               <div
                 key={item.title}
@@ -158,9 +158,9 @@ export function RegistrationsPage() {
 
           {/* State */}
           <h2 className="text-base font-normal text-[#061b31] mb-4" style={{ fontWeight: 400 }}>State Registrations</h2>
-          <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
+          <div className="bg-white border border-[#e5edf5] rounded-md overflow-x-auto">
             {/* Header */}
-            <div className="grid grid-cols-4 px-4 py-2.5 border-b border-[#e5edf5]">
+            <div className="grid grid-cols-4 min-w-[520px] px-4 py-2.5 border-b border-[#e5edf5]">
               {['State', 'Secretary of State', 'Registered Agent', 'Payroll'].map((h) => (
                 <span
                   key={h}
@@ -175,7 +175,7 @@ export function RegistrationsPage() {
             {stateRows.map((state) => (
               <div
                 key={state.name}
-                className="grid grid-cols-4 px-4 py-3 border-b border-[#f6f9fc] hover:bg-[#f6f9fc] transition-colors"
+                className="grid grid-cols-4 min-w-[520px] px-4 py-3 border-b border-[#f6f9fc] hover:bg-[#f6f9fc] transition-colors"
               >
                 <div className="flex items-center gap-1.5 text-sm font-medium text-[#061b31]">
                   {state.name}

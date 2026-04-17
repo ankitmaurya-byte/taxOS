@@ -128,10 +128,10 @@ export function TeamManagementPage() {
   const canEdit = user?.role === 'founder' || (user?.role === 'team_member' && Boolean(user?.permissions?.canManageTeam))
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-start justify-between">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Team Management</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Team Management</h1>
           <p className="mt-1 text-sm text-[#64748d]">
             Invite members, manage permissions, and configure role templates.
           </p>
@@ -155,7 +155,7 @@ export function TeamManagementPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs text-[#64748d]">Total members</p>
           <p className="mt-1 text-2xl font-normal text-[#061b31] font-tnum" style={{ fontWeight: 300 }}>{members.length - 1}</p>
@@ -175,7 +175,7 @@ export function TeamManagementPage() {
       </div>
 
       {/* Search + Filter */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d]" />
           <input
@@ -390,7 +390,7 @@ function MemberCard({
           </div>
 
           {/* Permission toggles */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {PERMISSION_KEYS.map((key) => {
               const checkedCount = PERMISSION_KEYS.filter(k => editPerms[k]).length
               const isChecked = editPerms[key] || false
@@ -447,7 +447,7 @@ function MemberCard({
       {isExpanded && (!canEdit || member.role !== 'team_member') && (
         <div className="border-t border-[#e5edf5] px-5 py-4 bg-[#FAFAFA]">
           <p className="mb-3 text-xs font-medium text-[#64748d] uppercase tracking-wide">Permissions (role-based, read-only)</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {PERMISSION_KEYS.map((key) => (
               <div
                 key={key}
@@ -551,8 +551,8 @@ function InviteModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="w-full max-w-lg rounded-lg bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#e5edf5] px-6 py-4">
+        <div className="w-full max-w-lg max-w-[calc(100vw-1.5rem)] rounded-lg bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-[#e5edf5] px-4 sm:px-6 py-3 sm:py-4">
             <div>
               <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Invite Team Member</h2>
               <p className="text-xs text-[#64748d]">They must accept within 24 hours.</p>
@@ -560,7 +560,7 @@ function InviteModal({
             <button onClick={requestClose} className="p-1 text-[#64748d] hover:text-[#273951]"><X size={18} /></button>
           </div>
 
-          <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-4 max-h-[70vh] overflow-y-auto">
             {/* Email */}
             <div>
               <label className="mb-1.5 block text-sm font-medium text-[#273951]">Email address</label>
@@ -646,7 +646,7 @@ function InviteModal({
               )}
 
               {permMode === 'custom' && (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {PERMISSION_KEYS.map((key) => (
                     <label
                       key={key}
@@ -684,7 +684,7 @@ function InviteModal({
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-[#e5edf5] px-6 py-4">
+          <div className="flex items-center justify-end gap-3 border-t border-[#e5edf5] px-4 sm:px-6 py-3 sm:py-4 flex-wrap">
             <button onClick={requestClose} className="h-9 px-4 rounded-lg text-sm font-medium text-[#273951] hover:bg-[#f6f9fc]">
               Cancel
             </button>
@@ -739,13 +739,13 @@ function TemplateModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#e5edf5] px-6 py-4">
+        <div className="w-full max-w-2xl max-w-[calc(100vw-1.5rem)] rounded-lg bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-[#e5edf5] px-4 sm:px-6 py-3 sm:py-4">
             <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Role Templates</h2>
             <button onClick={requestClose} className="p-1 text-[#64748d] hover:text-[#273951]"><X size={18} /></button>
           </div>
 
-          <div className="px-6 py-5 max-h-[70vh] overflow-y-auto space-y-4">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 max-h-[70vh] overflow-y-auto space-y-4">
             {/* Existing templates */}
             {templates.map((t: any) => (
               <div key={t.id} className="rounded-md border border-[#e5edf5] p-4">
@@ -782,7 +782,7 @@ function TemplateModal({
                   placeholder="Template name (e.g. Ops Manager)"
                   className="h-9 w-full rounded-lg border border-[#e5edf5] px-3 text-sm outline-none focus:ring-2 focus:ring-[#533afd]"
                 />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {PERMISSION_KEYS.map((key) => (
                     <label key={key} className="flex items-center gap-2 text-sm text-[#273951] cursor-pointer">
                       <input
@@ -812,7 +812,7 @@ function TemplateModal({
             )}
           </div>
 
-          <div className="flex justify-end border-t border-[#e5edf5] px-6 py-4">
+          <div className="flex justify-end border-t border-[#e5edf5] px-4 sm:px-6 py-3 sm:py-4">
             <button onClick={requestClose} className="h-9 px-4 rounded-lg bg-[#533afd] text-sm font-medium text-white hover:bg-[#4434d4]">
               Done
             </button>

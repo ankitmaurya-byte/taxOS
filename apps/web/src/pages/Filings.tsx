@@ -121,10 +121,10 @@ export function FilingsPage() {
 
   return (
     <div>
-      <h1 className="text-[26px] text-[#061b31] mb-5" style={{ fontWeight: 300, letterSpacing: '-0.26px', lineHeight: 1.12 }}>Filings</h1>
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-normal tracking-tight text-[#061b31] mb-5" style={{ fontWeight: 300 }}>Filings</h1>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-5">
         <div className="flex items-center gap-2 flex-wrap">
           {/* Year dropdown filter */}
           <div className="relative">
@@ -267,34 +267,33 @@ export function FilingsPage() {
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={() => navigate('/filings/room')}
-            title="Workflow View"
-            className="flex items-center gap-1.5 h-9 px-3 sm:px-4 border border-[#e5edf5] text-[#273951] rounded-[6px] text-sm font-normal hover:bg-[#f6f9fc] transition-colors"
+            className="flex items-center gap-1.5 h-9 px-3 sm:px-4 border border-[#e5edf5] text-[#273951] rounded-lg text-sm font-medium hover:bg-[#f6f9fc] transition-colors"
           >
-            <FolderOpen size={14} />
             <span className="hidden sm:inline">Workflow View</span>
+            <span className="sm:hidden">Workflow</span>
           </button>
           <button
             onClick={() => setPendingOnMe(!pendingOnMe)}
-            title="Pending on me"
-            className={`flex items-center gap-2 h-9 px-3 sm:px-4 rounded-[6px] text-sm font-normal border transition-colors ${
+            className={`flex items-center gap-2 h-9 px-3 sm:px-4 rounded-md text-sm font-medium border transition-colors ${
               pendingOnMe
-                ? 'bg-[rgba(83,58,253,0.08)] text-[#533afd] border-[#533afd]'
-                : 'bg-white text-[#273951] border-[#e5edf5] hover:bg-[#f6f9fc]'
+                ? 'bg-[#EDE9FD] text-[#533afd] border-[#533afd]'
+                : 'bg-[#f6f9fc] text-[#273951] border-[#e5edf5]'
             }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${pendingOnMe ? 'bg-[#533afd]' : 'bg-[#64748d]'}`}
             />
             <span className="hidden sm:inline">Pending on me</span>
+            <span className="sm:hidden">Pending</span>
           </button>
 
           <button
             onClick={() => setShowCreateModal(true)}
-            title="Create filing"
-            className="flex items-center gap-1.5 h-9 px-3 sm:px-4 bg-[#533afd] text-white rounded-[6px] text-sm font-normal hover:bg-[#4434d4] transition-colors"
+            className="flex items-center gap-1.5 h-9 px-3 sm:px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] transition-colors"
           >
             <Plus size={16} />
             <span className="hidden sm:inline">Create filing</span>
+            <span className="sm:hidden">Create</span>
           </button>
         </div>
       </div>
@@ -305,32 +304,29 @@ export function FilingsPage() {
           <button
             key={stat.key}
             onClick={() => setActiveFilter(stat.key)}
-            className={`text-left bg-white border rounded-[6px] px-4 sm:px-5 py-3 sm:py-4 transition-colors ${
+            className={`text-left bg-white border rounded-[10px] px-5 py-4 transition-colors ${
               activeFilter === stat.key
-                ? 'border-[#533afd] bg-[rgba(83,58,253,0.04)]'
-                : 'border-[#e5edf5] hover:border-[#b9b9f9]'
+                ? 'border-2 border-[#533afd] bg-[#FAFAFA]'
+                : 'border-[#e5edf5] hover:border-[#e5edf5]'
             }`}
           >
-            <p className="text-[11px] font-normal text-[#64748d] mb-1">{stat.label}</p>
-            <p className="text-[24px] text-[#061b31] font-tnum leading-none" style={{ fontWeight: 300, letterSpacing: '-0.26px' }}>{stat.count}</p>
+            <p className="text-xs font-medium text-[#64748d] mb-1">{stat.label}</p>
+            <p className="text-2xl font-normal text-[#061b31] font-tnum" style={{ fontWeight: 300 }}>{stat.count}</p>
           </button>
         ))}
       </div>
 
       {/* Filing Table */}
-      <div
-        className="bg-white border border-[#e5edf5] rounded-[6px] overflow-hidden"
-        style={{ boxShadow: 'rgba(23,23,23,0.08) 0px 15px 35px 0px' }}
-      >
+      <div className="bg-white border border-[#e5edf5] rounded-md overflow-x-auto">
         {/* Header */}
-        <div className="flex items-center px-4 py-2.5 border-b border-[#e5edf5] bg-[#f6f9fc]">
-          <div className="flex-1 text-[11px] font-medium text-[#64748d] uppercase tracking-wider">
+        <div className="flex items-center px-4 py-2.5 border-b border-[#e5edf5] min-w-[480px]">
+          <div className="flex-1 text-[11px] font-semibold text-[#64748d] uppercase tracking-wider">
             Filing
           </div>
-          <div className="hidden sm:block w-28 md:w-40 text-[11px] font-medium text-[#64748d] uppercase tracking-wider">
+          <div className="w-40 text-[11px] font-semibold text-[#64748d] uppercase tracking-wider hidden sm:block">
             Deadline
           </div>
-          <div className="w-40 lg:w-80 text-[11px] font-medium text-[#64748d] uppercase tracking-wider text-right">
+          <div className="w-60 text-[11px] font-semibold text-[#64748d] uppercase tracking-wider text-right">
             Status
           </div>
         </div>
@@ -360,7 +356,7 @@ export function FilingsPage() {
                 {shown.map((filing) => (
                 <div
                   key={filing.id}
-                  className="group flex items-center px-4 py-3 border-b border-[#f6f9fc] hover:bg-[#f6f9fc] cursor-pointer transition-colors"
+                  className="group flex items-center px-4 py-3 border-b border-[#f6f9fc] hover:bg-[#f6f9fc] cursor-pointer transition-colors min-w-[480px]"
                   onClick={() => navigate(`/filings/${filing.id}`)}
                 >
                   {/* Filing name */}
@@ -401,12 +397,12 @@ export function FilingsPage() {
                   </div>
 
                   {/* Deadline */}
-                  <div className="hidden sm:flex w-28 md:w-28 items-center gap-1.5 text-[13px] text-[#061b31] font-tnum">
+                  <div className="w-40 hidden sm:flex items-center gap-1.5 text-[13px] text-[#061b31]">
                     <Calendar size={14} className="text-[#64748d]" />
                     {filing.createdAt ? formatDate(filing.createdAt) : '—'}
                   </div>
 
-                  {/* Status + hover quick actions — always rendered to keep row height stable */}
+                  {/* Status + hover quick actions — icon-only below lg, always rendered to keep row height stable */}
                   <div className="w-40 lg:w-80 flex items-center justify-end gap-1.5 h-7">
                     <div className="flex items-center gap-0.5 invisible group-hover:visible">
                       <button

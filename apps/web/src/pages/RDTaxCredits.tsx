@@ -7,9 +7,9 @@ export function RDTaxCreditsPage() {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="flex items-start gap-12 py-8">
+    <div className="flex flex-col lg:flex-row lg:items-start gap-8 lg:gap-12 py-4 sm:py-8">
       <div className="flex-[3]">
-        <h1 className="text-[24px] text-[#061b31] mb-3" style={{ fontWeight: 300, letterSpacing: '-0.48px' }}>
+        <h1 className="text-xl sm:text-[24px] md:text-3xl text-[#061b31] mb-3" style={{ fontWeight: 300, letterSpacing: '-0.48px' }}>
           Unlock Potential R&amp;D Tax Credits
         </h1>
         <p className="text-sm text-[#64748d] leading-relaxed max-w-lg mb-8" style={{ fontWeight: 300 }}>
@@ -17,7 +17,7 @@ export function RDTaxCreditsPage() {
           research and development by reducing their corporate tax liability.
         </p>
 
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -42,7 +42,7 @@ export function RDTaxCreditsPage() {
       </div>
 
       <div className="flex-[2]">
-        <div className="bg-gradient-to-br from-[#f6f9fc] to-[#ffd7ef] rounded-md p-6">
+        <div className="bg-gradient-to-br from-[#f6f9fc] to-[#ffd7ef] rounded-md p-4 sm:p-6">
           <div className="bg-white rounded-md p-5 shadow-[rgba(23,23,23,0.08)_0px_15px_35px_0px]">
             <p className="text-[13px] text-[#061b31] mb-4" style={{ fontWeight: 400 }}>R&amp;D Tax Saving</p>
 

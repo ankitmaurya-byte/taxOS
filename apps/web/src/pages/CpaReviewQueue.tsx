@@ -40,14 +40,14 @@ export function CpaReviewQueue() {
   )
 
   return (
-    <div className="space-y-6 p-6 max-w-5xl mx-auto">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#EDE9FD]">
           <ClipboardCheck size={20} className="text-[#533afd]" />
         </div>
         <div>
-          <h1 className="text-2xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>My Review Queue</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>My Review Queue</h1>
           <p className="text-sm text-[#64748d]">
             Filings escalated to you for CPA review and approval.
           </p>
@@ -55,7 +55,7 @@ export function CpaReviewQueue() {
       </div>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Awaiting Review', value: pending.length, color: 'text-[#9b6829] bg-[rgba(155,104,41,0.08)] border-[rgba(155,104,41,0.2)]' },
           { label: 'Total Active', value: filings.length, color: 'text-[#533afd] bg-[#EDE9FD] border-[#b9b9f9]' },
@@ -139,7 +139,7 @@ function FilingCard({ filing, highlight = false, skippedBadge = false }: { filin
   return (
     <Link
       to={`/filings/${filing.id}`}
-      className={`flex items-center gap-4 rounded-md border px-5 py-4 transition-all hover:shadow-sm hover:border-[#b9b9f9] ${
+      className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-md border px-4 sm:px-5 py-4 transition-all hover:shadow-sm hover:border-[#b9b9f9] ${
         highlight ? 'border-[rgba(155,104,41,0.25)] bg-[rgba(155,104,41,0.06)]' : 'border-[#e5edf5] bg-white'
       }`}
     >
@@ -163,7 +163,7 @@ function FilingCard({ filing, highlight = false, skippedBadge = false }: { filin
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
         {skippedBadge && (
           <span className="inline-flex items-center gap-1 rounded-md border border-[rgba(21,190,83,0.3)] bg-[rgba(21,190,83,0.08)] px-2 py-0.5 text-[10px] font-medium text-[#108c3d]">
             <ShieldCheck size={10} />

@@ -26,7 +26,7 @@ export function DissolutionPage() {
   const [dialogMode, setDialogMode] = useState<null | 'start' | 'call'>(null)
   return (
     <div>
-      <h1 className="text-[24px] text-[#061b31] mb-6" style={{ fontWeight: 300, letterSpacing: '-0.24px' }}>Dissolution</h1>
+      <h1 className="text-xl sm:text-[24px] md:text-3xl text-[#061b31] mb-6" style={{ fontWeight: 300, letterSpacing: '-0.24px' }}>Dissolution</h1>
 
       <ServiceHero
         title="Assisted Dissolution"

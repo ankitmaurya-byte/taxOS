@@ -71,8 +71,8 @@ export function CreateFilingModal({ open, onClose }: CreateFilingModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      <div className="relative w-full max-w-xl rounded-md bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#e5edf5] px-6 py-4">
+      <div className="relative w-full max-w-xl max-w-[calc(100vw-1.5rem)] rounded-md bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[#e5edf5] px-4 sm:px-6 py-3 sm:py-4">
           <div>
             <h2 className="text-lg font-semibold text-[#061b31]">Create filing</h2>
             <p className="mt-0.5 text-sm text-[#64748d]">Start a new filing from an existing entity.</p>
@@ -85,7 +85,7 @@ export function CreateFilingModal({ open, onClose }: CreateFilingModalProps) {
           </button>
         </div>
 
-        <div className="space-y-4 px-6 py-5">
+        <div className="space-y-4 px-4 sm:px-6 py-4 sm:py-5">
           <div>
             <label className="mb-1 block text-xs text-[#64748d]">Entity</label>
             <select
@@ -147,7 +147,7 @@ export function CreateFilingModal({ open, onClose }: CreateFilingModalProps) {
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-[#e5edf5] px-6 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-[#e5edf5] px-4 sm:px-6 py-3 sm:py-4 flex-wrap">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>

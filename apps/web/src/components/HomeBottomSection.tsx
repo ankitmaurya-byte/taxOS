@@ -51,7 +51,7 @@ function ReferralCard() {
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-lg bg-[#f6f9fc] p-6 shadow-sm">
+    <div className="relative overflow-hidden rounded-lg bg-[#f6f9fc] p-4 sm:p-6 shadow-sm">
       {/* Content */}
       <div className="relative z-10">
         <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-[#533afd] shadow-sm">
@@ -174,7 +174,7 @@ function PromoCard() {
         {extendedSlides.map((slide, i) => (
           <div
             key={i}
-            className={`min-w-full h-full p-6 ${slide.bg} flex flex-col justify-between relative`}
+            className={`min-w-full h-full p-4 sm:p-6 ${slide.bg} flex flex-col justify-between relative`}
           >
             <div>
               <h3 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>

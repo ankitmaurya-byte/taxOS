@@ -40,9 +40,9 @@ export function DashboardPage() {
     .slice(0, 5)
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8">
       <div>
-        <h1 className="text-2xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Dashboard</h1>
         <p className="mt-1 text-sm text-[#64748d]">
           {isAdmin
             ? 'Platform oversight for founders, team members, and CPA coverage.'
@@ -56,7 +56,7 @@ export function DashboardPage() {
 
       {isAdmin && (
         <>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             <div
               onClick={() => navigate('/admin/founder-applications')}
               className="rounded-md border border-[#e5edf5] bg-white p-5 cursor-pointer hover:border-[#e5edf5] transition-colors"
@@ -152,7 +152,7 @@ export function DashboardPage() {
 
       {(isCpa || isTeamMember) && (
         <>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             {canViewFilings && (
               <div
                 onClick={() => navigate('/filings')}

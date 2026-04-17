@@ -79,14 +79,14 @@ export function ApprovalQueue() {
   }
 
   return (
-    <div className="space-y-8 p-6 max-w-5xl mx-auto">
+    <div className="space-y-8 p-3 sm:p-5 md:p-6 lg:p-8 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Approval Queue</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Approval Queue</h1>
         <p className="mt-1 text-sm text-[#64748d]">Review and action pending filing approvals.</p>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs font-medium text-[#64748d] uppercase tracking-wide">Pending</p>
           <p className="mt-1 text-2xl font-normal text-[#9b6829] font-tnum" style={{ fontWeight: 300 }}>{pending.length}</p>
@@ -138,7 +138,7 @@ export function ApprovalQueue() {
                 </div>
 
                 {/* Action bar */}
-                <div className="flex items-center gap-2 border-t border-[#f6f9fc] px-5 py-3">
+                <div className="flex items-center gap-2 flex-wrap border-t border-[#f6f9fc] px-4 sm:px-5 py-3">
                   <button
                     disabled={resolveLoading[approval.id]}
                     onClick={async (e) => {
@@ -236,8 +236,8 @@ export function ApprovalQueue() {
       {resolved.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold text-[#273951] uppercase tracking-wide mb-3">Resolved</h2>
-          <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden">
-            <table className="w-full text-left text-sm">
+          <div className="rounded-md border border-[#e5edf5] bg-white overflow-x-auto">
+            <table className="w-full text-left text-sm min-w-[520px]">
               <thead className="bg-[#f6f9fc] border-b border-[#e5edf5]">
                 <tr>
                   <th className="px-5 py-3 text-xs font-medium text-[#64748d] uppercase tracking-wide">Summary</th>

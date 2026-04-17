@@ -39,7 +39,7 @@ export function DialogViewport() {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={() => resolveDialog(top.id, top.kind === 'confirm' ? false : null)}
       />
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md max-w-[calc(100vw-1.5rem)]">
         {top.kind === 'confirm' ? (
           <ConfirmCard dialog={top} onResolve={(v) => resolveDialog(top.id, v)} />
         ) : (
@@ -70,7 +70,7 @@ function ConfirmCard({
   }, [onResolve])
 
   return (
-    <div className="rounded-xl border border-[#e5edf5] bg-white p-6 shadow-[0_24px_56px_rgba(17,24,39,0.18)]">
+    <div className="rounded-xl border border-[#e5edf5] bg-white p-4 sm:p-6 shadow-[0_24px_56px_rgba(17,24,39,0.18)]">
       <button
         onClick={() => onResolve(false)}
         className="absolute right-4 top-4 rounded-lg p-1 text-[#64748d] hover:bg-[#f6f9fc] hover:text-[#273951]"
@@ -139,7 +139,7 @@ function PromptCard({
   }
 
   return (
-    <div className="rounded-xl border border-[#e5edf5] bg-white p-6 shadow-[0_24px_56px_rgba(17,24,39,0.18)]">
+    <div className="rounded-xl border border-[#e5edf5] bg-white p-4 sm:p-6 shadow-[0_24px_56px_rgba(17,24,39,0.18)]">
       <button
         onClick={() => onResolve(null)}
         className="absolute right-4 top-4 rounded-lg p-1 text-[#64748d] hover:bg-[#f6f9fc] hover:text-[#273951]"

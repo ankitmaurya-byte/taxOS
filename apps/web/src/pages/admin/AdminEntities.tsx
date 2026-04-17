@@ -74,14 +74,14 @@ export function AdminEntities() {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-semibold text-[#061b31]">Global Entities</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-[#061b31]">Global Entities</h1>
         <p className="mt-1 text-sm text-[#64748d]">Observe and manage corporate subsidiaries and branches.</p>
       </div>
 
       {/* Search + Type filter toolbar */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d]" />
           <input
@@ -122,8 +122,8 @@ export function AdminEntities() {
         </div>
       </div>
 
-      <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden shadow-sm">
-        <table className="w-full text-left text-sm text-[#273951]">
+      <div className="rounded-md border border-[#e5edf5] bg-white overflow-x-auto shadow-sm">
+        <table className="w-full text-left text-sm text-[#273951] min-w-[720px]">
           <thead className="bg-[#f6f9fc] text-xs uppercase text-[#64748d] border-b border-[#e5edf5]">
             <tr>
               <th className="px-6 py-4">Legal Name</th>

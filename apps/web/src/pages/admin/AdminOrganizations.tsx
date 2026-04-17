@@ -49,16 +49,16 @@ export function AdminOrganizations() {
   function handleSort(v: typeof sortBy) { setSortBy(v); setPage(1) }
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#061b31]">Organizations</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-[#061b31]">Organizations</h1>
           <p className="mt-1 text-sm text-[#64748d]">Manage multitenant organizations.</p>
         </div>
       </div>
 
       {/* Search + Sort toolbar */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748d]" />
           <input
@@ -91,8 +91,8 @@ export function AdminOrganizations() {
         </div>
       </div>
 
-      <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden shadow-sm">
-        <table className="w-full text-left text-sm text-[#273951]">
+      <div className="rounded-md border border-[#e5edf5] bg-white overflow-x-auto shadow-sm">
+        <table className="w-full text-left text-sm text-[#273951] min-w-[640px]">
           <thead className="bg-[#f6f9fc] text-xs uppercase text-[#64748d] border-b border-[#e5edf5]">
             <tr>
               <th className="px-6 py-4 font-medium">Name</th>

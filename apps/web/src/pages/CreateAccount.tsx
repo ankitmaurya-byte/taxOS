@@ -112,9 +112,9 @@ export function CreateAccountPage() {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-2xl">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-semibold text-[#061b31]">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-[#061b31]">
           {isAdmin ? 'Invite CPA' : 'Invite Team Member'}
         </h1>
         <p className="mt-1 text-sm text-[#64748d]">
@@ -131,7 +131,7 @@ export function CreateAccountPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5 rounded-md border border-[#e5edf5] bg-white p-6">
+      <form onSubmit={handleSubmit} className="space-y-5 rounded-md border border-[#e5edf5] bg-white p-4 sm:p-6">
         {isAdmin && (
           <div className="rounded-lg bg-[#F0EDFF] px-4 py-3 text-sm text-[#4C3D8F]">
             The CPA will receive a secure link to create their account. You can assign them to organizations after they accept.
@@ -228,7 +228,7 @@ export function CreateAccountPage() {
               )}
 
               {permissionMode === 'custom' && (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {PERMISSION_KEYS.map((key) => (
                     <label
                       key={key}

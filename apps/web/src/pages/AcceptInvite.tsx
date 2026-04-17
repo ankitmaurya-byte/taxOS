@@ -52,9 +52,9 @@ export function AcceptInvitePage() {
   const roleLabel = invite?.role === 'cpa' ? 'CPA' : invite?.role === 'team_member' ? 'Team Member' : invite?.role || 'member'
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f6f9fc] p-6">
-      <div className="w-full max-w-md rounded-md border border-[#e5edf5] bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-[#061b31]">Accept Invite</h1>
+    <div className="flex min-h-screen items-center justify-center bg-[#f6f9fc] p-4 sm:p-6">
+      <div className="w-full max-w-md rounded-md border border-[#e5edf5] bg-white p-5 sm:p-8 shadow-sm">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-[#061b31]">Accept Invite</h1>
         {invite && (
           <p className="mt-2 text-sm text-[#64748d]">
             You've been invited to join <strong>{invite.organizationName}</strong> as a <strong>{roleLabel}</strong>.

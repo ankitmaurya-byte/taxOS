@@ -46,10 +46,10 @@ export function EntitiesOverviewPage() {
   return (
     <div>
       {/* Top row */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
         <div>
           <p className="text-xs text-[#64748d]">Overall Brand</p>
-          <h1 className="text-xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>{user?.name || 'My Brand'}</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>{user?.name || 'My Brand'}</h1>
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
@@ -64,7 +64,7 @@ export function EntitiesOverviewPage() {
       {showAddForm && (
         <div className="bg-white border border-[#e5edf5] rounded-md p-5 mb-6">
           <h3 className="text-sm font-normal text-[#061b31] mb-4" style={{ fontWeight: 400 }}>New Entity</h3>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Legal Name</label>
               <Input
@@ -172,7 +172,7 @@ export function EntitiesOverviewPage() {
                 </div>
 
                 {/* Details */}
-                <div className="grid grid-cols-3 gap-6 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-4">
                   <div>
                     <p className="text-[11px] text-[#64748d] uppercase tracking-wider mb-0.5">
                       Country
@@ -198,7 +198,7 @@ export function EntitiesOverviewPage() {
                 </div>
 
                 {/* Tabs — each navigates to EntityDetailPage with the matching tab */}
-                <div className="flex items-center gap-4 border-t border-[#e5edf5] pt-3">
+                <div className="flex items-center gap-3 sm:gap-4 flex-wrap border-t border-[#e5edf5] pt-3">
                   {[
                     { key: 'overview', icon: FileText, label: 'Overview' },
                     { key: 'directors', icon: Users, label: 'Directors & Officers' },

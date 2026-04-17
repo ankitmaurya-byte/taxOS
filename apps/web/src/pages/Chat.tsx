@@ -330,7 +330,7 @@ export function ChatPage() {
   // Non-AI modes: full-screen ChatRoom with mode selector at top
   if (chatMode !== 'ai') {
     return (
-      <div className="flex h-[calc(100vh-56px)] -m-8 flex-col bg-white">
+      <div className="flex h-[calc(100dvh-56px)] -m-3 sm:-m-8 flex-col bg-white">
         {/* Mode bar */}
         <div className="flex items-center gap-3 px-5 py-3 border-b border-[#e5edf5]">
           <div className="relative">
@@ -379,9 +379,9 @@ export function ChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-56px)] -m-8 bg-white">
+    <div className="flex h-[calc(100dvh-56px)] -m-3 sm:-m-8 bg-white">
       {/* Conversation list */}
-      <div className="w-60 border-r border-[#e5edf5] flex flex-col">
+      <div className="hidden md:flex w-60 border-r border-[#e5edf5] flex-col">
         <div className="flex items-center justify-between p-4 border-b border-[#e5edf5]">
           {/* Mode dropdown */}
           <div className="relative flex-1 mr-2">
@@ -439,7 +439,7 @@ export function ChatPage() {
       {/* Chat area */}
       <div className="flex-1 flex flex-col">
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4">
           {active?.messages.length === 0 && showActionLibrary && (
             <div className="flex flex-col items-center pt-4">
               {/* Header */}
@@ -464,7 +464,7 @@ export function ChatPage() {
                     <p className="text-xs font-medium text-[#64748d] uppercase tracking-wide mb-2">
                       {category.title}
                     </p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {category.actions.map((action) => (
                         <button
                           key={action.label}

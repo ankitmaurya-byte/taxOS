@@ -34,14 +34,14 @@ export function ClaimFilings() {
   const hasMore = visibleCount < claimable.length
 
   return (
-    <div className="space-y-6 p-6 max-w-5xl mx-auto">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#EDE9FD]">
           <Inbox size={20} className="text-[#533afd]" />
         </div>
         <div>
-          <h1 className="text-2xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Claim Filings</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Claim Filings</h1>
           <p className="text-sm text-[#64748d]">
             Filings available for CPA review. Claim a filing to start reviewing.
           </p>
@@ -49,7 +49,7 @@ export function ClaimFilings() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div className="rounded-md border border-[rgba(155,104,41,0.25)] bg-[rgba(155,104,41,0.06)] px-5 py-4">
           <p className="text-2xl font-normal text-[#9b6829] font-tnum" style={{ fontWeight: 300 }}>{claimable.length}</p>
           <p className="mt-0.5 text-xs font-medium text-[#9b6829] opacity-80">Available to Claim</p>
@@ -73,7 +73,7 @@ export function ClaimFilings() {
           {visibleClaimable.map((filing: any) => (
             <div
               key={filing.id}
-              className="flex items-center gap-4 rounded-md border border-[rgba(155,104,41,0.25)] bg-[rgba(155,104,41,0.06)] px-5 py-4 transition-all hover:shadow-sm hover:border-[#b9b9f9]"
+              className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-md border border-[rgba(155,104,41,0.25)] bg-[rgba(155,104,41,0.06)] px-4 sm:px-5 py-4 transition-all hover:shadow-sm hover:border-[#b9b9f9]"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white flex-shrink-0">
                 <FileText size={16} className="text-[#64748d]" />
@@ -108,7 +108,7 @@ export function ClaimFilings() {
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
+              <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
                 <StatusBadge status={filing.status} />
                 <button
                   onClick={async () => {

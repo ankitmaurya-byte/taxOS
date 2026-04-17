@@ -73,17 +73,17 @@ export function FilingDataEditor({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-md shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5edf5]">
+      <div className="relative bg-white rounded-md shadow-2xl w-full max-w-lg max-w-[calc(100vw-1.5rem)] max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e5edf5]">
           <h2 className="text-base font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Edit Filing Data</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-[#64748d] hover:bg-[#f6f9fc]">
             <X size={18} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-2">
           {rows.length === 0 && (
             <p className="text-sm text-[#64748d] italic">No fields yet. Add one below.</p>
           )}
@@ -132,7 +132,7 @@ export function FilingDataEditor({
           {error && <p className="text-xs text-[#ea2261] mt-1">{error}</p>}
         </div>
 
-        <div className="px-6 py-4 border-t border-[#e5edf5] flex justify-end gap-2">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-[#e5edf5] flex justify-end gap-2 flex-wrap">
           <button onClick={onClose} className="h-9 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#273951] hover:bg-[#f6f9fc]">
             Cancel
           </button>

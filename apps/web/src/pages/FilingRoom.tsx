@@ -237,8 +237,8 @@ export function FilingRoom() {
           <span className="text-[#061b31]">Workflow View</span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Filing Room</h1>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Filing Room</h1>
           <span className="text-sm text-[#64748d]">{filtered.length} filing{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
@@ -357,13 +357,13 @@ export function FilingRoom() {
         <span className="text-[#061b31]">{filing.formType}</span>
       </div>
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>{filing.formType} — {filing.formName}</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>{filing.formType} — {filing.formName}</h1>
         <StatusBadge status={filing.status} />
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6">
         {/* Timeline Sidebar */}
-        <div className="col-span-2">
+        <div className="lg:col-span-2">
           <Card>
             <CardContent className="p-4">
               <div className="space-y-4">
@@ -387,8 +387,8 @@ export function FilingRoom() {
         </div>
 
         {/* Chat / Conversation Thread */}
-        <div className="col-span-5">
-          <Card className="flex flex-col h-[600px]">
+        <div className="lg:col-span-5">
+          <Card className="flex flex-col h-[calc(100dvh-200px)] lg:h-[600px]">
             <CardHeader>
               <CardTitle>AI Conversation</CardTitle>
             </CardHeader>
@@ -472,7 +472,7 @@ export function FilingRoom() {
         </div>
 
         {/* Form Preview */}
-        <div className="col-span-5">
+        <div className="lg:col-span-5">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">

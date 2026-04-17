@@ -65,14 +65,14 @@ export function DeadlinesPage() {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-[26px] font-light tracking-[-0.26px] text-[#061b31]">Deadlines</h1>
+          <h1 className="text-xl sm:text-[26px] font-light tracking-[-0.26px] text-[#061b31]">Deadlines</h1>
           <p className="mt-1 text-sm text-[#64748d]">Tax filing deadlines and compliance calendar.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <select value={selectedEntityId} onChange={e => setSelectedEntityId(e.target.value)} className="h-9 rounded-sm border border-[#e5edf5] bg-white px-3 text-sm text-[#273951] outline-none focus:border-[#533afd] transition-colors">
             <option value="">Select entity</option>
             {entities.map((entity: any) => <option key={entity.id} value={entity.id}>{entity.legalName}</option>)}
@@ -89,7 +89,7 @@ export function DeadlinesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <div className="flex items-center gap-2 mb-2"><CalendarClock size={14} className="text-[#64748d]" /><p className="text-[12px] text-[#64748d]">Total deadlines</p></div>
           <p className="text-[22px] font-light text-[#061b31] font-tnum">{(deadlines as any[]).length}</p>
@@ -129,8 +129,8 @@ export function DeadlinesPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden" style={{ boxShadow: 'rgba(23,23,23,0.08) 0px 15px 35px' }}>
-        <table className="w-full text-left text-sm">
+      <div className="rounded-md border border-[#e5edf5] bg-white overflow-x-auto" style={{ boxShadow: 'rgba(23,23,23,0.08) 0px 15px 35px' }}>
+        <table className="w-full text-left text-sm min-w-[720px]">
           <thead className="bg-[#f6f9fc] border-b border-[#e5edf5]">
             <tr>
               <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Form</th>
@@ -192,7 +192,7 @@ export function DeadlinesPage() {
       {selectedDeadline && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSelectedId(null)} />
-          <div className="relative w-full max-w-md rounded-md bg-white p-6" style={{ boxShadow: 'rgba(3,3,39,0.25) 0px 14px 21px -14px, rgba(0,0,0,0.1) 0px 8px 17px -8px' }}>
+          <div className="relative w-full max-w-md max-w-[calc(100vw-1.5rem)] rounded-md bg-white p-4 sm:p-6" style={{ boxShadow: 'rgba(3,3,39,0.25) 0px 14px 21px -14px, rgba(0,0,0,0.1) 0px 8px 17px -8px' }}>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-[22px] font-light tracking-[-0.22px] text-[#061b31]">{selectedDeadline.formType}</h2>

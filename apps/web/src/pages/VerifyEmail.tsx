@@ -40,7 +40,7 @@ export function VerifyEmailPage() {
   return (
     <div className="grid min-h-screen bg-white lg:grid-cols-[1.08fr_0.92fr]">
       {/* Left */}
-      <div className="flex min-h-screen flex-col px-6 py-8 lg:px-16 lg:py-12">
+      <div className="flex min-h-screen flex-col px-4 sm:px-6 py-6 sm:py-8 lg:px-16 lg:py-12">
         <div className="flex items-center justify-between">
           <div className="text-[26px] font-light tracking-[-0.26px] text-[#533afd]">inkle</div>
           <a
@@ -54,7 +54,7 @@ export function VerifyEmailPage() {
         <div className="flex flex-1 items-center">
           <div className="w-full max-w-lg">
             <p className="text-[13px] font-normal text-[#64748d] mb-3">Step 1 of 4: Email verification</p>
-            <h1 className="text-[32px] font-light tracking-[-0.64px] text-[#061b31]">Verify your email address</h1>
+            <h1 className="text-2xl sm:text-[32px] font-light tracking-[-0.64px] text-[#061b31]">Verify your email address</h1>
 
             {/* Status indicator */}
             <div className={`mt-6 flex items-start gap-3 rounded-md border p-4 ${
@@ -83,7 +83,7 @@ export function VerifyEmailPage() {
                   </button>
                 </p>
 
-                <div className="mt-6 flex gap-3">
+                <div className="mt-6 flex gap-3 flex-wrap">
                   <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-sm border border-[#e5edf5] bg-white px-4 py-3 text-[14px] font-normal text-[#273951] hover:bg-[#f6f9fc] transition-colors">
                     <Mail size={18} className="text-[#ea2261]" /> Open Gmail
                   </a>

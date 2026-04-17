@@ -99,11 +99,11 @@ export function AuditTrail() {
   const humanCount = (auditLog as any[]).filter(e => e.actorType !== 'ai' && e.actorType !== 'system').length
 
   return (
-    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+    <div className="space-y-6 p-3 sm:p-5 md:p-6 lg:p-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-[26px] font-light tracking-[-0.26px] text-[#061b31]">Audit Trail</h1>
+          <h1 className="text-xl sm:text-[26px] font-light tracking-[-0.26px] text-[#061b31]">Audit Trail</h1>
           <p className="mt-1 text-sm text-[#64748d]">Complete log of actions across your organization.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export function AuditTrail() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-[12px] font-normal text-[#64748d]">Total entries</p>
           <p className="mt-1 text-[22px] font-light text-[#061b31] font-tnum">{(auditLog as any[]).length}</p>
@@ -170,14 +170,14 @@ export function AuditTrail() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden" style={{ boxShadow: 'rgba(23,23,23,0.08) 0px 15px 35px' }}>
-        <table className="w-full text-left text-sm">
+      <div className="rounded-md border border-[#e5edf5] bg-white overflow-x-auto" style={{ boxShadow: 'rgba(23,23,23,0.08) 0px 15px 35px' }}>
+        <table className="w-full text-left text-sm min-w-[720px]">
           <thead className="bg-[#f6f9fc] border-b border-[#e5edf5]">
             <tr>
               <th className="w-8 px-4 py-3" />
               <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Actor</th>
               <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Action</th>
-              <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Reasoning</th>
+              <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide hidden md:table-cell">Reasoning</th>
               <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide text-right">Confidence</th>
               <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide text-right">Date</th>
             </tr>
@@ -214,7 +214,7 @@ export function AuditTrail() {
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 align-top max-w-[240px]">
+                  <td className="px-4 py-3 align-top max-w-[240px] hidden md:table-cell">
                     <p className="text-sm text-[#64748d] leading-relaxed line-clamp-2">{entry.reasoning || '—'}</p>
                   </td>
                   <td className="px-4 py-3 align-top text-right">

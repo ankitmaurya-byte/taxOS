@@ -298,9 +298,9 @@ export function DocumentsPage() {
       <input ref={retryExtractInputRef} type="file" className="hidden" onChange={handleRetryExtractPicked} />
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-[26px] font-light tracking-[-0.26px] text-[#061b31]">Documents</h1>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+        <h1 className="text-xl sm:text-[26px] font-light tracking-[-0.26px] text-[#061b31]">Documents</h1>
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center rounded-sm border border-[#e5edf5] bg-white">
             <button onClick={() => setViewMode('grid')} className={`flex items-center justify-center w-8 h-8 rounded-l-sm transition-colors ${viewMode === 'grid' ? 'bg-[rgba(83,58,253,0.08)] text-[#533afd]' : 'text-[#64748d] hover:text-[#273951]'}`}><Grid3X3 size={15} strokeWidth={1.8} /></button>
             <button onClick={() => setViewMode('list')} className={`flex items-center justify-center w-8 h-8 rounded-r-sm transition-colors ${viewMode === 'list' ? 'bg-[rgba(83,58,253,0.08)] text-[#533afd]' : 'text-[#64748d] hover:text-[#273951]'}`}><List size={15} strokeWidth={1.8} /></button>
@@ -335,7 +335,7 @@ export function DocumentsPage() {
       </div>
 
       {/* Drop zone */}
-      <div {...getRootProps()} className={`rounded-sm border-2 border-dashed p-8 text-center mb-6 cursor-pointer transition-colors ${isDragActive ? 'border-[#362baa] bg-[rgba(83,58,253,0.04)]' : 'border-[#e5edf5] hover:border-[#b9b9f9] bg-white'}`}>
+      <div {...getRootProps()} className={`rounded-sm border-2 border-dashed p-5 sm:p-8 text-center mb-6 cursor-pointer transition-colors ${isDragActive ? 'border-[#362baa] bg-[rgba(83,58,253,0.04)]' : 'border-[#e5edf5] hover:border-[#b9b9f9] bg-white'}`}>
         <input {...getInputProps()} />
         <Upload size={36} className="text-[#b9b9f9] mx-auto mb-3" strokeWidth={1.5} />
         <p className="text-[14px] text-[#64748d]">{isDragActive ? 'Drop files here...' : 'Drag and drop files here or click to upload'}</p>
@@ -426,16 +426,16 @@ export function DocumentsPage() {
             <p className="text-[14px] text-[#64748d]">{searchQuery ? 'No documents match your search.' : 'No documents uploaded yet.'}</p>
           </div>
         ) : viewMode === 'list' ? (
-          <div className="rounded-md border border-[#e5edf5] bg-white overflow-hidden" style={{ boxShadow: 'rgba(23,23,23,0.08) 0px 15px 35px' }}>
-            <table className="w-full text-left text-sm">
+          <div className="rounded-md border border-[#e5edf5] bg-white overflow-x-auto" style={{ boxShadow: 'rgba(23,23,23,0.08) 0px 15px 35px' }}>
+            <table className="w-full text-left text-sm min-w-[720px]">
               <thead className="bg-[#f6f9fc] border-b border-[#e5edf5]">
                 <tr>
                   <th className="w-8 px-4 py-3"><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="h-3.5 w-3.5 rounded-sm border-[#e5edf5] accent-[#533afd] cursor-pointer" /></th>
                   <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Name</th>
-                  <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Created</th>
+                  <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide hidden md:table-cell">Created</th>
                   <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Upload</th>
-                  <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Extraction</th>
-                  <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide">Confidence</th>
+                  <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide hidden sm:table-cell">Extraction</th>
+                  <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide hidden lg:table-cell">Confidence</th>
                   <th className="px-4 py-3 w-36" />
                 </tr>
               </thead>
@@ -460,7 +460,7 @@ export function DocumentsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-[12px] text-[#64748d] font-tnum">{formatDate(doc.createdAt)}</td>
+                      <td className="px-4 py-3 text-[12px] text-[#64748d] font-tnum hidden md:table-cell">{formatDate(doc.createdAt)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 flex-wrap">
                           <UploadStatusPill status={doc.uploadStatus} error={doc.uploadError} />
@@ -475,7 +475,7 @@ export function DocumentsPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 hidden sm:table-cell">
                         <div className="flex items-center gap-2 flex-wrap">
                           <ExtractionStatusPill status={doc.extractionStatus} error={doc.extractionError} />
                           {extractFailed && (
@@ -491,7 +491,7 @@ export function DocumentsPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">{doc.confidenceScore != null && doc.confidenceScore !== -1 ? <ConfidenceBadge score={doc.confidenceScore} /> : <span className="text-[12px] text-[#64748d]">—</span>}</td>
+                      <td className="px-4 py-3 hidden lg:table-cell">{doc.confidenceScore != null && doc.confidenceScore !== -1 ? <ConfidenceBadge score={doc.confidenceScore} /> : <span className="text-[12px] text-[#64748d]">—</span>}</td>
                       <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-end gap-1 relative">
                           <button
@@ -637,8 +637,8 @@ export function DocumentsPage() {
       {selectedDocument && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSelectedDocumentId(null)} />
-          <div className="relative w-full max-w-2xl rounded-md bg-white" style={{ boxShadow: 'rgba(3,3,39,0.25) 0px 14px 21px -14px, rgba(0,0,0,0.1) 0px 8px 17px -8px' }}>
-            <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-[#e5edf5]">
+          <div className="relative w-full max-w-2xl max-w-[calc(100vw-1.5rem)] rounded-md bg-white" style={{ boxShadow: 'rgba(3,3,39,0.25) 0px 14px 21px -14px, rgba(0,0,0,0.1) 0px 8px 17px -8px' }}>
+            <div className="flex items-start justify-between gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-[#e5edf5]">
               <div className="flex items-center gap-3">
                 {(() => { const c = getFileConfig(selectedDocument.mimeType); const I = c.icon; return <div className={`flex h-10 w-10 items-center justify-center rounded-sm ${c.bg}`}><I size={20} className={c.color} strokeWidth={1.8} /></div> })()}
                 <div>
@@ -657,7 +657,7 @@ export function DocumentsPage() {
               </div>
             </div>
 
-            <div className="px-6 py-5 max-h-[60vh] overflow-y-auto space-y-5">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 max-h-[60vh] overflow-y-auto space-y-5">
               <div className="flex flex-wrap gap-2">
                 <UploadStatusPill status={selectedDocument.uploadStatus} error={selectedDocument.uploadError} />
                 <ExtractionStatusPill status={selectedDocument.extractionStatus} error={selectedDocument.extractionError} />
@@ -723,7 +723,7 @@ export function DocumentsPage() {
               </div>
             </div>
 
-            <div className="flex justify-end px-6 py-4 border-t border-[#e5edf5]">
+            <div className="flex justify-end px-4 sm:px-6 py-3 sm:py-4 border-t border-[#e5edf5]">
               <button onClick={() => setSelectedDocumentId(null)} className="h-9 rounded-sm bg-[#533afd] px-4 text-[14px] font-normal text-white hover:bg-[#4434d4] transition-colors">Close</button>
             </div>
           </div>

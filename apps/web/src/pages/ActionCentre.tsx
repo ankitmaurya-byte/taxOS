@@ -41,7 +41,7 @@ export function ActionCentrePage() {
 
   return (
     <div className="relative min-h-[calc(100vh-7rem)]">
-      <h1 className="text-xl font-normal text-[#061b31] mb-5" style={{ fontWeight: 300 }}>Action Centre</h1>
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-normal text-[#061b31] mb-5" style={{ fontWeight: 300 }}>Action Centre</h1>
 
       {/* Content */}
       {items.length === 0 ? (
@@ -71,7 +71,7 @@ export function ActionCentrePage() {
           {items.map((item) => (
             <div
               key={item.id}
-              className="bg-white border border-[#e5edf5] rounded-md px-5 py-4 flex items-center justify-between hover:border-[#e5edf5] cursor-pointer transition-colors"
+              className="bg-white border border-[#e5edf5] rounded-md px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#e5edf5] cursor-pointer transition-colors"
               onClick={() =>
                 navigate(item.type === 'approval' && item.filingId ? `/filings/${item.filingId}` : item.type === 'approval' ? '/approvals' : '/filings')
               }
@@ -83,7 +83,7 @@ export function ActionCentrePage() {
                   <p className="text-xs text-[#64748d] mt-0.5 truncate">{item.description}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+              <div className="flex items-center gap-3 flex-shrink-0 sm:ml-4">
                 <span className="text-xs text-[#64748d]">{formatDate(item.date)}</span>
                 <span className="h-8 px-3 text-[13px] font-medium text-[#533afd] border border-[#533afd] rounded-lg hover:bg-[#EDE9FD] transition-colors inline-flex items-center">
                   {item.type === 'approval' ? 'Review' : 'View'}
@@ -98,7 +98,7 @@ export function ActionCentrePage() {
       {user?.role !== 'team_member' && (
         <button
           onClick={() => navigate('/chat')}
-          className="fixed bottom-8 right-8 w-14 h-14 bg-[#533afd] text-white rounded-md shadow-lg hover:bg-[#4434d4] transition-colors flex items-center justify-center"
+          className="fixed bottom-20 sm:bottom-8 right-4 sm:right-8 w-12 h-12 sm:w-14 sm:h-14 bg-[#533afd] text-white rounded-md shadow-lg hover:bg-[#4434d4] transition-colors flex items-center justify-center"
         >
           <MessageCircle size={24} />
         </button>
