@@ -330,7 +330,7 @@ export function FilingsPage() {
           <div className="hidden sm:block w-28 md:w-40 text-[11px] font-medium text-[#64748d] uppercase tracking-wider">
             Deadline
           </div>
-          <div className="w-40 sm:w-56 md:w-64 text-[11px] font-medium text-[#64748d] uppercase tracking-wider text-right">
+          <div className="w-40 lg:w-80 text-[11px] font-medium text-[#64748d] uppercase tracking-wider text-right">
             Status
           </div>
         </div>
@@ -406,13 +406,13 @@ export function FilingsPage() {
                     {filing.createdAt ? formatDate(filing.createdAt) : '—'}
                   </div>
 
-                  {/* Status + hover quick actions */}
-                  <div className="w-20 sm:w-64 md:w-96 flex items-center justify-end gap-1 sm:gap-2">
-                    <div className="hidden group-hover:flex items-center gap-0.5">
+                  {/* Status + hover quick actions — always rendered to keep row height stable */}
+                  <div className="w-40 lg:w-80 flex items-center justify-end gap-1.5 h-7">
+                    <div className="flex items-center gap-0.5 invisible group-hover:visible">
                       <button
                         title="View filing"
                         onClick={(e) => { e.stopPropagation(); navigate(`/filings/${filing.id}`) }}
-                        className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-[4px] text-[11px] font-normal text-[#64748d] hover:text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] transition-colors"
+                        className="inline-flex items-center gap-1 h-7 px-1.5 lg:px-2 rounded-[4px] text-[11px] font-normal text-[#64748d] hover:text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] transition-colors"
                       >
                         <Eye size={13} />
                         <span className="hidden lg:inline">View</span>
@@ -420,7 +420,7 @@ export function FilingsPage() {
                       <button
                         title="Upload document"
                         onClick={(e) => { e.stopPropagation(); navigate(`/documents`) }}
-                        className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-[4px] text-[11px] font-normal text-[#64748d] hover:text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] transition-colors"
+                        className="inline-flex items-center gap-1 h-7 px-1.5 lg:px-2 rounded-[4px] text-[11px] font-normal text-[#64748d] hover:text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] transition-colors"
                       >
                         <Upload size={13} />
                         <span className="hidden lg:inline">Upload</span>
@@ -428,7 +428,7 @@ export function FilingsPage() {
                       <button
                         title="Open filing room"
                         onClick={(e) => { e.stopPropagation(); navigate(`/filings/room/${filing.id}`) }}
-                        className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-[4px] text-[11px] font-normal text-[#64748d] hover:text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] transition-colors"
+                        className="inline-flex items-center gap-1 h-7 px-1.5 lg:px-2 rounded-[4px] text-[11px] font-normal text-[#64748d] hover:text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] transition-colors"
                       >
                         <FolderOpen size={13} />
                         <span className="hidden lg:inline">Room</span>
