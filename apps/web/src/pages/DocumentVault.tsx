@@ -124,11 +124,24 @@ export function DocumentVault() {
           </div>
         </div>
 
-        {/* Drop zone */}
-        <div className="rounded-sm border-2 border-dashed border-[#e5edf5] hover:border-[#b9b9f9] bg-white p-6 text-center mb-6 cursor-pointer transition-colors" onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); if (e.dataTransfer.files.length) handleUpload(e.dataTransfer.files) }}>
+        {/* Drop zone — click anywhere opens file picker */}
+        <label
+          className="block rounded-sm border-2 border-dashed border-[#e5edf5] hover:border-[#b9b9f9] bg-white p-6 text-center mb-6 cursor-pointer transition-colors"
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => { e.preventDefault(); if (e.dataTransfer.files.length) handleUpload(e.dataTransfer.files) }}
+        >
+          <input
+            type="file"
+            className="hidden"
+            multiple
+            onChange={e => {
+              if (e.target.files && e.target.files.length) handleUpload(e.target.files)
+              e.target.value = ''
+            }}
+          />
           <Upload size={28} className="text-[#b9b9f9] mx-auto mb-2" strokeWidth={1.5} />
-          <p className="text-[14px] text-[#64748d]">{uploadLoading ? 'Uploading...' : 'Drop files here or click Upload'}</p>
-        </div>
+          <p className="text-[14px] text-[#64748d]">{uploadLoading ? 'Uploading...' : 'Click to upload or drop files here'}</p>
+        </label>
 
         {/* Folders */}
         {currentFolders.length > 0 && (

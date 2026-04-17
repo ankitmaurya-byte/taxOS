@@ -42,6 +42,7 @@ import {
   cpaNotifications,
   cpaRejections,
   documents,
+  entities,
   filingReviewLocks,
   filings,
   users,
@@ -263,7 +264,11 @@ export function getFiling(req: Request, res: Response) {
     ? { name: getReviewerName(founderApproval.resolvedById), email: getReviewerEmail(founderApproval.resolvedById) }
     : null
 
-  res.json({ ...filing, conversations, documents: docs, approvals, reviewLock: reviewLockWithName, myNotification, rejectionRemarks, notifiedCpas, approvedBy })
+  const entity = filing.entityId
+    ? db.select().from(entities).where(eq(entities.id, filing.entityId)).get() ?? null
+    : null
+
+  res.json({ ...filing, entity, conversations, documents: docs, approvals, reviewLock: reviewLockWithName, myNotification, rejectionRemarks, notifiedCpas, approvedBy })
 }
 
 // ─── PUT /api/filings/:id/status ──────────────────────────────────────────────
@@ -634,6 +639,7 @@ export function pauseFiling(req: Request, res: Response) {
     .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
     .get()
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
+  if (filing.stopped) return res.status(409).json({ error: 'Filing is stopped' })
 
   db.update(filings)
     .set({ paused: true, updatedAt: new Date().toISOString() })
@@ -648,21 +654,15 @@ export function pauseFiling(req: Request, res: Response) {
     reasoning: 'Founder requested workflow pause',
   })
 
-  // If filing at cpa_review and CPA has claimed it, notify CPA and release lock
+  // Notify claimed CPA — lock stays, but CPA sees filing is paused
   if (filing.status === 'cpa_review') {
     const lock = getActiveLock(filing.id)
     if (lock) {
-      // Release lock
-      db.update(filingReviewLocks)
-        .set({ status: 'released', releasedAt: new Date().toISOString() })
-        .where(eq(filingReviewLocks.id, lock.id)).run()
-
-      // Notify CPA via SSE
       sendToUsers([lock.cpaUserId], {
         type: 'filing_status_changed',
         data: {
           filingId: filing.id,
-          message: `Workflow paused for filing ${filing.formType}. Your review has been released.`,
+          message: `Workflow paused for filing ${filing.formType}. Review is locked until resumed.`,
           action: 'workflow_paused',
         },
       })
@@ -672,6 +672,60 @@ export function pauseFiling(req: Request, res: Response) {
   res.json({ message: 'Workflow paused' })
 }
 
+// ─── POST /api/filings/:id/stop ──────────────────────────────────────────────
+// Permanent stop. Releases any active CPA lock. Voids any pending approval
+// queue entries for this filing. Not reversible via /resume.
+
+export function stopFiling(req: Request, res: Response) {
+  const filing = db.select().from(filings)
+    .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
+    .get()
+  if (!filing) return res.status(404).json({ error: 'Filing not found' })
+
+  db.update(filings)
+    .set({ stopped: true, paused: false, updatedAt: new Date().toISOString() })
+    .where(eq(filings.id, filing.id)).run()
+
+  // Release any active CPA review lock
+  const lock = getActiveLock(filing.id)
+  if (lock) {
+    db.update(filingReviewLocks)
+      .set({ status: 'released', releasedAt: new Date().toISOString() })
+      .where(eq(filingReviewLocks.id, lock.id)).run()
+
+    sendToUsers([lock.cpaUserId], {
+      type: 'filing_status_changed',
+      data: {
+        filingId: filing.id,
+        message: `Workflow stopped for filing ${filing.formType}. Your review has been released.`,
+        action: 'workflow_stopped',
+      },
+    })
+  }
+
+  // Void pending approval queue entries for this filing — mark rejected with reason
+  db.update(approvalQueue)
+    .set({
+      status: 'rejected',
+      resolvedAt: new Date().toISOString(),
+      resolvedById: req.user!.userId,
+      rejectionReason: 'Workflow stopped by founder',
+    })
+    .where(and(eq(approvalQueue.filingId, filing.id), eq(approvalQueue.status, 'pending')))
+    .run()
+
+  auditLogger.log({
+    orgId: req.user!.orgId,
+    filingId: filing.id,
+    actorType: 'founder',
+    actorId: req.user!.userId,
+    action: 'workflow_stopped',
+    reasoning: 'Founder stopped workflow — lock released and approvals voided',
+  })
+
+  res.json({ message: 'Workflow stopped' })
+}
+
 // ─── POST /api/filings/:id/resume ────────────────────────────────────────────
 
 export function resumeFiling(req: Request, res: Response) {
@@ -679,6 +733,7 @@ export function resumeFiling(req: Request, res: Response) {
     .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
     .get()
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
+  if (filing.stopped) return res.status(409).json({ error: 'Stopped workflows cannot be resumed' })
 
   db.update(filings)
     .set({ paused: false, updatedAt: new Date().toISOString() })

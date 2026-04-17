@@ -131,6 +131,9 @@ function ensureFilingColumns() {
   if (!existingColumns.has('paused')) {
     sqlite.prepare("ALTER TABLE filings ADD COLUMN paused INTEGER NOT NULL DEFAULT 0").run()
   }
+  if (!existingColumns.has('stopped')) {
+    sqlite.prepare("ALTER TABLE filings ADD COLUMN stopped INTEGER NOT NULL DEFAULT 0").run()
+  }
 }
 
 function ensureDocumentVaultColumns() {

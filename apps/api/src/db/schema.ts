@@ -187,6 +187,7 @@ export const filings = sqliteTable('filings', {
   aiConfidenceScore: real('ai_confidence_score'),
   cpaReviewSkipped: integer('cpa_review_skipped', { mode: 'boolean' }).default(false).notNull(),
   paused: integer('paused', { mode: 'boolean' }).default(false).notNull(),
+  stopped: integer('stopped', { mode: 'boolean' }).default(false).notNull(),
   cpaAssignedId: text('cpa_assigned_id').references(() => users.id),
   filingData: text('filing_data', { mode: 'json' }).$type<Record<string, unknown>>().default({}),
   aiSummary: text('ai_summary'),

@@ -22,6 +22,7 @@ import {
   releaseFilingReview,
   pauseFiling,
   resumeFiling,
+  stopFiling,
   escalateToCpa,
   escalateToFounder,
 } from '../controllers/filings.controller'
@@ -43,6 +44,7 @@ router.post('/:id/approve', requireRole('founder'), requirePermission('canApprov
 router.post('/:id/reject', requireRole('founder'), requirePermission('canEditFilings'), rejectFiling)
 router.post('/:id/pause', requireRole('founder', 'team_member'), requirePermission('canEditFilings'), pauseFiling)
 router.post('/:id/resume', requireRole('founder', 'team_member'), requirePermission('canEditFilings'), resumeFiling)
+router.post('/:id/stop', requireRole('founder'), requirePermission('canEditFilings'), stopFiling)
 router.post('/:id/escalate-cpa', requireRole('founder'), requirePermission('canEditFilings'), escalateToCpa)
 router.post('/:id/escalate-founder', requireRole('founder', 'team_member', 'cpa'), requirePermission('canEditFilings'), escalateToFounder)
 

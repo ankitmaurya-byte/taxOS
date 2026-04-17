@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
-import { promptDialog } from '@/stores/dialogs'
+import { promptDialog, confirmDialog } from '@/stores/dialogs'
 import { MessageContent } from '@/components/MessageContent'
 
 // Strip [COLLECTED: key=value] markers from displayed message text
@@ -79,6 +79,7 @@ export function FilingDetailPage() {
   const updateFilingStatus = useAuthStore(s => s.updateFilingStatus)
   const pauseFiling = useAuthStore(s => s.pauseFiling)
   const resumeFiling = useAuthStore(s => s.resumeFiling)
+  const stopFiling = useAuthStore(s => s.stopFiling)
   const escalateToCpa = useAuthStore(s => s.escalateToCpa)
   const runPrefill = useAuthStore(s => s.runPrefill)
   const runAuditRisk = useAuthStore(s => s.runAuditRisk)
@@ -129,8 +130,9 @@ export function FilingDetailPage() {
     }
   }
 
-  // Resolve entity — prefer from filing detail response, fallback to entities list
-  const entity = entities.find((e: any) => e.id === filing?.entityId)
+  // Resolve entity — prefer embedded entity from filing response, fallback to entities list
+  const embeddedEntity = (filing as any)?.entity
+  const entity = embeddedEntity ?? entities.find((e: any) => e.id === filing?.entityId)
   const entityName = entity?.legalName
 
   // Status-based visibility flags
@@ -139,34 +141,38 @@ export function FilingDetailPage() {
   const isArchived = status === 'archived'
   const isSubmitted = status === 'submitted'
   const isPaused = filing?.paused === true || filing?.paused === 1
+  const isStopped = (filing as any)?.stopped === true || (filing as any)?.stopped === 1
+  const isFrozen = isPaused || isStopped
 
   // Agent action visibility — per status AND per role
   // Intake: all agent actions available
-  const canStartIntake = !isPaused && (status === 'intake' || status === 'ai_prep') && !intakeConversation && (isFounder || isCpa)
-  const canRunPrefill = !isPaused && status === 'ai_prep' && (isFounder || isCpa)
+  const canStartIntake = !isFrozen && (status === 'intake' || status === 'ai_prep') && !intakeConversation && (isFounder || isCpa)
+  const canRunPrefill = !isFrozen && status === 'ai_prep' && (isFounder || isCpa)
   // Founder sees audit risk in ai_prep / founder_approval; CPA only in cpa_review
-  const canRunAuditRisk = !isPaused && (
+  const canRunAuditRisk = !isFrozen && (
     (isFounder && (status === 'ai_prep' || status === 'founder_approval'))
     || (isCpa && status === 'cpa_review')
   )
-  // Pause: only visible during cpa_review or founder_approval, for founder + team_member, and only when not already paused
-  const canPause = !isPaused && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
-  const canResume = isPaused && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
-  const canStopWorkflow = !isPaused && (status === 'ai_prep' || status === 'cpa_review') && isFounder
-  const canEscalate = !isPaused && (status === 'intake' || status === 'ai_prep') && isFounder
+  // Pause: founder/team_member; only in cpa_review/founder_approval; only when not paused/stopped
+  const canPause = !isFrozen && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
+  // Resume: only when paused (never when stopped)
+  const canResume = isPaused && !isStopped && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
+  // Stop: founder, any non-terminal status, only when not already stopped
+  const canStopWorkflow = !isStopped && !isTerminal && isFounder
+  const canEscalate = !isFrozen && (status === 'intake' || status === 'ai_prep') && isFounder
   // Post-prefill high-confidence shortcut: team_member/founder can skip CPA review and push filing to founder approval.
   const aiConfidenceScore = (filing?.aiConfidenceScore as number | null | undefined) ?? null
   const cpaReviewSkipped = filing?.cpaReviewSkipped === true || filing?.cpaReviewSkipped === 1
-  const canEscalateToFounder = !isPaused
+  const canEscalateToFounder = !isFrozen
     && status === 'cpa_review'
     && cpaReviewSkipped
     && typeof aiConfidenceScore === 'number' && aiConfidenceScore >= 0.8
     && (isFounder || isTeamMember)
   // Archive: founder can archive submitted filings
-  const canArchive = !isPaused && status === 'submitted' && isFounder
+  const canArchive = !isFrozen && status === 'submitted' && isFounder
   // Advance: only intake → ai_prep (founder/CPA)
   const canAdvanceStatus = (s: string | undefined) => {
-    if (isPaused) return false
+    if (isFrozen) return false
     if (s === 'intake') return isFounder || isCpa
     return false
   }
@@ -180,9 +186,10 @@ export function FilingDetailPage() {
   // Review lock info
   const reviewLock = filing?.reviewLock as { cpaUserId: string; cpaName: string; cpaEmail: string; status: string } | null
   // CPA approve only if CPA has claimed this filing
-  const canCpaApprove = !isPaused && status === 'cpa_review' && isCpa && reviewLock?.cpaUserId === user?.id
-  // CPA can claim if cpa_review and not yet claimed
-  const canCpaClaim = !isPaused && status === 'cpa_review' && isCpa && !reviewLock
+  // CPA approve: disabled while paused (lock stays) and always when stopped
+  const canCpaApprove = !isFrozen && status === 'cpa_review' && isCpa && reviewLock?.cpaUserId === user?.id
+  // CPA can claim if cpa_review and not yet claimed — disabled while paused/stopped
+  const canCpaClaim = !isFrozen && status === 'cpa_review' && isCpa && !reviewLock
   // Rejection remarks
   const rejectionRemarks = (filing?.rejectionRemarks || []) as { source: string; reason: string; date: string }[]
   // CPAs notified for claim
@@ -313,8 +320,15 @@ export function FilingDetailPage() {
 
   const handleStopWorkflow = async () => {
     if (!id) return
+    const ok = await confirmDialog({
+      title: 'Stop workflow?',
+      message: 'Stopping is permanent — it releases any CPA lock, voids pending approvals, and cannot be resumed.',
+      confirmLabel: 'Stop workflow',
+      tone: 'danger',
+    })
+    if (!ok) return
     setStopWorkflowLoading(true)
-    try { await pauseFiling(id) } finally { setStopWorkflowLoading(false) }
+    try { await stopFiling(id) } finally { setStopWorkflowLoading(false) }
   }
 
   const handleArchive = async () => {
@@ -505,10 +519,10 @@ const renderValue = (value: any): React.ReactNode => {
             <button
               type="button"
               onClick={() => setShowEditData(v => !v)}
-              disabled={isPaused}
+              disabled={isFrozen}
               className="p-1.5 text-[#64748d] hover:bg-[#f6f9fc] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Edit filing data"
-              title={isPaused ? 'Paused' : 'Edit filing data'}
+              title={isStopped ? 'Stopped' : isPaused ? 'Paused' : 'Edit filing data'}
             >
               <MoreHorizontal size={16} />
             </button>
@@ -672,7 +686,7 @@ const renderValue = (value: any): React.ReactNode => {
           )}
 
           {/* Founder approval actions — approve, reject, audit risk, edit */}
-          {status === 'founder_approval' && isFounder && !isPaused && (
+          {status === 'founder_approval' && isFounder && !isFrozen && (
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-3">
               <button
                 onClick={handleApprove}
@@ -800,27 +814,44 @@ const renderValue = (value: any): React.ReactNode => {
             </div>
           )}
 
-          {/* CPA Review — founder: only Stop Workflow */}
-          {status === 'cpa_review' && canStopWorkflow && (
+          {/* CPA Review — Pause + Stop buttons (founder/team_member) */}
+          {status === 'cpa_review' && (canPause || canStopWorkflow) && (
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
-              <button
-                onClick={handleStopWorkflow}
-                disabled={stopWorkflowLoading}
-                className="h-10 rounded-lg border border-[#ffd7ef] px-4 text-sm font-medium text-[#ea2261] hover:bg-[rgba(234,34,97,0.08)] disabled:opacity-50"
-              >
-                {stopWorkflowLoading ? 'Stopping...' : 'Stop Workflow'}
-              </button>
-              <p className="flex items-center text-xs text-[#64748d]">Waiting for CPA to review. Stop workflow to release CPA lock.</p>
+              {canPause && (
+                <button
+                  onClick={handlePause}
+                  disabled={pauseLoading}
+                  className="h-10 rounded-lg border border-[#e5edf5] px-4 text-sm font-medium text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-50"
+                >
+                  {pauseLoading ? 'Pausing...' : 'Pause Workflow'}
+                </button>
+              )}
+              {canStopWorkflow && (
+                <button
+                  onClick={handleStopWorkflow}
+                  disabled={stopWorkflowLoading}
+                  className="h-10 rounded-lg border border-[#ffd7ef] px-4 text-sm font-medium text-[#ea2261] hover:bg-[rgba(234,34,97,0.08)] disabled:opacity-50"
+                >
+                  {stopWorkflowLoading ? 'Stopping...' : 'Stop Workflow'}
+                </button>
+              )}
+              <p className="flex items-center text-xs text-[#64748d]">
+                Pause holds the CPA lock; Stop releases it and voids approvals.
+              </p>
             </div>
           )}
 
-          {/* Paused banner + Resume */}
-          {isPaused && (
+          {/* Paused/Stopped banner */}
+          {(isPaused || isStopped) && (
             <div className="mb-8 w-full max-w-4xl rounded-md border border-[#ffd7ef] bg-[rgba(234,34,97,0.06)] p-4">
               <div className="mb-3">
-                <p className="text-sm font-medium text-[#ea2261]">Workflow paused</p>
+                <p className="text-sm font-medium text-[#ea2261]">
+                  {isStopped ? 'Workflow stopped' : 'Workflow paused'}
+                </p>
                 <p className="mt-0.5 text-xs text-[#273951]">
-                  All actions on this filing are disabled until the workflow is resumed.
+                  {isStopped
+                    ? 'This workflow has been stopped by the founder. CPA lock and pending approvals were cleared. Stopping is permanent and cannot be resumed.'
+                    : 'Actions are disabled until the workflow is resumed. CPA lock is preserved while paused.'}
                 </p>
               </div>
               {canResume && (
@@ -840,7 +871,7 @@ const renderValue = (value: any): React.ReactNode => {
           )}
 
           {/* Intake & AI Prep workflow buttons */}
-          {!isTerminal && !isPaused && (status === 'intake' || status === 'ai_prep') && (
+          {!isTerminal && !isFrozen && (status === 'intake' || status === 'ai_prep') && (
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
               {canStartIntake && (
                 <button
@@ -1099,7 +1130,7 @@ const renderValue = (value: any): React.ReactNode => {
               <h3 className="text-sm font-normal text-[#061b31]" style={{ fontWeight: 400 }}>
                 Filing Data {Object.keys(filing.filingData ?? {}).length > 0 && `(${Object.keys(filing.filingData).length} fields)`}
               </h3>
-              {(status === 'intake' || status === 'ai_prep') && !isPaused && (
+              {(status === 'intake' || status === 'ai_prep') && !isFrozen && (
                 <button
                   onClick={() => setShowEditData(true)}
                   className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#e5edf5] text-xs font-medium text-[#273951] hover:bg-[#f6f9fc] transition-colors"

@@ -301,6 +301,9 @@ const pauseFiling = (id: string) =>
 const resumeFiling = (id: string) =>
   request<{ message: string }>(`/filings/${id}/resume`, { method: 'POST' }, { successMessage: 'AI workflow resumed.' })
 
+const stopFiling = (id: string) =>
+  request<{ message: string }>(`/filings/${id}/stop`, { method: 'POST' }, { successMessage: 'Workflow stopped.' })
+
 const escalateToCpa = (id: string) =>
   request<{ message: string; notifiedCpaCount: number }>(`/filings/${id}/escalate-cpa`, { method: 'POST' }, { successMessage: 'Filing escalated to CPA.' })
 
@@ -649,6 +652,7 @@ export const api = {
   rejectFiling,
   pauseFiling,
   resumeFiling,
+  stopFiling,
   escalateToCpa,
   escalateToFounder,
 
@@ -787,6 +791,7 @@ export const api = {
     cpaReject: cpaRejectFiling,
     pause: pauseFiling,
     resume: resumeFiling,
+    stop: stopFiling,
     escalateToCpa,
     escalateToFounder,
   },

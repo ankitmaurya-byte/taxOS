@@ -147,6 +147,7 @@ export function FilingRoom() {
   const runAuditRisk = useAuthStore(s => s.runAuditRisk)
   const pauseFiling = useAuthStore(s => s.pauseFiling)
   const resumeFiling = useAuthStore(s => s.resumeFiling)
+  const stopFiling = useAuthStore(s => s.stopFiling)
   const startIntake = useAuthStore(s => s.startIntake)
   const runPrefill = useAuthStore(s => s.runPrefill)
   const escalateToCpa = useAuthStore(s => s.escalateToCpa)
@@ -499,7 +500,8 @@ export function FilingRoom() {
                     const role = user?.role
                     const status = filing.status as string
                     const isPaused = (filing as any).paused === true || (filing as any).paused === 1
-                    const canEditData = !isPaused
+                    const isStopped = (filing as any).stopped === true || (filing as any).stopped === 1
+                    const canEditData = !isPaused && !isStopped
                       && (status === 'intake' || status === 'ai_prep')
                       && (role === 'founder' || role === 'cpa' || role === 'team_member')
                     if (!canEditData) return null
@@ -549,25 +551,27 @@ export function FilingRoom() {
             const status = filing.status as string
             const isTerminal = status === 'submitted' || status === 'archived'
             const isPaused = (filing as any).paused === true || (filing as any).paused === 1
+            const isStopped = (filing as any).stopped === true || (filing as any).stopped === 1
+            const isFrozen = isPaused || isStopped
             const reviewLock = (filing as any).reviewLock as { cpaUserId: string } | null | undefined
             const aiConfidenceScore = (filing as any).aiConfidenceScore as number | null | undefined
             const cpaReviewSkipped = (filing as any).cpaReviewSkipped === true || (filing as any).cpaReviewSkipped === 1
             const intakeConversation = (filing as any).conversations?.find((c: any) => c.agentType === 'intake')
 
-            const canStartIntake = !isPaused && (status === 'intake' || status === 'ai_prep') && !intakeConversation && (isFounder || isCpa)
-            const canRunPrefill = !isPaused && status === 'ai_prep' && (isFounder || isCpa)
-            const canRunAuditRisk = !isPaused && (
+            const canStartIntake = !isFrozen && (status === 'intake' || status === 'ai_prep') && !intakeConversation && (isFounder || isCpa)
+            const canRunPrefill = !isFrozen && status === 'ai_prep' && (isFounder || isCpa)
+            const canRunAuditRisk = !isFrozen && (
               (isFounder && (status === 'ai_prep' || status === 'founder_approval'))
               || (isCpa && status === 'cpa_review')
             )
-            const canAdvanceIntake = !isPaused && status === 'intake' && (isFounder || isCpa)
-            const canEscalate = !isPaused && (status === 'intake' || status === 'ai_prep') && isFounder
-            const canCpaClaim = !isPaused && status === 'cpa_review' && isCpa && !reviewLock
-            const canCpaApprove = !isPaused && status === 'cpa_review' && isCpa && reviewLock?.cpaUserId === user?.id
-            const canStopWorkflow = !isPaused && (status === 'ai_prep' || status === 'cpa_review') && isFounder
-            const canPause = !isPaused && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
-            const canResume = isPaused && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
-            const canEscalateToFounder = !isPaused
+            const canAdvanceIntake = !isFrozen && status === 'intake' && (isFounder || isCpa)
+            const canEscalate = !isFrozen && (status === 'intake' || status === 'ai_prep') && isFounder
+            const canCpaClaim = !isFrozen && status === 'cpa_review' && isCpa && !reviewLock
+            const canCpaApprove = !isFrozen && status === 'cpa_review' && isCpa && reviewLock?.cpaUserId === user?.id
+            const canStopWorkflow = !isStopped && !isTerminal && isFounder
+            const canPause = !isFrozen && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
+            const canResume = isPaused && !isStopped && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
+            const canEscalateToFounder = !isFrozen
               && status === 'cpa_review'
               && cpaReviewSkipped
               && typeof aiConfidenceScore === 'number' && aiConfidenceScore >= 0.8
@@ -575,7 +579,7 @@ export function FilingRoom() {
 
             const hasAny = canStartIntake || canRunPrefill || canRunAuditRisk || canAdvanceIntake
               || canEscalate || canCpaClaim || canCpaApprove || canStopWorkflow
-              || canPause || canResume || canEscalateToFounder || isPaused
+              || canPause || canResume || canEscalateToFounder || isPaused || isStopped
             if (isTerminal || !hasAny) return null
 
             const invalidate = () => queryClient.invalidateQueries({ queryKey: ['filing', id] })
@@ -585,10 +589,16 @@ export function FilingRoom() {
                 <CardContent className="p-4 space-y-3">
                   <p className="text-sm font-medium text-[#061b31]">Actions</p>
 
-                  {isPaused && (
+                  {(isPaused || isStopped) && (
                     <div className="rounded-md border border-[#ffd7ef] bg-[rgba(234,34,97,0.06)] p-3">
-                      <p className="text-sm font-medium text-[#ea2261]">Workflow paused</p>
-                      <p className="mt-0.5 text-xs text-[#273951]">All actions disabled until resumed.</p>
+                      <p className="text-sm font-medium text-[#ea2261]">
+                        {isStopped ? 'Workflow stopped' : 'Workflow paused'}
+                      </p>
+                      <p className="mt-0.5 text-xs text-[#273951]">
+                        {isStopped
+                          ? 'Stopped permanently — CPA lock released, pending approvals voided. Cannot be resumed.'
+                          : 'Actions disabled until resumed. CPA lock is preserved while paused.'}
+                      </p>
                       {canResume && (
                         <Button
                           className="mt-2"
@@ -758,13 +768,13 @@ export function FilingRoom() {
                           if (!id) return
                           const ok = await confirmDialog({
                             title: 'Stop workflow?',
-                            message: 'This releases the CPA review lock and pauses the filing.',
+                            message: 'Stopping is permanent. CPA lock is released, pending approvals are voided, and the workflow cannot be resumed.',
                             confirmLabel: 'Stop workflow',
                             tone: 'danger',
                           })
                           if (!ok) return
                           setStopWorkflowLoading(true)
-                          try { await pauseFiling(id); invalidate() } finally { setStopWorkflowLoading(false) }
+                          try { await stopFiling(id); invalidate() } finally { setStopWorkflowLoading(false) }
                         }}
                       >
                         {stopWorkflowLoading ? 'Stopping...' : 'Stop Workflow'}
@@ -791,7 +801,7 @@ export function FilingRoom() {
           })()}
 
           {/* Approval Card */}
-          {filing.status === 'founder_approval' && (
+          {filing.status === 'founder_approval' && !((filing as any).paused || (filing as any).stopped) && (
             <Card className="mt-4 border-[rgba(155,104,41,0.3)] bg-[rgba(155,104,41,0.08)]">
               <CardContent className="p-4 space-y-3">
                 <p className="font-medium text-[#9b6829]">Founder Approval Required</p>

@@ -388,6 +388,7 @@ interface AuthState {
   runAuditRisk: (id: string) => Promise<any>
   pauseFiling: (id: string) => Promise<void>
   resumeFiling: (id: string) => Promise<void>
+  stopFiling: (id: string) => Promise<void>
   escalateToCpa: (id: string) => Promise<void>
   extractDocument: (documentId: string) => Promise<void>
   createEntity: (data: { legalName: string; entityType: string; stateOfIncorporation: string; ein?: string; fiscalYearEnd?: string; foreignSubsidiaries?: string[]; country?: string }) => Promise<void>
@@ -752,6 +753,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   resumeFiling: async (id) => {
     await api.filings.resume(id)
+    await get().fetchFilings()
+    await get().fetchFiling(id)
+  },
+
+  stopFiling: async (id) => {
+    await api.filings.stop(id)
     await get().fetchFilings()
     await get().fetchFiling(id)
   },
