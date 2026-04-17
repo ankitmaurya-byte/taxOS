@@ -1167,6 +1167,111 @@ const renderValue = (value: any): React.ReactNode => {
   )
 }
 
+/* ─── Prefill Value Cell ─── */
+// Renders either a raw primitive or a structured prefill object
+// { value, confidence, source, needsCpaReview, ... } into a clean display.
+function PrefillValueCell({ value }: { value: unknown }) {
+  if (value == null || value === '') {
+    return <span className="text-[#64748d]">—</span>
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <span className="text-[#64748d] italic">Empty list</span>
+    return (
+      <div className="space-y-1.5">
+        {value.map((item, i) => (
+          <div key={i} className="rounded-md border border-[#f6f9fc] bg-[#FAFAFA] px-2.5 py-1.5">
+            <PrefillValueCell value={item} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>
+    const hasPrefillShape = 'value' in obj
+    if (hasPrefillShape) {
+      const mainValue = obj.value
+      const confidence = typeof obj.confidence === 'number' ? obj.confidence : null
+      const source = typeof obj.source === 'string' ? obj.source : null
+      const needsReview = obj.needsCpaReview === true
+      const extraEntries = Object.entries(obj).filter(
+        ([k]) => !['value', 'confidence', 'source', 'needsCpaReview'].includes(k),
+      )
+
+      return (
+        <div className="space-y-1.5">
+          <div className="flex items-center flex-wrap gap-2">
+            <span className="font-medium text-[#061b31] break-words">
+              {mainValue == null || mainValue === ''
+                ? '—'
+                : typeof mainValue === 'object'
+                  ? JSON.stringify(mainValue)
+                  : String(mainValue)}
+            </span>
+            {confidence != null && (
+              <span
+                className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${
+                  confidence >= 0.8
+                    ? 'bg-[rgba(21,190,83,0.12)] text-[#108c3d]'
+                    : confidence >= 0.5
+                      ? 'bg-[rgba(155,104,41,0.12)] text-[#9b6829]'
+                      : 'bg-[rgba(234,34,97,0.08)] text-[#ea2261]'
+                }`}
+              >
+                {Math.round(confidence * 100)}%
+              </span>
+            )}
+            {needsReview && (
+              <span className="rounded-md bg-[rgba(234,34,97,0.08)] px-1.5 py-0.5 text-[11px] font-medium text-[#ea2261]">
+                CPA review
+              </span>
+            )}
+          </div>
+          {source && (
+            <p className="text-[11px] text-[#64748d]">
+              Source: <span className="text-[#273951]">{source}</span>
+            </p>
+          )}
+          {extraEntries.length > 0 && (
+            <div className="rounded-md border border-[#f6f9fc] bg-[#FAFAFA] px-2.5 py-1.5 space-y-1">
+              {extraEntries.map(([k, v]) => (
+                <div key={k} className="flex gap-2 text-[11px]">
+                  <span className="text-[#64748d] min-w-[80px]">{k}:</span>
+                  <span className="text-[#273951] break-words">
+                    {v == null ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    const entries = Object.entries(obj)
+    if (entries.length === 0) return <span className="text-[#64748d] italic">Empty object</span>
+    return (
+      <div className="rounded-md border border-[#f6f9fc] bg-[#FAFAFA] divide-y divide-[#f6f9fc]">
+        {entries.map(([k, v]) => (
+          <div key={k} className="flex gap-3 px-2.5 py-1.5">
+            <span className="min-w-[110px] text-xs font-medium text-[#64748d]">
+              {k.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())}
+            </span>
+            <div className="flex-1 text-xs text-[#273951]">
+              <PrefillValueCell value={v} />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (typeof value === 'boolean') return <span>{value ? 'Yes' : 'No'}</span>
+  return <span className="break-words">{String(value)}</span>
+}
+
 /* ─── Form Preview Modal ─── */
 // Used in: FilingDetailPage — opened by "Preview form" button
 function FormPreviewModal({
@@ -1261,12 +1366,12 @@ function FormPreviewModal({
                   </thead>
                   <tbody>
                     {dataEntries.map(([key, value]) => (
-                      <tr key={key} className="border-t border-[#f6f9fc]">
-                        <td className="px-4 py-2 text-sm text-[#64748d] font-medium">
+                      <tr key={key} className="border-t border-[#f6f9fc] align-top">
+                        <td className="px-4 py-3 text-sm text-[#64748d] font-medium whitespace-nowrap">
                           {key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())}
                         </td>
-                        <td className="px-4 py-2 text-sm text-[#061b31]">
-                          {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value ?? '—')}
+                        <td className="px-4 py-3 text-sm text-[#061b31]">
+                          <PrefillValueCell value={value} />
                         </td>
                       </tr>
                     ))}

@@ -5,6 +5,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 import { confirmDialog, promptDialog } from '@/stores/dialogs'
+import { FilingDataEditor } from '@/components/FilingDataEditor'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ConfidenceBadge } from '@/components/agents/ConfidenceBadge'
 import { formatDate } from '@/lib/utils'
-import { ChevronRight, Search, Filter, ChevronDown, X } from 'lucide-react'
+import { ChevronRight, Search, Filter, ChevronDown, X, Pencil } from 'lucide-react'
 import type { FilingStatus } from 'shared'
 
 const STAGES: { status: FilingStatus; label: string }[] = [
@@ -162,6 +163,7 @@ export function FilingRoom() {
   const [prefillLoading, setPrefillLoading] = useState(false)
   const [escalateCpaLoading, setEscalateCpaLoading] = useState(false)
   const [advanceLoading, setAdvanceLoading] = useState(false)
+  const [showEditData, setShowEditData] = useState(false)
 
   // List view filters
   const [search, setSearch] = useState('')
@@ -491,7 +493,27 @@ export function FilingRoom() {
                 </div>
               )}
               <div className='overflow-y-scroll max-h-96'>
-                <p className="text-sm font-medium text-[#061b31] mb-3">Filing Data</p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium text-[#061b31]">Filing Data</p>
+                  {(() => {
+                    const role = user?.role
+                    const status = filing.status as string
+                    const isPaused = (filing as any).paused === true || (filing as any).paused === 1
+                    const canEditData = !isPaused
+                      && (status === 'intake' || status === 'ai_prep')
+                      && (role === 'founder' || role === 'cpa' || role === 'team_member')
+                    if (!canEditData) return null
+                    return (
+                      <button
+                        onClick={() => setShowEditData(true)}
+                        className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#e5edf5] text-xs font-medium text-[#273951] hover:bg-[#f6f9fc] transition-colors"
+                      >
+                        <Pencil size={13} />
+                        Edit / Add Fields
+                      </button>
+                    )
+                  })()}
+                </div>
                 {filing.filingData && typeof filing.filingData === 'object' && Object.keys(filing.filingData as Record<string, any>).length > 0 ? (
                   <div className="rounded-md border border-[#e5edf5] overflow-hidden">
                     <FilingDataFields data={filing.filingData as Record<string, any>} />
@@ -584,6 +606,61 @@ export function FilingRoom() {
                   )}
 
                   <div className="flex flex-wrap gap-2">
+                    {canStartIntake && (
+                      <Button
+                        disabled={startIntakeLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          setStartIntakeLoading(true)
+                          try { await startIntake(id); invalidate() } finally { setStartIntakeLoading(false) }
+                        }}
+                      >
+                        {startIntakeLoading ? 'Starting Intake...' : 'Start Intake Agent'}
+                      </Button>
+                    )}
+
+                    {canRunPrefill && (
+                      <Button
+                        variant="outline"
+                        disabled={prefillLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          setPrefillLoading(true)
+                          try { await runPrefill(id); invalidate() } finally { setPrefillLoading(false) }
+                        }}
+                      >
+                        {prefillLoading ? 'Running Prefill...' : 'Run Prefill Agent'}
+                      </Button>
+                    )}
+
+                    {canAdvanceIntake && (
+                      <Button
+                        variant="outline"
+                        disabled={advanceLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          setAdvanceLoading(true)
+                          try { await updateFilingStatus(id, 'ai_prep'); invalidate() } finally { setAdvanceLoading(false) }
+                        }}
+                      >
+                        {advanceLoading ? 'Updating...' : 'Move to AI Prep'}
+                      </Button>
+                    )}
+
+                    {canEscalate && (
+                      <Button
+                        variant="outline"
+                        disabled={escalateCpaLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          setEscalateCpaLoading(true)
+                          try { await escalateToCpa(id); invalidate() } finally { setEscalateCpaLoading(false) }
+                        }}
+                      >
+                        {escalateCpaLoading ? 'Escalating...' : 'Escalate to CPA'}
+                      </Button>
+                    )}
+
                     {canCpaClaim && (
                       <Button
                         disabled={claimLoading}
@@ -742,6 +819,18 @@ export function FilingRoom() {
           )}
         </div>
       </div>
+
+      {showEditData && id && filing && (
+        <FilingDataEditor
+          filingId={id}
+          initialData={(filing.filingData as Record<string, unknown>) ?? {}}
+          onClose={() => setShowEditData(false)}
+          onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: ['filing', id] })
+            setShowEditData(false)
+          }}
+        />
+      )}
     </div>
   )
 }
