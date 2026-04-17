@@ -23,6 +23,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
+import { notify } from '@/stores/notifications'
 import type { LucideIcon } from 'lucide-react'
 import { ChatRoom } from '@/components/ChatRoom'
 
@@ -428,26 +429,37 @@ export function ChatPage() {
     setIsStreaming(true)
     try {
       let fullResponse = ''
-      await api.streamTaxQa(`${config.prefix}\n\nUser question: ${userMsg}`, (chunk: string) => {
-        fullResponse += chunk
+      const writeContent = (content: string) => {
         setConversations((prev) =>
           prev.map((c) => {
             if (c.id !== activeId) return c
             const msgs = [...c.messages]
             const lastIdx = msgs.length - 1
             if (msgs[lastIdx]?.role === 'assistant') {
-              msgs[lastIdx] = { ...msgs[lastIdx], content: fullResponse }
+              msgs[lastIdx] = { ...msgs[lastIdx], content }
             } else {
               msgs.push({
                 role: 'assistant',
-                content: fullResponse,
+                content,
                 timestamp: new Date().toLocaleTimeString(),
               })
             }
             return { ...c, messages: msgs }
           }),
         )
-      })
+      }
+      await api.streamTaxQa(
+        `${config.prefix}\n\nUser question: ${userMsg}`,
+        (chunk: string) => {
+          fullResponse += chunk
+          writeContent(fullResponse)
+        },
+        (metadata) => {
+          // Server strips METADATA from the stream; re-attach so MessageContent can render MetaFooter.
+          fullResponse = `${fullResponse.trimEnd()}\nMETADATA:\n${JSON.stringify(metadata)}`
+          writeContent(fullResponse)
+        },
+      )
     } catch {
       setConversations((prev) =>
         prev.map((c) =>

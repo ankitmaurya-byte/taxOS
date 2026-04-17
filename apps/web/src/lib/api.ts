@@ -473,41 +473,58 @@ const startIntake = (filingId: string) =>
     data: { filingId },
   }, { notifySuccess: false })
 
-const streamIntakeMessage = async (filingId: string, message: string, onChunk: (text: string) => void) => {
+interface StreamHandlers {
+  onChunk: (text: string) => void
+  onMetadata?: (metadata: Record<string, unknown>) => void
+  onError?: (message: string) => void
+}
+
+async function consumeSseStream(url: string, body: unknown, handlers: StreamHandlers) {
   const token = localStorage.getItem('taxos_token')
-  const response = await fetch(`${API_URL}/agents/intake/message`, {
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ filingId, message }),
+    body: JSON.stringify(body),
   })
-  if (!response.ok) {
-    throw new Error('Agent request failed')
-  }
+  if (!response.ok) throw new Error('Agent request failed')
   const reader = response.body?.getReader()
   if (!reader) return
   const decoder = new TextDecoder()
+  let buffer = ''
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
-    const text = decoder.decode(value)
-    const lines = text.split('\n').filter(l => l.startsWith('data: '))
-    for (const line of lines) {
+    buffer += decoder.decode(value, { stream: true })
+    const events = buffer.split('\n\n')
+    buffer = events.pop() ?? ''
+    for (const ev of events) {
+      const line = ev.split('\n').find(l => l.startsWith('data: '))
+      if (!line) continue
       const data = line.slice(6)
       if (data === '[DONE]') return
       try {
         const parsed = JSON.parse(data)
         if (parsed.error) {
-          onChunk(`\n\n_Error: ${parsed.error}_`)
+          if (handlers.onError) handlers.onError(parsed.error)
+          else handlers.onChunk(`\n\n_Error: ${parsed.error}_`)
           return
         }
-        if (parsed.text) onChunk(parsed.text)
-      } catch { /* ignore */ }
+        if (parsed.metadata && handlers.onMetadata) handlers.onMetadata(parsed.metadata)
+        if (parsed.text) handlers.onChunk(parsed.text)
+      } catch { /* ignore malformed frames */ }
     }
   }
 }
+
+const streamIntakeMessage = (
+  filingId: string,
+  message: string,
+  onChunk: (text: string) => void,
+  onMetadata?: (metadata: Record<string, unknown>) => void,
+) => consumeSseStream(`${API_URL}/agents/intake/message`, { filingId, message }, { onChunk, onMetadata })
 
 const runDeadlines = (entityId: string) =>
   request<any>('/agents/deadline/run', {
@@ -533,37 +550,11 @@ const runAuditRisk = (filingId: string) =>
     data: { filingId },
   }, { notifySuccess: false })
 
-const streamTaxQa = async (question: string, onChunk: (text: string) => void) => {
-  const token = localStorage.getItem('taxos_token')
-  const response = await fetch(`${API_URL}/agents/tax-qa/ask`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({ question }),
-  })
-  if (!response.ok) {
-    throw new Error('Agent request failed')
-  }
-  const reader = response.body?.getReader()
-  if (!reader) return
-  const decoder = new TextDecoder()
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    const text = decoder.decode(value)
-    const lines = text.split('\n').filter(l => l.startsWith('data: '))
-    for (const line of lines) {
-      const data = line.slice(6)
-      if (data === '[DONE]') return
-      try {
-        const parsed = JSON.parse(data)
-        if (parsed.text) onChunk(parsed.text)
-      } catch { /* ignore */ }
-    }
-  }
-}
+const streamTaxQa = (
+  question: string,
+  onChunk: (text: string) => void,
+  onMetadata?: (metadata: Record<string, unknown>) => void,
+) => consumeSseStream(`${API_URL}/agents/tax-qa/ask`, { question }, { onChunk, onMetadata })
 
 // ─── Main API export (flat + nested) ─────────────────────────────────────────
 

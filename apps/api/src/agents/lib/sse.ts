@@ -21,6 +21,23 @@ export type SsePayload =
   | { type: 'metadata'; metadata: Record<string, unknown> }
   | { type: 'error'; error: string }
 
+export function friendlyAgentError(raw: string): { code: string; message: string } {
+  const lower = raw.toLowerCase()
+  if (lower.includes('429') || lower.includes('quota') || lower.includes('rate-limit') || lower.includes('too many requests')) {
+    return {
+      code: 'ai_quota_exceeded',
+      message: 'AI limit exceeded. Please upgrade your plan or contact the TaxOS team.',
+    }
+  }
+  if (lower.includes('api key') || lower.includes('permission_denied') || lower.includes('unauthorized')) {
+    return {
+      code: 'ai_unauthorized',
+      message: 'AI service is not configured correctly. Please contact the TaxOS team.',
+    }
+  }
+  return { code: 'ai_error', message: raw || 'Stream failed' }
+}
+
 export async function pumpSSE(
   res: Response,
   gen: AsyncGenerator<SsePayload>,
@@ -33,12 +50,14 @@ export async function pumpSSE(
       } else if (payload.type === 'metadata') {
         writeSSE(res, { metadata: payload.metadata })
       } else if (payload.type === 'error') {
-        writeSSE(res, { error: payload.error })
+        const friendly = friendlyAgentError(payload.error)
+        writeSSE(res, { error: friendly.message, code: friendly.code })
       }
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Stream failed'
-    writeSSE(res, { error: message })
+    const raw = err instanceof Error ? err.message : 'Stream failed'
+    const friendly = friendlyAgentError(raw)
+    writeSSE(res, { error: friendly.message, code: friendly.code })
   } finally {
     closeSSE(res)
   }

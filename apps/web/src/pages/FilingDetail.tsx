@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
+import { MessageContent } from '@/components/MessageContent'
 
 // Strip [COLLECTED: key=value] markers from displayed message text
 function cleanMessageContent(content: string): string {
@@ -441,14 +442,32 @@ const renderValue = (value: any): React.ReactNode => {
           <div className="flex items-center gap-2">
             <StatusBadge status={filing.status} />
             {!isTerminal && (
-              <button className="p-1.5 text-[#EF4444] hover:bg-[#FEE2E2] rounded transition-colors">
-                <Circle size={8} fill="#EF4444" />
+              <button
+                type="button"
+                onClick={() => { if (id) { setPauseLoading(true); pauseFiling(id).finally(() => setPauseLoading(false)) } }}
+                disabled={pauseLoading}
+                className="p-1.5 text-[#ea2261] hover:bg-[rgba(234,34,97,0.08)] rounded transition-colors disabled:opacity-50"
+                aria-label="Pause AI workflow"
+                title="Pause AI workflow"
+              >
+                <Circle size={8} fill="#ea2261" />
               </button>
             )}
-            <button className="p-1.5 text-[#64748d] hover:bg-[#f6f9fc] rounded transition-colors">
+            <Link
+              to="/documents"
+              className="p-1.5 text-[#64748d] hover:bg-[#f6f9fc] rounded transition-colors"
+              aria-label="Open documents vault"
+              title="Open documents"
+            >
               <FolderOpen size={16} />
-            </button>
-            <button className="p-1.5 text-[#64748d] hover:bg-[#f6f9fc] rounded transition-colors">
+            </Link>
+            <button
+              type="button"
+              onClick={() => setShowEditData(v => !v)}
+              className="p-1.5 text-[#64748d] hover:bg-[#f6f9fc] rounded transition-colors"
+              aria-label="Edit filing data"
+              title="Edit filing data"
+            >
               <MoreHorizontal size={16} />
             </button>
           </div>
@@ -499,7 +518,7 @@ const renderValue = (value: any): React.ReactNode => {
             <span className="text-[#64748d]">Reviewing by:</span>
             <span className="text-[#061b31]">
               {reviewLock
-                ? <span className="inline-flex items-center gap-1 text-[#15803D]"><ShieldCheck size={13} />{reviewLock.cpaEmail || reviewLock.cpaName}</span>
+                ? <span className="inline-flex items-center gap-1 text-[#108c3d]"><ShieldCheck size={13} />{reviewLock.cpaEmail || reviewLock.cpaName}</span>
                 : <span className="text-[#64748d]">CPA not assigned yet</span>}
             </span>
             <span className="text-[#64748d]">Preparer:</span>
@@ -559,15 +578,15 @@ const renderValue = (value: any): React.ReactNode => {
 
           {/* Rejection remarks */}
           {rejectionRemarks.length > 0 && (
-            <div className="mb-8 w-full max-w-4xl rounded-md border border-amber-200 bg-amber-50 p-4 text-left">
-              <h3 className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1.5">
+            <div className="mb-8 w-full max-w-4xl rounded-md border border-[rgba(155,104,41,0.3)] bg-[rgba(155,104,41,0.08)] p-4 text-left">
+              <h3 className="text-sm font-normal text-[#9b6829] mb-2 flex items-center gap-1.5" style={{ fontWeight: 400 }}>
                 <AlertTriangle size={14} />
                 Remarks
               </h3>
               <div className="space-y-2">
                 {rejectionRemarks.map((remark, i) => (
-                  <div key={i} className="rounded-lg bg-white border border-amber-100 px-3 py-2 text-sm">
-                    <span className="font-medium text-amber-700">{remark.source}:</span>{' '}
+                  <div key={i} className="rounded-lg bg-white border border-[rgba(155,104,41,0.2)] px-3 py-2 text-sm">
+                    <span className="font-medium text-[#9b6829]">{remark.source}:</span>{' '}
                     <span className="text-[#273951]">{remark.reason}</span>
                     {remark.date && (
                       <span className="ml-2 text-xs text-[#64748d]">{formatDate(remark.date)}</span>
@@ -581,7 +600,7 @@ const renderValue = (value: any): React.ReactNode => {
           {/* Notified CPAs — hide once claimed */}
           {notifiedCpas.length > 0 && !reviewLock && (
             <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-white p-4 text-left">
-              <h3 className="text-sm font-semibold text-[#061b31] mb-3 flex items-center gap-1.5">
+              <h3 className="text-sm font-normal text-[#061b31] mb-3 flex items-center gap-1.5" style={{ fontWeight: 400 }}>
                 <Eye size={14} className="text-[#533afd]" />
                 Claim Sent To ({notifiedCpas.length} CPAs)
               </h3>
@@ -589,7 +608,7 @@ const renderValue = (value: any): React.ReactNode => {
                 {notifiedCpas.map((cpa, i) => (
                   <div key={i} className="flex items-center justify-between rounded-lg bg-[#f6f9fc] px-3 py-2.5">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EDE9FD] text-xs font-bold text-[#533afd]">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#EDE9FD] text-xs font-bold text-[#533afd]">
                         {(cpa.cpaName || 'C')[0].toUpperCase()}
                       </div>
                       <div>
@@ -597,10 +616,10 @@ const renderValue = (value: any): React.ReactNode => {
                         <p className="text-xs text-[#64748d]">{cpa.cpaEmail}</p>
                       </div>
                     </div>
-                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                      cpa.status === 'approved' ? 'bg-green-100 text-green-700' :
-                      cpa.status === 'dismissed' ? 'bg-gray-100 text-gray-500' :
-                      'bg-amber-100 text-amber-700'
+                    <span className={`rounded-md px-2.5 py-0.5 text-[11px] font-medium ${
+                      cpa.status === 'approved' ? 'bg-[rgba(21,190,83,0.12)] text-[#108c3d]' :
+                      cpa.status === 'dismissed' ? 'bg-[#f6f9fc] text-[#64748d]' :
+                      'bg-[rgba(155,104,41,0.12)] text-[#9b6829]'
                     }`}>
                       {cpa.status === 'approved' ? 'Claimed' : cpa.status === 'dismissed' ? 'Dismissed' : 'Pending'}
                     </span>
@@ -616,7 +635,7 @@ const renderValue = (value: any): React.ReactNode => {
               <button
                 onClick={handleApprove}
                 disabled={approveLoading}
-                className="h-10 rounded-lg bg-[#15803D] px-5 text-sm font-medium text-white hover:bg-[#166534] disabled:opacity-50"
+                className="h-10 rounded-lg bg-[#108c3d] px-5 text-sm font-medium text-white hover:bg-[#0a6b2e] disabled:opacity-50"
               >
                 {approveLoading ? 'Submitting...' : 'Approve & Submit'}
               </button>
@@ -626,7 +645,7 @@ const renderValue = (value: any): React.ReactNode => {
                   if (reason) handleReject(reason)
                 }}
                 disabled={rejectLoading}
-                className="h-10 rounded-lg border border-red-200 px-5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                className="h-10 rounded-lg border border-[#ffd7ef] px-5 text-sm font-medium text-[#ea2261] hover:bg-[rgba(234,34,97,0.08)] disabled:opacity-50"
               >
                 Reject Filing
               </button>
@@ -653,7 +672,7 @@ const renderValue = (value: any): React.ReactNode => {
               <button
                 onClick={handleCpaApprove}
                 disabled={cpaApproveLoading}
-                className="h-10 rounded-lg bg-[#15803D] px-5 text-sm font-medium text-white hover:bg-[#166534] disabled:opacity-50"
+                className="h-10 rounded-lg bg-[#108c3d] px-5 text-sm font-medium text-white hover:bg-[#0a6b2e] disabled:opacity-50"
               >
                 {cpaApproveLoading ? 'Approving...' : 'Approve Filing'}
               </button>
@@ -663,7 +682,7 @@ const renderValue = (value: any): React.ReactNode => {
                   if (reason) handleCpaReject(reason)
                 }}
                 disabled={cpaRejectLoading}
-                className="h-10 rounded-lg border border-red-200 px-5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                className="h-10 rounded-lg border border-[#ffd7ef] px-5 text-sm font-medium text-[#ea2261] hover:bg-[rgba(234,34,97,0.08)] disabled:opacity-50"
               >
                 Reject Filing
               </button>
@@ -691,7 +710,7 @@ const renderValue = (value: any): React.ReactNode => {
               <button
                 onClick={handleStopWorkflow}
                 disabled={stopWorkflowLoading}
-                className="h-10 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                className="h-10 rounded-lg border border-[#ffd7ef] px-4 text-sm font-medium text-[#ea2261] hover:bg-[rgba(234,34,97,0.08)] disabled:opacity-50"
               >
                 {stopWorkflowLoading ? 'Stopping...' : 'Stop Workflow'}
               </button>
@@ -756,7 +775,7 @@ const renderValue = (value: any): React.ReactNode => {
                 <button
                   onClick={handleStopWorkflow}
                   disabled={stopWorkflowLoading}
-                  className="h-10 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  className="h-10 rounded-lg border border-[#ffd7ef] px-4 text-sm font-medium text-[#ea2261] hover:bg-[rgba(234,34,97,0.08)] disabled:opacity-50"
                 >
                   {stopWorkflowLoading ? 'Stopping...' : 'Stop Workflow'}
                 </button>
@@ -811,23 +830,23 @@ const renderValue = (value: any): React.ReactNode => {
           {/* Audit Risk Result */}
           {auditRiskResult && (
             <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-white p-4 text-left">
-              <h3 className="text-sm font-semibold text-[#061b31] mb-3 flex items-center gap-1.5">
+              <h3 className="text-sm font-normal text-[#061b31] mb-3 flex items-center gap-1.5" style={{ fontWeight: 400 }}>
                 <ShieldCheck size={14} />
                 Audit Risk Assessment
               </h3>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div className="rounded-lg bg-[#f6f9fc] px-3 py-2.5">
                   <span className="text-xs text-[#64748d]">Risk Score</span>
-                  <p className={`text-lg font-bold ${
-                    auditRiskResult.riskScore > 60 ? 'text-red-600' :
-                    auditRiskResult.riskScore > 30 ? 'text-amber-600' : 'text-green-600'
-                  }`}>
+                  <p className={`text-lg font-normal font-tnum ${
+                    auditRiskResult.riskScore > 60 ? 'text-[#ea2261]' :
+                    auditRiskResult.riskScore > 30 ? 'text-[#9b6829]' : 'text-[#108c3d]'
+                  }`} style={{ fontWeight: 400 }}>
                     {auditRiskResult.riskScore}/100
                   </p>
                 </div>
                 <div className="rounded-lg bg-[#f6f9fc] px-3 py-2.5">
                   <span className="text-xs text-[#64748d]">Risk Level</span>
-                  <p className="text-lg font-bold text-[#061b31]">{auditRiskResult.riskLevel}</p>
+                  <p className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>{auditRiskResult.riskLevel}</p>
                 </div>
               </div>
               {auditRiskResult.summary && (
@@ -841,8 +860,8 @@ const renderValue = (value: any): React.ReactNode => {
                   {auditRiskResult.flaggedItems.map((item: any, i: number) => (
                     <div key={i} className="rounded-lg border border-[#e5edf5] px-3 py-2 text-sm">
                       <span className={`inline-block mr-2 px-1.5 py-0.5 rounded text-xs font-medium ${
-                        item.severity === 'high' ? 'bg-red-100 text-red-700' :
-                        item.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                        item.severity === 'high' ? 'bg-[rgba(234,34,97,0.08)] text-[#ea2261]' :
+                        item.severity === 'medium' ? 'bg-[rgba(155,104,41,0.12)] text-[#9b6829]' : 'bg-[rgba(21,190,83,0.12)] text-[#108c3d]'
                       }`}>{item.severity}</span>
                       <span className="text-[#273951]">{item.description || item.issue}</span>
                       {item.recommendation && (
@@ -860,7 +879,7 @@ const renderValue = (value: any): React.ReactNode => {
             <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-[#FCFCFD] p-4 text-left">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-[#061b31]">Intake Conversation</h3>
+                  <h3 className="text-sm font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Intake Conversation</h3>
                   <p className="mt-1 text-xs text-[#64748d]">
                     Status: {intakeConversation?.status}
                   </p>
@@ -879,7 +898,9 @@ const renderValue = (value: any): React.ReactNode => {
                       <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#64748d]">
                         {message.role === 'assistant' ? 'TaxOS AI' : 'You'}
                       </p>
-                      <p className="whitespace-pre-wrap">{cleanMessageContent(message.content)}</p>
+                      {message.role === 'assistant'
+                        ? <MessageContent content={cleanMessageContent(message.content)} />
+                        : <p className="whitespace-pre-wrap">{cleanMessageContent(message.content)}</p>}
                     </div>
                   ))
                 )}
@@ -912,7 +933,7 @@ const renderValue = (value: any): React.ReactNode => {
             <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-[#FCFCFD] p-4 text-left">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-[#061b31]">Intake Conversation</h3>
+                  <h3 className="text-sm font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Intake Conversation</h3>
                   <p className="mt-1 text-xs text-[#64748d]">
                     Completed — {intakeMessages.length} messages
                   </p>
@@ -927,7 +948,9 @@ const renderValue = (value: any): React.ReactNode => {
                     <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#64748d]">
                       {message.role === 'assistant' ? 'TaxOS AI' : 'You'}
                     </p>
-                    <p className="whitespace-pre-wrap">{cleanMessageContent(message.content)}</p>
+                    {message.role === 'assistant'
+                      ? <MessageContent content={cleanMessageContent(message.content)} />
+                      : <p className="whitespace-pre-wrap">{cleanMessageContent(message.content)}</p>}
                   </div>
                 ))}
               </div>
@@ -937,7 +960,7 @@ const renderValue = (value: any): React.ReactNode => {
           {/* Collected data from intake conversation */}
           {Object.keys(collectedData).length > 0 && (
             <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-white p-4 text-left">
-              <h3 className="text-sm font-semibold text-[#061b31] mb-3">Collected Data</h3>
+              <h3 className="text-sm font-normal text-[#061b31] mb-3" style={{ fontWeight: 400 }}>Collected Data</h3>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(collectedData).map(([key, value]) => (
                   <div key={key} className="flex items-center justify-between rounded-lg bg-[#f6f9fc] px-3 py-2.5">
@@ -952,7 +975,7 @@ const renderValue = (value: any): React.ReactNode => {
           {/* Filing data — editable section */}
           <div className="mb-8 w-full max-w-4xl rounded-md border border-[#e5edf5] bg-white p-4 text-left">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-[#061b31]">
+              <h3 className="text-sm font-normal text-[#061b31]" style={{ fontWeight: 400 }}>
                 Filing Data {Object.keys(filing.filingData ?? {}).length > 0 && `(${Object.keys(filing.filingData).length} fields)`}
               </h3>
               {(status === 'intake' || status === 'ai_prep') && (
@@ -1048,7 +1071,7 @@ function FormPreviewModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5edf5]">
           <div>
-            <h2 className="text-lg font-semibold text-[#061b31]">
+            <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>
               {filing.formType} — {filing.formName}
             </h2>
             <p className="text-xs text-[#64748d] mt-0.5">
@@ -1078,7 +1101,7 @@ function FormPreviewModal({
           {/* AI Summary */}
           {filing.aiSummary && (
             <div>
-              <h3 className="text-sm font-semibold text-[#061b31] mb-2">AI Summary</h3>
+              <h3 className="text-sm font-normal text-[#061b31] mb-2" style={{ fontWeight: 400 }}>AI Summary</h3>
               <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-lg p-4 text-sm text-[#273951] whitespace-pre-wrap">
                 {filing.aiSummary}
               </div>
@@ -1088,7 +1111,7 @@ function FormPreviewModal({
           {/* AI Reasoning */}
           {filing.aiReasoning && (
             <div>
-              <h3 className="text-sm font-semibold text-[#061b31] mb-2">AI Reasoning</h3>
+              <h3 className="text-sm font-normal text-[#061b31] mb-2" style={{ fontWeight: 400 }}>AI Reasoning</h3>
               <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-lg p-4 text-sm text-[#273951] whitespace-pre-wrap">
                 {filing.aiReasoning}
               </div>
@@ -1097,7 +1120,7 @@ function FormPreviewModal({
 
           {/* Filing Data fields */}
           <div>
-            <h3 className="text-sm font-semibold text-[#061b31] mb-2">
+            <h3 className="text-sm font-normal text-[#061b31] mb-2" style={{ fontWeight: 400 }}>
               Form Data {dataEntries.length > 0 && `(${dataEntries.length} fields)`}
             </h3>
             {dataEntries.length === 0 ? (
@@ -1134,7 +1157,7 @@ function FormPreviewModal({
 
           {/* Attached Documents */}
           <div>
-            <h3 className="text-sm font-semibold text-[#061b31] mb-2">
+            <h3 className="text-sm font-normal text-[#061b31] mb-2" style={{ fontWeight: 400 }}>
               Documents {documents.length > 0 && `(${documents.length})`}
             </h3>
             {documents.length === 0 ? (
@@ -1164,7 +1187,7 @@ function FormPreviewModal({
 
           {/* Key Dates */}
           <div>
-            <h3 className="text-sm font-semibold text-[#061b31] mb-2">Key Dates</h3>
+            <h3 className="text-sm font-normal text-[#061b31] mb-2" style={{ fontWeight: 400 }}>Key Dates</h3>
             <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
               <span className="text-[#64748d]">Created:</span>
               <span className="text-[#061b31]">{formatDate(filing.createdAt)}</span>
@@ -1277,7 +1300,7 @@ function FilingDataEditor({
       <div className="relative bg-white rounded-md shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5edf5]">
-          <h2 className="text-base font-semibold text-[#061b31]">Edit Filing Data</h2>
+          <h2 className="text-base font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Edit Filing Data</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-[#64748d] hover:bg-[#f6f9fc]">
             <X size={18} />
           </button>
@@ -1298,7 +1321,7 @@ function FilingDataEditor({
                 onChange={e => updateValue(row.key, e.target.value)}
                 className="flex-1 h-8 text-sm border border-[#e5edf5] rounded-lg px-2 outline-none focus:border-[#533afd]"
               />
-              <button onClick={() => removeRow(row.key)} className="p-1 text-[#64748d] hover:text-[#EF4444]">
+              <button onClick={() => removeRow(row.key)} className="p-1 text-[#64748d] hover:text-[#ea2261]">
                 <Trash2 size={14} />
               </button>
             </div>
@@ -1331,7 +1354,7 @@ function FilingDataEditor({
             </div>
           </div>
 
-          {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+          {error && <p className="text-xs text-[#ea2261] mt-1">{error}</p>}
         </div>
 
         {/* Footer */}

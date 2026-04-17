@@ -28,6 +28,7 @@ import {
   Zap,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { MessageContent } from '@/components/MessageContent'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -310,8 +311,8 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
                       <Sparkles size={12} className="text-white" />
                     </div>
                     <div className="max-w-[280px]">
-                      <div className="bg-white border border-[#e5edf5] rounded-md rounded-tl-sm px-4 py-2.5 text-[13px] text-[#061b31] whitespace-pre-wrap">
-                        {msg.content}
+                      <div className="bg-white border border-[#e5edf5] rounded-md rounded-tl-sm px-4 py-2.5 text-[13px] text-[#061b31]">
+                        <MessageContent content={msg.content} />
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-[10px] text-[#64748d]">{msg.timestamp}</p>

@@ -1,7 +1,9 @@
 import { BaseAgent } from './base'
 import { db } from '../db'
-import { filings, entities } from '../db/schema'
-import { eq } from 'drizzle-orm'
+import { filings, entities, approvalQueue } from '../db/schema'
+import { and, eq } from 'drizzle-orm'
+import { AgentOutputError } from './lib/json'
+import { AuditRiskResult, AuditRiskSchema } from './lib/schemas'
 
 const AUDIT_RISK_PROMPT = `
 You are a US tax audit risk specialist.
@@ -22,12 +24,23 @@ Analyze this filing for audit risk factors and return ONLY a JSON object:
   "reasoning": "overall assessment"
 }
 
-Risk score guide: 0-30=low, 31-60=medium, 61-85=high, 86-100=critical
+Risk score guide: 0-30=low, 31-60=medium, 61-85=high, 86-100=critical.
 If riskScore > 60, mandatory CPA review is required.
 `
 
+const MANDATORY_CPA_RISK = 60
+
+export interface AuditRiskOutcome {
+  riskScore: number
+  riskLevel: AuditRiskResult['riskLevel']
+  flaggedItems: AuditRiskResult['flaggedItems']
+  summary: string
+  queuedForCpa: boolean
+  statusTransitionedTo: string | null
+}
+
 export class AuditRiskAgent extends BaseAgent {
-  async scoreRisk(filingId: string, orgId: string) {
+  async scoreRisk(filingId: string, orgId: string): Promise<AuditRiskOutcome> {
     const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
     if (!filing) throw new Error('Filing not found')
 
@@ -38,31 +51,93 @@ export class AuditRiskAgent extends BaseAgent {
 Form type: ${filing.formType}
 Filing data: ${JSON.stringify(filing.filingData)}
 Entity profile: ${JSON.stringify(entity)}
-AI confidence: ${filing.aiConfidenceScore}
+AI confidence: ${filing.aiConfidenceScore ?? 'unknown'}
 `
 
-    const model = this.getModel()
-    const response = await model.generateContent(prompt)
-    const text = response.response.text()
-
-    let result: any
+    let result: AuditRiskResult
     try {
-      const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-      result = JSON.parse(cleaned)
-    } catch {
-      result = {
-        overallRiskScore: 35,
-        riskLevel: 'medium',
-        flaggedItems: [],
-        reasoning: 'Unable to fully assess risk. CPA review recommended.',
+      result = await this.generateJson(prompt, AuditRiskSchema)
+    } catch (err) {
+      if (err instanceof AgentOutputError) {
+        await this.log({
+          orgId,
+          filingId,
+          action: 'audit_risk_parse_failed',
+          reasoning: err.message,
+          outputs: { rawOutput: err.rawText.slice(0, 500) },
+        })
+        // Conservative default when AI output unparsable: treat as medium risk, still flag CPA.
+        result = {
+          overallRiskScore: 65,
+          riskLevel: 'high',
+          flaggedItems: [{
+            lineItem: 'overall',
+            issue: 'AI audit-risk model returned unparseable output; defaulting to high-risk for safety.',
+            severity: 'high',
+            recommendation: 'Manual CPA review.',
+          }],
+          reasoning: 'Unparseable AI response; conservative fallback.',
+        }
+      } else {
+        throw err
       }
     }
+
+    const queuedForCpa = result.overallRiskScore > MANDATORY_CPA_RISK
+
+    // Halt filing at CPA review if risk crosses the mandatory gate (and filing hasn't moved past it).
+    const blockingStatuses: Array<typeof filings.$inferSelect.status> = ['intake', 'ai_prep', 'cpa_review']
+    const shouldHalt = queuedForCpa && blockingStatuses.includes(filing.status)
+    const nextStatus = shouldHalt ? 'cpa_review' : filing.status
+    if (shouldHalt && filing.status !== 'cpa_review') {
+      db.update(filings).set({
+        status: 'cpa_review',
+        updatedAt: new Date().toISOString(),
+      }).where(eq(filings.id, filingId)).run()
+    }
+
+    if (queuedForCpa) {
+      const existing = db.select().from(approvalQueue)
+        .where(and(
+          eq(approvalQueue.filingId, filingId),
+          eq(approvalQueue.queueType, 'cpa'),
+          eq(approvalQueue.status, 'pending'),
+        ))
+        .get()
+      if (!existing) {
+        db.insert(approvalQueue).values({
+          orgId,
+          filingId,
+          queueType: 'cpa',
+          status: 'pending',
+          summary: `Audit risk score ${result.overallRiskScore}/100 (${result.riskLevel}) — mandatory CPA review.`,
+          aiRecommendation: result.reasoning,
+        }).run()
+      }
+    }
+
+    await this.log({
+      orgId,
+      filingId,
+      action: 'audit_risk_scored',
+      reasoning: result.reasoning,
+      confidenceScore: 1 - result.overallRiskScore / 100,
+      outputs: {
+        riskScore: result.overallRiskScore,
+        riskLevel: result.riskLevel,
+        flaggedCount: result.flaggedItems.length,
+        queuedForCpa,
+        statusTransitionedTo: shouldHalt ? nextStatus : null,
+      },
+    })
 
     return {
       riskScore: result.overallRiskScore,
       riskLevel: result.riskLevel,
-      flaggedItems: result.flaggedItems || [],
+      flaggedItems: result.flaggedItems,
       summary: result.reasoning,
+      queuedForCpa,
+      statusTransitionedTo: shouldHalt ? nextStatus : null,
     }
   }
 }

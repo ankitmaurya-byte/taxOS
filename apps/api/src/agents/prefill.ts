@@ -1,7 +1,12 @@
 import { BaseAgent } from './base'
 import { db } from '../db'
-import { filings, entities, documents, agentConversations, approvalQueue } from '../db/schema'
+import { filings, entities, documents, agentConversations } from '../db/schema'
 import { eq } from 'drizzle-orm'
+import { AgentOutputError } from './lib/json'
+import { PrefillResult, PrefillSchema } from './lib/schemas'
+import { escalateFilingToCpa } from '../lib/cpaEscalation'
+
+const PREFILL_ACTOR_ID = 'system:prefill-agent'
 
 const PREFILL_PROMPT = `
 You are a US tax form preparation specialist.
@@ -9,7 +14,7 @@ You are a US tax form preparation specialist.
 Given the entity information, intake responses, and extracted documents below,
 prefill the form fields.
 
-For each field return a JSON object:
+Return a JSON object:
 {
   "fields": {
     "fieldId": {
@@ -34,70 +39,89 @@ Flag needsCpaReview=true if:
 Return ONLY the JSON object.
 `
 
+const CONFIDENCE_GATE = 0.8
+
+export interface PrefillOutcome extends PrefillResult {
+  queuedForCpa: boolean
+  statusTransitionedTo: string | null
+}
+
 export class PrefillAgent extends BaseAgent {
-  async prefillForm(filingId: string, orgId: string) {
+  async prefillForm(filingId: string, orgId: string): Promise<PrefillOutcome> {
     const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
     if (!filing) throw new Error('Filing not found')
 
     const entity = db.select().from(entities).where(eq(entities.id, filing.entityId)).get()
-
-    const docs = db.select().from(documents)
-      .where(eq(documents.filingId, filingId))
-      .all()
-
+    const docs = db.select().from(documents).where(eq(documents.filingId, filingId)).all()
     const conversations = db.select().from(agentConversations)
-      .where(eq(agentConversations.filingId, filingId))
-      .all()
-
-    const intakeData = conversations
+      .where(eq(agentConversations.filingId, filingId)).all()
+    const intakeTurns = conversations
       .filter(c => c.agentType === 'intake')
       .flatMap(c => (c.messages as any[]) || [])
+      .map(m => ({ role: m.role, content: m.content }))
 
     const prompt = `${PREFILL_PROMPT}
 
 Form type: ${filing.formType} (${filing.formName})
 Entity data: ${JSON.stringify(entity)}
-Intake data: ${JSON.stringify(intakeData.map(m => ({ role: m.role, content: m.content })))}
+Intake data: ${JSON.stringify(intakeTurns)}
 Extracted documents: ${JSON.stringify(docs.map(d => ({ name: d.fileName, data: d.extractedData })))}
 Filing data so far: ${JSON.stringify(filing.filingData)}
 `
 
-    const model = this.getModel()
-    const response = await model.generateContent(prompt)
-    const text = response.response.text()
-
-    let result: any
+    let result: PrefillResult
     try {
-      const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-      result = JSON.parse(cleaned)
-    } catch {
-      result = {
-        fields: filing.filingData || {},
-        overallConfidence: 0.85,
-        summary: `Form ${filing.formType} prefilled based on available data.`,
-        reasoning: 'Used entity data and document extractions to populate form fields.',
+      result = await this.generateJson(prompt, PrefillSchema)
+    } catch (err) {
+      if (err instanceof AgentOutputError) {
+        await this.log({
+          orgId,
+          filingId,
+          action: 'prefill_parse_failed',
+          reasoning: err.message,
+          outputs: { rawOutput: err.rawText.slice(0, 500) },
+        })
+        throw new Error('AI prefill produced an invalid response. Please retry or enter fields manually.')
       }
+      throw err
     }
 
-    // Convert all field values to strings
-    const stringifiedFields: Record<string, { value: string; confidence?: number; source?: string; reasoning?: string; needsCpaReview?: boolean }> = {}
-    for (const [key, field] of Object.entries(result.fields || {})) {
-      const f = field as { value: any; confidence?: number; source?: string; reasoning?: string; needsCpaReview?: boolean }
-      stringifiedFields[key] = {
-        ...f,
-        value: f.value != null ? String(f.value) : '',
-      }
+    const fields = stringifyFieldValues(result.fields)
+    const now = new Date().toISOString()
+
+    const queuedForCpa = result.overallConfidence < CONFIDENCE_GATE
+    const canTransitionFromPrefill = filing.status === 'intake' || filing.status === 'ai_prep'
+
+    // High confidence → skip CPA, jump straight to founder_approval.
+    // Low confidence  → round-robin escalate to CPAs (same flow as founder-initiated escalation).
+    let nextStatus: typeof filing.status = filing.status
+    if (canTransitionFromPrefill) {
+      nextStatus = queuedForCpa ? 'cpa_review' : 'founder_approval'
     }
 
-    // Update filing with prefilled data — move to ai_prep if intake, else keep status
     db.update(filings).set({
-      filingData: stringifiedFields as any,
+      filingData: { ...(filing.filingData || {}), ...fields } as any,
       aiConfidenceScore: result.overallConfidence,
       aiSummary: result.summary,
       aiReasoning: result.reasoning,
-      ...(filing.status === 'intake' ? { status: 'ai_prep' } : {}),
-      updatedAt: new Date().toISOString(),
+      cpaReviewSkipped: canTransitionFromPrefill && !queuedForCpa,
+      ...(canTransitionFromPrefill ? { status: nextStatus } : {}),
+      updatedAt: now,
     }).where(eq(filings.id, filingId)).run()
+
+    // HITL: low-confidence → full CPA round-robin escalation (notify 5 CPAs, queue entry, SSE).
+    if (queuedForCpa) {
+      escalateFilingToCpa({
+        filingId,
+        orgId,
+        formType: filing.formType,
+        formName: filing.formName,
+        summary: `AI prefill confidence ${(result.overallConfidence * 100).toFixed(0)}% is below ${CONFIDENCE_GATE * 100}% threshold. CPA review required.`,
+        aiRecommendation: result.summary,
+        actor: { type: 'ai', id: PREFILL_ACTOR_ID },
+        auditReasoning: `Prefill auto-escalated: confidence ${(result.overallConfidence * 100).toFixed(0)}% < ${CONFIDENCE_GATE * 100}%.`,
+      })
+    }
 
     await this.log({
       orgId,
@@ -105,9 +129,30 @@ Filing data so far: ${JSON.stringify(filing.filingData)}
       action: 'form_prefilled',
       reasoning: result.reasoning,
       confidenceScore: result.overallConfidence,
-      outputs: { fieldCount: Object.keys(result.fields || {}).length },
+      outputs: {
+        fieldCount: Object.keys(fields).length,
+        queuedForCpa,
+        cpaReviewSkipped: canTransitionFromPrefill && !queuedForCpa,
+        statusTransitionedTo: canTransitionFromPrefill ? nextStatus : null,
+      },
     })
 
-    return result
+    return {
+      ...result,
+      fields,
+      queuedForCpa,
+      statusTransitionedTo: canTransitionFromPrefill ? nextStatus : null,
+    }
   }
+}
+
+function stringifyFieldValues(fields: PrefillResult['fields']): PrefillResult['fields'] {
+  const out: PrefillResult['fields'] = {}
+  for (const [key, field] of Object.entries(fields)) {
+    out[key] = {
+      ...field,
+      value: field.value == null ? '' : String(field.value),
+    }
+  }
+  return out
 }

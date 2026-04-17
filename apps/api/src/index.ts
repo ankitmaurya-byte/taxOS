@@ -19,6 +19,7 @@ import profileRoutes from './routes/profile'
 import sseRoutes from './routes/sse'
 import chatRoutes from './routes/chat'
 import vaultRoutes from './routes/vaults'
+import aiChatRoutes from './routes/aiChat'
 import { errorHandler } from './middleware/errorHandler'
 import { requestLogger } from './middleware/requestLogger'
 import { logger } from './lib/logger'
@@ -46,6 +47,7 @@ app.use('/api/profile', profileRoutes)
 app.use('/api/sse', sseRoutes)
 app.use('/api/chat', chatRoutes)
 app.use('/api/vaults', vaultRoutes)
+app.use('/api/ai-chats', aiChatRoutes)
 
 // Health check
 app.get('/api/health', (_req, res) => {
