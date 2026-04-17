@@ -298,8 +298,17 @@ const rejectFiling = (id: string, reason: string) =>
 const pauseFiling = (id: string) =>
   request<{ message: string }>(`/filings/${id}/pause`, { method: 'POST' }, { successMessage: 'AI workflow paused.' })
 
+const resumeFiling = (id: string) =>
+  request<{ message: string }>(`/filings/${id}/resume`, { method: 'POST' }, { successMessage: 'AI workflow resumed.' })
+
 const escalateToCpa = (id: string) =>
   request<{ message: string; notifiedCpaCount: number }>(`/filings/${id}/escalate-cpa`, { method: 'POST' }, { successMessage: 'Filing escalated to CPA.' })
+
+const escalateToFounder = (id: string, reason?: string) =>
+  request<{ message: string; reason: string }>(`/filings/${id}/escalate-founder`, {
+    method: 'POST',
+    data: { reason: reason ?? '' },
+  }, { successMessage: 'Filing escalated to founder.' })
 
 const cpaApproveFiling = (id: string) =>
   request<{ message: string }>(`/filings/${id}/cpa-approve`, { method: 'POST' }, { successMessage: 'Filing approved.' })
@@ -476,7 +485,7 @@ const startIntake = (filingId: string) =>
 interface StreamHandlers {
   onChunk: (text: string) => void
   onMetadata?: (metadata: Record<string, unknown>) => void
-  onError?: (message: string) => void
+  onError?: (message: string, code?: string) => void
 }
 
 async function consumeSseStream(url: string, body: unknown, handlers: StreamHandlers) {
@@ -508,7 +517,7 @@ async function consumeSseStream(url: string, body: unknown, handlers: StreamHand
       try {
         const parsed = JSON.parse(data)
         if (parsed.error) {
-          if (handlers.onError) handlers.onError(parsed.error)
+          if (handlers.onError) handlers.onError(parsed.error, parsed.code)
           else handlers.onChunk(`\n\n_Error: ${parsed.error}_`)
           return
         }
@@ -550,11 +559,42 @@ const runAuditRisk = (filingId: string) =>
     data: { filingId },
   }, { notifySuccess: false })
 
+// ─── AI Chat (Inkle AI) conversations ────────────────────────────────────────
+export interface AiChatMessage { role: 'user' | 'assistant'; content: string; timestamp: string }
+export interface AiChatConversation {
+  id: string
+  userId: string
+  orgId: string | null
+  title: string
+  messages: AiChatMessage[]
+  createdAt: string
+  updatedAt: string
+}
+
+const listAiChats = () =>
+  request<{ conversations: AiChatConversation[] }>('/ai-chats')
+
+const createAiChat = (payload: { title?: string; messages?: AiChatMessage[] }) =>
+  request<AiChatConversation>('/ai-chats', {
+    method: 'POST',
+    data: payload,
+  }, { notifySuccess: false })
+
+const updateAiChat = (id: string, patch: { title?: string; messages?: AiChatMessage[] }) =>
+  request<AiChatConversation>(`/ai-chats/${id}`, {
+    method: 'PATCH',
+    data: patch,
+  }, { notifySuccess: false })
+
+const deleteAiChat = (id: string) =>
+  request<void>(`/ai-chats/${id}`, { method: 'DELETE' }, { notifySuccess: false })
+
 const streamTaxQa = (
   question: string,
   onChunk: (text: string) => void,
   onMetadata?: (metadata: Record<string, unknown>) => void,
-) => consumeSseStream(`${API_URL}/agents/tax-qa/ask`, { question }, { onChunk, onMetadata })
+  onError?: (message: string, code?: string) => void,
+) => consumeSseStream(`${API_URL}/agents/tax-qa/ask`, { question }, { onChunk, onMetadata, onError })
 
 // ─── Main API export (flat + nested) ─────────────────────────────────────────
 
@@ -608,7 +648,9 @@ export const api = {
   approveFiling,
   rejectFiling,
   pauseFiling,
+  resumeFiling,
   escalateToCpa,
+  escalateToFounder,
 
   // Deadlines
   getDeadlines,
@@ -654,6 +696,12 @@ export const api = {
   // CPA filing actions
   cpaApproveFiling,
   cpaRejectFiling,
+
+  // AI Chat (Inkle AI)
+  listAiChats,
+  createAiChat,
+  updateAiChat,
+  deleteAiChat,
 
   // Chat
   getOrgMessages,
@@ -738,7 +786,9 @@ export const api = {
     cpaApprove: cpaApproveFiling,
     cpaReject: cpaRejectFiling,
     pause: pauseFiling,
+    resume: resumeFiling,
     escalateToCpa,
+    escalateToFounder,
   },
   deadlines: {
     getAll: getDeadlines,

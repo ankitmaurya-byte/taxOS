@@ -185,6 +185,8 @@ export const filings = sqliteTable('filings', {
     enum: ['intake', 'ai_prep', 'cpa_review', 'founder_approval', 'submitted', 'archived']
   }).default('intake').notNull(),
   aiConfidenceScore: real('ai_confidence_score'),
+  cpaReviewSkipped: integer('cpa_review_skipped', { mode: 'boolean' }).default(false).notNull(),
+  paused: integer('paused', { mode: 'boolean' }).default(false).notNull(),
   cpaAssignedId: text('cpa_assigned_id').references(() => users.id),
   filingData: text('filing_data', { mode: 'json' }).$type<Record<string, unknown>>().default({}),
   aiSummary: text('ai_summary'),
@@ -288,6 +290,17 @@ export const agentConversations = sqliteTable('agent_conversations', {
   agentType: text('agent_type').notNull(),
   messages: text('messages', { mode: 'json' }).$type<Array<{ role: string; content: string; timestamp: string }>>().default([]),
   status: text('status', { enum: ['active', 'completed', 'escalated'] }).default('active').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+})
+
+// ─── AI Chat (Inkle AI) Conversations per user ────────
+export const aiChatConversations = sqliteTable('ai_chat_conversations', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').references(() => users.id).notNull(),
+  orgId: text('org_id').references(() => organizations.id),
+  title: text('title').notNull().default('Untitled'),
+  messages: text('messages', { mode: 'json' }).$type<Array<{ role: string; content: string; timestamp: string }>>().default([]).notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 })

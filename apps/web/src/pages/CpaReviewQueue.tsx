@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
-import { ClipboardCheck, FileText, Building2, Calendar, ChevronRight, Clock } from 'lucide-react'
+import { ClipboardCheck, FileText, Building2, Calendar, ChevronRight, Clock, ShieldCheck } from 'lucide-react'
 
 const STATUS_COLORS: Record<string, string> = {
   cpa_review: 'bg-[rgba(155,104,41,0.12)] text-[#9b6829]',
@@ -21,16 +21,23 @@ export function CpaReviewQueue() {
     queryKey: ['cpa-review-queue', user?.id],
     queryFn: async () => {
       const all = await api.filings.getAll() as any[]
-      // Show only filings assigned to this CPA that are in active review stages
-      return all.filter(
-        (f) => f.cpaAssignedId === user?.id && (f.status === 'cpa_review' || f.status === 'founder_approval')
-      )
+      // Include:
+      //  - Filings assigned to this CPA in active review stages
+      //  - Filings where prefill auto-skipped CPA review (visible to all CPAs with org access)
+      return all.filter((f) => {
+        const assignedMine = f.cpaAssignedId === user?.id && (f.status === 'cpa_review' || f.status === 'founder_approval')
+        const skipped = f.cpaReviewSkipped === true || f.cpaReviewSkipped === 1
+        return assignedMine || skipped
+      })
     },
     enabled: !!user,
   })
 
-  const pending = filings.filter((f: any) => f.status === 'cpa_review')
-  const others = filings.filter((f: any) => f.status === 'founder_approval')
+  const pending = filings.filter((f: any) => f.status === 'cpa_review' && !(f.cpaReviewSkipped === true || f.cpaReviewSkipped === 1))
+  const skipped = filings.filter((f: any) => f.cpaReviewSkipped === true || f.cpaReviewSkipped === 1)
+  const others = filings.filter((f: any) =>
+    f.status === 'founder_approval' && !(f.cpaReviewSkipped === true || f.cpaReviewSkipped === 1) && f.cpaAssignedId === user?.id,
+  )
 
   return (
     <div className="space-y-6 p-6 max-w-5xl mx-auto">
@@ -48,11 +55,12 @@ export function CpaReviewQueue() {
       </div>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         {[
           { label: 'Awaiting Review', value: pending.length, color: 'text-[#9b6829] bg-[rgba(155,104,41,0.08)] border-[rgba(155,104,41,0.2)]' },
           { label: 'Total Active', value: filings.length, color: 'text-[#533afd] bg-[#EDE9FD] border-[#b9b9f9]' },
           { label: 'Sent to Founder', value: others.length, color: 'text-[#533afd] bg-[#EDE9FD] border-[#b9b9f9]' },
+          { label: 'CPA Review Skipped', value: skipped.length, color: 'text-[#108c3d] bg-[rgba(21,190,83,0.08)] border-[rgba(21,190,83,0.2)]' },
         ].map((stat) => (
           <div key={stat.label} className={`rounded-md border px-5 py-4 ${stat.color}`}>
             <p className="text-2xl font-normal font-tnum" style={{ fontWeight: 300 }}>{stat.value}</p>
@@ -101,13 +109,31 @@ export function CpaReviewQueue() {
               </div>
             </div>
           )}
+
+          {/* Filings where AI prefill confidence was high enough to skip CPA review */}
+          {skipped.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <ShieldCheck size={14} className="text-[#108c3d]" />
+                <h2 className="text-sm font-normal text-[#108c3d]" style={{ fontWeight: 400 }}>CPA Review Skipped (high AI confidence)</h2>
+              </div>
+              <p className="text-xs text-[#64748d] mb-2">
+                AI prefill was confident enough that the filing went straight to founder approval. Review optional.
+              </p>
+              <div className="space-y-2">
+                {skipped.map((filing: any) => (
+                  <FilingCard key={filing.id} filing={filing} skippedBadge />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
   )
 }
 
-function FilingCard({ filing, highlight = false }: { filing: any; highlight?: boolean }) {
+function FilingCard({ filing, highlight = false, skippedBadge = false }: { filing: any; highlight?: boolean; skippedBadge?: boolean }) {
   const statusColor = STATUS_COLORS[filing.status] || 'bg-[#f6f9fc] text-[#273951]'
 
   return (
@@ -137,7 +163,13 @@ function FilingCard({ filing, highlight = false }: { filing: any; highlight?: bo
           )}
         </div>
       </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {skippedBadge && (
+          <span className="inline-flex items-center gap-1 rounded-md border border-[rgba(21,190,83,0.3)] bg-[rgba(21,190,83,0.08)] px-2 py-0.5 text-[10px] font-medium text-[#108c3d]">
+            <ShieldCheck size={10} />
+            Review skipped
+          </span>
+        )}
         <span className={`rounded-md px-2.5 py-0.5 text-[11px] font-medium capitalize ${statusColor}`}>
           {filing.status.replace(/_/g, ' ')}
         </span>

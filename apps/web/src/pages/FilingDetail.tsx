@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
+import { promptDialog } from '@/stores/dialogs'
 import { MessageContent } from '@/components/MessageContent'
 
 // Strip [COLLECTED: key=value] markers from displayed message text
@@ -52,6 +53,7 @@ export function FilingDetailPage() {
   const [startIntakeLoading, setStartIntakeLoading] = useState(false)
   const [updateStatusLoading, setUpdateStatusLoading] = useState(false)
   const [pauseLoading, setPauseLoading] = useState(false)
+  const [resumeLoading, setResumeLoading] = useState(false)
   const [escalateLoading, setEscalateLoading] = useState(false)
   const [prefillLoading, setPrefillLoading] = useState(false)
   const [auditRiskLoading, setAuditRiskLoading] = useState(false)
@@ -60,6 +62,7 @@ export function FilingDetailPage() {
   const [archiveLoading, setArchiveLoading] = useState(false)
   const [cpaApproveLoading, setCpaApproveLoading] = useState(false)
   const [cpaRejectLoading, setCpaRejectLoading] = useState(false)
+  const [escalateFounderLoading, setEscalateFounderLoading] = useState(false)
   const [stopWorkflowLoading, setStopWorkflowLoading] = useState(false)
   const [auditRiskResult, setAuditRiskResult] = useState<any>(null)
 
@@ -75,6 +78,7 @@ export function FilingDetailPage() {
   const startIntake = useAuthStore(s => s.startIntake)
   const updateFilingStatus = useAuthStore(s => s.updateFilingStatus)
   const pauseFiling = useAuthStore(s => s.pauseFiling)
+  const resumeFiling = useAuthStore(s => s.resumeFiling)
   const escalateToCpa = useAuthStore(s => s.escalateToCpa)
   const runPrefill = useAuthStore(s => s.runPrefill)
   const runAuditRisk = useAuthStore(s => s.runAuditRisk)
@@ -89,6 +93,7 @@ export function FilingDetailPage() {
   const userRole = user?.role
   const isFounder = userRole === 'founder'
   const isCpa = userRole === 'cpa'
+  const isTeamMember = userRole === 'team_member'
 
   useEffect(() => {
     if (!id) return
@@ -133,20 +138,35 @@ export function FilingDetailPage() {
   const isTerminal = status === 'submitted' || status === 'archived'
   const isArchived = status === 'archived'
   const isSubmitted = status === 'submitted'
+  const isPaused = filing?.paused === true || filing?.paused === 1
 
   // Agent action visibility — per status AND per role
   // Intake: all agent actions available
-  const canStartIntake = (status === 'intake' || status === 'ai_prep') && !intakeConversation && (isFounder || isCpa)
-  const canRunPrefill = (status === 'intake' || status === 'ai_prep') && (isFounder || isCpa)
-  const canRunAuditRisk = (status === 'intake' || status === 'ai_prep' || status === 'founder_approval') && (isFounder || isCpa)
-  // Pause/Stop: intake has pause. ai_prep + cpa_review have stop workflow (founder only)
-  const canPause = status === 'intake' && isFounder
-  const canStopWorkflow = (status === 'ai_prep' || status === 'cpa_review') && isFounder
-  const canEscalate = (status === 'intake' || status === 'ai_prep') && isFounder
+  const canStartIntake = !isPaused && (status === 'intake' || status === 'ai_prep') && !intakeConversation && (isFounder || isCpa)
+  const canRunPrefill = !isPaused && status === 'ai_prep' && (isFounder || isCpa)
+  // Founder sees audit risk in ai_prep / founder_approval; CPA only in cpa_review
+  const canRunAuditRisk = !isPaused && (
+    (isFounder && (status === 'ai_prep' || status === 'founder_approval'))
+    || (isCpa && status === 'cpa_review')
+  )
+  // Pause: only visible during cpa_review or founder_approval, for founder + team_member, and only when not already paused
+  const canPause = !isPaused && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
+  const canResume = isPaused && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
+  const canStopWorkflow = !isPaused && (status === 'ai_prep' || status === 'cpa_review') && isFounder
+  const canEscalate = !isPaused && (status === 'intake' || status === 'ai_prep') && isFounder
+  // Post-prefill high-confidence shortcut: team_member/founder can skip CPA review and push filing to founder approval.
+  const aiConfidenceScore = (filing?.aiConfidenceScore as number | null | undefined) ?? null
+  const cpaReviewSkipped = filing?.cpaReviewSkipped === true || filing?.cpaReviewSkipped === 1
+  const canEscalateToFounder = !isPaused
+    && status === 'cpa_review'
+    && cpaReviewSkipped
+    && typeof aiConfidenceScore === 'number' && aiConfidenceScore >= 0.8
+    && (isFounder || isTeamMember)
   // Archive: founder can archive submitted filings
-  const canArchive = status === 'submitted' && isFounder
+  const canArchive = !isPaused && status === 'submitted' && isFounder
   // Advance: only intake → ai_prep (founder/CPA)
   const canAdvanceStatus = (s: string | undefined) => {
+    if (isPaused) return false
     if (s === 'intake') return isFounder || isCpa
     return false
   }
@@ -160,9 +180,9 @@ export function FilingDetailPage() {
   // Review lock info
   const reviewLock = filing?.reviewLock as { cpaUserId: string; cpaName: string; cpaEmail: string; status: string } | null
   // CPA approve only if CPA has claimed this filing
-  const canCpaApprove = status === 'cpa_review' && isCpa && reviewLock?.cpaUserId === user?.id
+  const canCpaApprove = !isPaused && status === 'cpa_review' && isCpa && reviewLock?.cpaUserId === user?.id
   // CPA can claim if cpa_review and not yet claimed
-  const canCpaClaim = status === 'cpa_review' && isCpa && !reviewLock
+  const canCpaClaim = !isPaused && status === 'cpa_review' && isCpa && !reviewLock
   // Rejection remarks
   const rejectionRemarks = (filing?.rejectionRemarks || []) as { source: string; reason: string; date: string }[]
   // CPAs notified for claim
@@ -280,6 +300,15 @@ export function FilingDetailPage() {
     if (!id) return
     setCpaRejectLoading(true)
     try { await cpaRejectFiling(id, reason) } finally { setCpaRejectLoading(false) }
+  }
+
+  const handleEscalateToFounder = async (reason: string) => {
+    if (!id) return
+    setEscalateFounderLoading(true)
+    try {
+      await api.filings.escalateToFounder(id, reason)
+      await fetchFiling(id)
+    } finally { setEscalateFounderLoading(false) }
   }
 
   const handleStopWorkflow = async () => {
@@ -433,15 +462,27 @@ const renderValue = (value: any): React.ReactNode => {
 
         {/* Filing header */}
         <div className="flex items-center justify-between px-8 pb-4">
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>
-              {filing.formType} ({filing.formName})
-            </h1>
-            <span className="text-lg">🇺🇸</span>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>
+                {filing.formType} ({filing.formName})
+              </h1>
+              <span className="text-lg">🇺🇸</span>
+            </div>
+            <div className="text-xs text-[#64748d]">
+              Entity:{' '}
+              {entityName ? (
+                <Link to={`/entities/${filing.entityId}`} className="text-[#533afd] hover:underline">
+                  {entityName}
+                </Link>
+              ) : (
+                <span className="text-[#061b31]">—</span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={filing.status} />
-            {!isTerminal && (
+            {canPause && (
               <button
                 type="button"
                 onClick={() => { if (id) { setPauseLoading(true); pauseFiling(id).finally(() => setPauseLoading(false)) } }}
@@ -464,9 +505,10 @@ const renderValue = (value: any): React.ReactNode => {
             <button
               type="button"
               onClick={() => setShowEditData(v => !v)}
-              className="p-1.5 text-[#64748d] hover:bg-[#f6f9fc] rounded transition-colors"
+              disabled={isPaused}
+              className="p-1.5 text-[#64748d] hover:bg-[#f6f9fc] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Edit filing data"
-              title="Edit filing data"
+              title={isPaused ? 'Paused' : 'Edit filing data'}
             >
               <MoreHorizontal size={16} />
             </button>
@@ -630,7 +672,7 @@ const renderValue = (value: any): React.ReactNode => {
           )}
 
           {/* Founder approval actions — approve, reject, audit risk, edit */}
-          {status === 'founder_approval' && isFounder && (
+          {status === 'founder_approval' && isFounder && !isPaused && (
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-3">
               <button
                 onClick={handleApprove}
@@ -640,8 +682,16 @@ const renderValue = (value: any): React.ReactNode => {
                 {approveLoading ? 'Submitting...' : 'Approve & Submit'}
               </button>
               <button
-                onClick={() => {
-                  const reason = window.prompt('Rejection reason (will be sent back to AI Prep):')
+                onClick={async () => {
+                  const reason = await promptDialog({
+                    title: 'Reject filing',
+                    message: 'Filing will be sent back to AI Prep. Provide a reason so the team can address it.',
+                    placeholder: 'Rejection reason',
+                    multiline: true,
+                    required: true,
+                    confirmLabel: 'Reject filing',
+                    tone: 'danger',
+                  })
                   if (reason) handleReject(reason)
                 }}
                 disabled={rejectLoading}
@@ -677,8 +727,16 @@ const renderValue = (value: any): React.ReactNode => {
                 {cpaApproveLoading ? 'Approving...' : 'Approve Filing'}
               </button>
               <button
-                onClick={() => {
-                  const reason = window.prompt('Rejection reason (filing will be sent back to AI Prep):')
+                onClick={async () => {
+                  const reason = await promptDialog({
+                    title: 'Reject filing',
+                    message: 'Filing will be sent back to AI Prep. Share a reason so the preparer knows what to fix.',
+                    placeholder: 'Rejection reason',
+                    multiline: true,
+                    required: true,
+                    confirmLabel: 'Reject filing',
+                    tone: 'danger',
+                  })
                   if (reason) handleCpaReject(reason)
                 }}
                 disabled={cpaRejectLoading}
@@ -686,6 +744,15 @@ const renderValue = (value: any): React.ReactNode => {
               >
                 Reject Filing
               </button>
+              {canRunAuditRisk && (
+                <button
+                  onClick={handleAuditRisk}
+                  disabled={auditRiskLoading}
+                  className="h-10 rounded-lg border border-[#e5edf5] px-4 text-sm font-medium text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-50"
+                >
+                  {auditRiskLoading ? 'Scoring Risk...' : 'Run Audit Risk'}
+                </button>
+              )}
             </div>
           )}
 
@@ -704,6 +771,35 @@ const renderValue = (value: any): React.ReactNode => {
             </div>
           )}
 
+          {/* CPA Review — high-confidence shortcut: founder/team_member can skip CPA and push to founder approval */}
+          {canEscalateToFounder && (
+            <div className="mb-8 w-full max-w-4xl rounded-md border border-[rgba(21,190,83,0.25)] bg-[rgba(21,190,83,0.06)] p-4">
+              <div className="mb-3">
+                <p className="text-sm font-medium text-[#108c3d]">AI prefill confidence is high</p>
+                <p className="mt-0.5 text-xs text-[#273951]">
+                  CPA review is optional ({Math.round((aiConfidenceScore ?? 0) * 100)}% confidence). You can skip CPA review and send this filing directly to founder approval.
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  const reason = await promptDialog({
+                    title: 'Escalate to founder',
+                    message: 'Skip CPA review and send this filing to founder approval. Reason is optional.',
+                    placeholder: 'Reason (optional)',
+                    multiline: true,
+                    confirmLabel: 'Escalate',
+                  })
+                  if (reason === null) return
+                  handleEscalateToFounder(reason)
+                }}
+                disabled={escalateFounderLoading}
+                className="h-10 rounded-lg bg-[#108c3d] px-5 text-sm font-medium text-white hover:bg-[#0a6b2e] disabled:opacity-50"
+              >
+                {escalateFounderLoading ? 'Escalating...' : 'Escalate to Founder'}
+              </button>
+            </div>
+          )}
+
           {/* CPA Review — founder: only Stop Workflow */}
           {status === 'cpa_review' && canStopWorkflow && (
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
@@ -718,8 +814,33 @@ const renderValue = (value: any): React.ReactNode => {
             </div>
           )}
 
+          {/* Paused banner + Resume */}
+          {isPaused && (
+            <div className="mb-8 w-full max-w-4xl rounded-md border border-[#ffd7ef] bg-[rgba(234,34,97,0.06)] p-4">
+              <div className="mb-3">
+                <p className="text-sm font-medium text-[#ea2261]">Workflow paused</p>
+                <p className="mt-0.5 text-xs text-[#273951]">
+                  All actions on this filing are disabled until the workflow is resumed.
+                </p>
+              </div>
+              {canResume && (
+                <button
+                  onClick={async () => {
+                    if (!id) return
+                    setResumeLoading(true)
+                    try { await resumeFiling(id) } finally { setResumeLoading(false) }
+                  }}
+                  disabled={resumeLoading}
+                  className="h-10 rounded-lg bg-[#533afd] px-5 text-sm font-medium text-white hover:bg-[#4434d4] disabled:opacity-50"
+                >
+                  {resumeLoading ? 'Resuming...' : 'Resume Workflow'}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Intake & AI Prep workflow buttons */}
-          {!isTerminal && (status === 'intake' || status === 'ai_prep') && (
+          {!isTerminal && !isPaused && (status === 'intake' || status === 'ai_prep') && (
             <div className="mb-8 flex w-full max-w-4xl flex-wrap gap-2">
               {canStartIntake && (
                 <button
@@ -978,7 +1099,7 @@ const renderValue = (value: any): React.ReactNode => {
               <h3 className="text-sm font-normal text-[#061b31]" style={{ fontWeight: 400 }}>
                 Filing Data {Object.keys(filing.filingData ?? {}).length > 0 && `(${Object.keys(filing.filingData).length} fields)`}
               </h3>
-              {(status === 'intake' || status === 'ai_prep') && (
+              {(status === 'intake' || status === 'ai_prep') && !isPaused && (
                 <button
                   onClick={() => setShowEditData(true)}
                   className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#e5edf5] text-xs font-medium text-[#273951] hover:bg-[#f6f9fc] transition-colors"

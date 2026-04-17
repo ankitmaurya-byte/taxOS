@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { notify } from '@/stores/notifications'
 import {
   X,
-  Pencil,
+  SquarePen,
   History,
   List,
   Send,
@@ -34,6 +34,29 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: string
+}
+
+interface Conversation {
+  id: string
+  serverId?: string
+  title: string
+  messages: Message[]
+  updatedAt: number
+}
+
+function titleFromPrompt(prompt: string): string {
+  const clean = prompt.replace(/\s+/g, ' ').trim()
+  if (!clean) return 'New chat'
+  const max = 42
+  return clean.length > max ? clean.slice(0, max).trimEnd() + '…' : clean
+}
+
+function formatRelativeTime(ts: number): string {
+  const diff = Date.now() - ts
+  if (diff < 60_000) return 'Just now'
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`
+  return `${Math.floor(diff / 86_400_000)}d ago`
 }
 
 interface ActionItem {
@@ -135,15 +158,148 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
   const role = user?.role || 'team_member'
   const config = ROLE_PANEL_CONFIG[role as keyof typeof ROLE_PANEL_CONFIG] || ROLE_PANEL_CONFIG.team_member
   const actions = getActionsForRole(role)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>(() => [{
+    id: Date.now().toString(),
+    title: 'Untitled',
+    messages: [],
+    updatedAt: Date.now(),
+  }])
+  const [activeId, setActiveId] = useState<string>(() => conversations[0]?.id ?? '')
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [activeView, setActiveView] = useState<'chat' | 'history' | 'actions'>('chat')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const activeIdRef = useRef(activeId)
+  activeIdRef.current = activeId
+
+  const active = conversations.find((c) => c.id === activeId) ?? conversations[0]
+  const messages = active?.messages ?? []
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Load persisted conversations on mount
+  useEffect(() => {
+    let cancelled = false
+    api.listAiChats().then(({ conversations: rows }) => {
+      if (cancelled) return
+      if (!rows.length) return
+      const loaded: Conversation[] = rows.map((r) => ({
+        id: r.id,
+        serverId: r.id,
+        title: r.title,
+        messages: (r.messages ?? []) as Message[],
+        updatedAt: new Date(r.updatedAt).getTime() || Date.now(),
+      }))
+      loaded.sort((a, b) => b.updatedAt - a.updatedAt)
+      setConversations(loaded)
+      setActiveId(loaded[0].id)
+    }).catch(() => { /* unauthenticated or network — keep local blank chat */ })
+    return () => { cancelled = true }
+  }, [])
+
+  const conversationsRef = useRef(conversations)
+  conversationsRef.current = conversations
+  const createInFlightRef = useRef<Map<string, Promise<string | null>>>(new Map())
+
+  // Wrap setConversations so conversationsRef stays in sync immediately,
+  // letting persistMessages see the latest snapshot without waiting for a rerender.
+  const patchConversations = (updater: (prev: Conversation[]) => Conversation[]) => {
+    setConversations((prev) => {
+      const next = updater(prev)
+      conversationsRef.current = next
+      return next
+    })
+  }
+
+  const updateActive = (updater: (c: Conversation) => Conversation) => {
+    patchConversations((prev) => prev.map((c) => (c.id === activeIdRef.current ? updater(c) : c)))
+  }
+
+  const persistMessages = async (convId: string) => {
+    const latest = conversationsRef.current.find((c) => c.id === convId)
+    if (!latest || latest.messages.length === 0) return
+
+    let serverId = latest.serverId
+    if (!serverId) {
+      const existing = createInFlightRef.current.get(convId)
+      if (existing) {
+        const resolved = await existing
+        serverId = resolved ?? undefined
+      } else {
+        const createPromise = api.createAiChat({ title: latest.title, messages: latest.messages })
+          .then((saved) => {
+            patchConversations((cur) => cur.map((c) =>
+              c.id === convId ? { ...c, serverId: saved.id } : c,
+            ))
+            return saved.id
+          })
+          .catch(() => null)
+          .finally(() => { createInFlightRef.current.delete(convId) })
+        createInFlightRef.current.set(convId, createPromise)
+        serverId = (await createPromise) ?? undefined
+      }
+    }
+
+    if (!serverId) return
+    const current = conversationsRef.current.find((c) => c.id === convId)
+    if (!current) return
+    try {
+      await api.updateAiChat(serverId, { messages: current.messages, title: current.title })
+    } catch { /* swallow */ }
+  }
+
+  const startNewChat = () => {
+    const current = conversations.find((c) => c.id === activeId)
+    if (current && current.messages.length === 0) {
+      setActiveView('chat')
+      return
+    }
+    const id = Date.now().toString()
+    setConversations((prev) => [
+      { id, title: 'Untitled', messages: [], updatedAt: Date.now() },
+      ...prev,
+    ])
+    setActiveId(id)
+    setActiveView('chat')
+  }
+
+  const generateTitleFromAI = async (prompt: string, convId: string) => {
+    try {
+      let buf = ''
+      let errored = false
+      await api.streamTaxQa(
+        `Generate a very short chat title (max 5 words, no quotes, no trailing punctuation) for this user question. Output ONLY the title, nothing else.\n\nQuestion: ${prompt}`,
+        (chunk: string) => { buf += chunk },
+        undefined,
+        () => { errored = true },
+      )
+      if (errored) buf = ''
+      const cleaned = buf
+        .replace(/\nMETADATA:[\s\S]*$/, '')
+        .trim()
+        .replace(/^["'“”']+|["'“”'.!?]+$/g, '')
+        .split('\n')[0]
+        .trim()
+        .slice(0, 60)
+      const finalTitle = cleaned || titleFromPrompt(prompt)
+      patchConversations((prev) =>
+        prev.map((c) => (c.id === convId ? { ...c, title: finalTitle } : c)),
+      )
+      void persistMessages(convId)
+    } catch {
+      patchConversations((prev) =>
+        prev.map((c) => (c.id === convId ? { ...c, title: titleFromPrompt(prompt) } : c)),
+      )
+      void persistMessages(convId)
+    }
+  }
+
+  const selectConversation = (id: string) => {
+    setActiveId(id)
+    setActiveView('chat')
+  }
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming) return
@@ -157,39 +313,75 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
 
-    setMessages((prev) => [...prev, userMessage])
+    const isFirstPrompt = active?.messages.length === 0
+    updateActive((c) => ({
+      ...c,
+      messages: [...c.messages, userMessage],
+      updatedAt: Date.now(),
+    }))
     setIsStreaming(true)
+    if (isFirstPrompt) {
+      void generateTitleFromAI(userMsg, activeId)
+    }
 
     try {
       let fullResponse = ''
-      await api.streamTaxQa(`${config.prefix}\n\nUser question: ${userMsg}`, (chunk: string) => {
-        fullResponse += chunk
-        setMessages((prev) => {
-          const msgs = [...prev]
-          const lastIdx = msgs.length - 1
-          if (msgs[lastIdx]?.role === 'assistant') {
-            msgs[lastIdx] = { ...msgs[lastIdx], content: fullResponse }
-          } else {
-            msgs.push({
-              role: 'assistant',
-              content: fullResponse,
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            })
-          }
-          return msgs
-        })
-      })
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Sorry, something went wrong. Please try again.',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      await api.streamTaxQa(
+        `${config.prefix}\n\nUser question: ${userMsg}`,
+        (chunk: string) => {
+          fullResponse += chunk
+          updateActive((c) => {
+            const msgs = [...c.messages]
+            const lastIdx = msgs.length - 1
+            if (msgs[lastIdx]?.role === 'assistant') {
+              msgs[lastIdx] = { ...msgs[lastIdx], content: fullResponse }
+            } else {
+              msgs.push({
+                role: 'assistant',
+                content: fullResponse,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              })
+            }
+            return { ...c, messages: msgs, updatedAt: Date.now() }
+          })
         },
-      ])
+        undefined,
+        (message, code) => {
+          const title = code === 'ai_quota_exceeded' ? 'AI limit reached' : 'AI error'
+          notify({ title, message, tone: 'error' })
+          updateActive((c) => {
+            const msgs = [...c.messages]
+            const lastIdx = msgs.length - 1
+            const bubble = {
+              role: 'assistant' as const,
+              content: message,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            }
+            if (msgs[lastIdx]?.role === 'assistant' && !msgs[lastIdx].content) {
+              msgs[lastIdx] = bubble
+            } else {
+              msgs.push(bubble)
+            }
+            return { ...c, messages: msgs, updatedAt: Date.now() }
+          })
+        },
+      )
+    } catch {
+      updateActive((c) => ({
+        ...c,
+        messages: [
+          ...c.messages,
+          {
+            role: 'assistant',
+            content: 'Sorry, something went wrong. Please try again.',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ],
+        updatedAt: Date.now(),
+      }))
     } finally {
       setIsStreaming(false)
+      void persistMessages(activeIdRef.current)
     }
   }
 
@@ -200,13 +392,13 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
       {/* Left sidebar icons */}
       <div className="w-12 border-r border-[#e5edf5] flex flex-col items-center py-4 gap-2 bg-[#f6f9fc]">
         <button
-          onClick={() => setActiveView('chat')}
+          onClick={startNewChat}
           className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
             activeView === 'chat' ? 'bg-[#EDE9FD] text-[#533afd]' : 'text-[#64748d] hover:bg-[#f6f9fc]'
           }`}
           title="New chat"
         >
-          <Pencil size={16} />
+          <SquarePen size={16} />
         </button>
         <button
           onClick={() => setActiveView('history')}
@@ -261,7 +453,11 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
         {activeView === 'actions' ? (
           <ActionLibraryView actions={actions} onAction={(prompt) => sendMessage(prompt)} onBack={() => setActiveView('chat')} />
         ) : activeView === 'history' ? (
-          <HistoryView />
+          <HistoryView
+            conversations={conversations}
+            activeId={activeId}
+            onSelect={selectConversation}
+          />
         ) : (
           <>
             {/* Chat messages */}
@@ -419,14 +615,51 @@ function ActionLibraryView({ actions, onAction, onBack }: { actions: ActionItem[
 }
 
 /* ─── History View ─── */
-function HistoryView() {
+function HistoryView({
+  conversations,
+  activeId,
+  onSelect,
+}: {
+  conversations: Conversation[]
+  activeId: string
+  onSelect: (id: string) => void
+}) {
+  const visible = [...conversations].sort((a, b) => b.updatedAt - a.updatedAt)
+  const hasAny = visible.some((c) => c.messages.length > 0)
+
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
       <h3 className="text-sm font-normal text-[#061b31] mb-4">Chat History</h3>
-      <div className="text-center py-12">
-        <History size={32} className="text-[#e5edf5] mx-auto mb-2" />
-        <p className="text-sm text-[#64748d]">No previous conversations yet.</p>
-      </div>
+
+      {!hasAny ? (
+        <div className="text-center py-12">
+          <History size={32} className="text-[#e5edf5] mx-auto mb-2" />
+          <p className="text-sm text-[#64748d]">No previous conversations yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-1">
+          {visible.map((c) => {
+            const lastUser = [...c.messages].reverse().find((m) => m.role === 'user')
+            const preview = lastUser?.content ?? 'No messages yet'
+            const isActive = c.id === activeId
+            return (
+              <button
+                key={c.id}
+                onClick={() => onSelect(c.id)}
+                className={`w-full text-left px-3 py-2.5 rounded-md border transition-colors ${
+                  isActive
+                    ? 'border-[#D8D3FF] bg-[#EDE9FD]'
+                    : 'border-transparent hover:border-[#e5edf5] hover:bg-[#f6f9fc]'
+                }`}
+              >
+                <p className="text-[13px] font-medium text-[#061b31] truncate">{c.title}</p>
+                <p className="text-[11px] text-[#64748d] truncate mt-0.5">{preview}</p>
+                <p className="text-[10px] text-[#64748d] mt-1">{formatRelativeTime(c.updatedAt)}</p>
+              </button>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

@@ -51,6 +51,7 @@ import { auditLogger } from '../lib/auditLog'
 import { ensureCpaHasOrgAccess } from '../lib/rbac'
 import { AppError, withContext } from '../lib/errors'
 import { sendToUser, sendToUsers } from '../services/sse.service'
+import { escalateFilingToCpa, getCpaFilingStats } from '../lib/cpaEscalation'
 
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   intake:           ['ai_prep', 'cpa_review'],
@@ -119,59 +120,6 @@ function getVisibleOrgIds(req: Request): string[] {
  * - rejectedCount  = cpaRejections rows for this CPA
  * - totalFilings   = approvedCount + rejectedCount
  */
-function getCpaFilingStats(cpaId: string) {
-  const approvedCount = db.select().from(filingReviewLocks)
-    .where(and(eq(filingReviewLocks.cpaUserId, cpaId), eq(filingReviewLocks.status, 'completed')))
-    .all().length
-
-  const rejectedCount = db.select().from(cpaRejections)
-    .where(eq(cpaRejections.cpaUserId, cpaId))
-    .all().length
-
-  const totalFilings = approvedCount + rejectedCount
-  const approvalRate = totalFilings > 0 ? approvedCount / totalFilings : 0
-
-  return { approvedCount, rejectedCount, totalFilings, approvalRate }
-}
-
-/**
- * Select up to `limit` CPAs for escalation notification using round-robin logic:
- *   1. All active CPAs (status='active') ordered by createdAt.
- *   2. If fewer than `limit` active CPAs, fill from non-active CPAs ordered by
- *      approvedCount DESC (0 rejections first), then createdAt ASC.
- */
-function selectCpasForEscalation(limit = 5): string[] {
-  const allCpas = db.select().from(users).where(eq(users.role, 'cpa')).all()
-
-  const activeCpas = allCpas
-    .filter(u => u.status === 'active')
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-
-  if (activeCpas.length >= limit) {
-    return activeCpas.slice(0, limit).map(u => u.id)
-  }
-
-  // Need to supplement with non-active CPAs
-  const nonActiveCpas = allCpas.filter(u => u.status !== 'active')
-
-  // Rank non-active CPAs by stats
-  const ranked = nonActiveCpas
-    .map(u => ({ ...u, stats: getCpaFilingStats(u.id) }))
-    .sort((a, b) => {
-      // Prefer CPAs with 0 rejections and most approvals
-      const aZeroRej = a.stats.rejectedCount === 0 ? 1 : 0
-      const bZeroRej = b.stats.rejectedCount === 0 ? 1 : 0
-      if (bZeroRej !== aZeroRej) return bZeroRej - aZeroRej
-      if (b.stats.approvedCount !== a.stats.approvedCount) return b.stats.approvedCount - a.stats.approvedCount
-      return a.createdAt.localeCompare(b.createdAt)
-    })
-
-  const needed = limit - activeCpas.length
-  return [
-    ...activeCpas.map(u => u.id),
-    ...ranked.slice(0, needed).map(u => u.id),
-  ]
-}
 
 /**
  * Select top-performing CPAs for rejection top-match logic:
@@ -687,13 +635,17 @@ export function pauseFiling(req: Request, res: Response) {
     .get()
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
 
+  db.update(filings)
+    .set({ paused: true, updatedAt: new Date().toISOString() })
+    .where(eq(filings.id, filing.id)).run()
+
   auditLogger.log({
     orgId: req.user!.orgId,
     filingId: filing.id,
     actorType: 'founder',
     actorId: req.user!.userId,
     action: 'workflow_paused',
-    reasoning: 'Founder requested workflow stop',
+    reasoning: 'Founder requested workflow pause',
   })
 
   // If filing at cpa_review and CPA has claimed it, notify CPA and release lock
@@ -710,14 +662,38 @@ export function pauseFiling(req: Request, res: Response) {
         type: 'filing_status_changed',
         data: {
           filingId: filing.id,
-          message: `Workflow stopped for filing ${filing.formType}. Your review has been released.`,
-          action: 'workflow_stopped',
+          message: `Workflow paused for filing ${filing.formType}. Your review has been released.`,
+          action: 'workflow_paused',
         },
       })
     }
   }
 
-  res.json({ message: 'Workflow stopped' })
+  res.json({ message: 'Workflow paused' })
+}
+
+// ─── POST /api/filings/:id/resume ────────────────────────────────────────────
+
+export function resumeFiling(req: Request, res: Response) {
+  const filing = db.select().from(filings)
+    .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
+    .get()
+  if (!filing) return res.status(404).json({ error: 'Filing not found' })
+
+  db.update(filings)
+    .set({ paused: false, updatedAt: new Date().toISOString() })
+    .where(eq(filings.id, filing.id)).run()
+
+  auditLogger.log({
+    orgId: req.user!.orgId,
+    filingId: filing.id,
+    actorType: req.user!.role === 'cpa' ? 'cpa' : 'founder',
+    actorId: req.user!.userId,
+    action: 'workflow_resumed',
+    reasoning: 'User resumed workflow',
+  })
+
+  res.json({ message: 'Workflow resumed' })
 }
 
 // ─── POST /api/filings/:id/escalate-cpa ──────────────────────────────────────
@@ -732,64 +708,102 @@ export function escalateToCpa(req: Request, res: Response) {
     .get()
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
 
-  // Set status to cpa_review
-  db.update(filings).set({
-    status: 'cpa_review',
-    updatedAt: new Date().toISOString(),
-  }).where(eq(filings.id, filing.id)).run()
-
-  // Create approval queue entry
-  db.insert(approvalQueue).values({
-    orgId: req.user!.orgId,
+  const { notifiedCpaIds } = escalateFilingToCpa({
     filingId: filing.id,
-    queueType: 'cpa',
-    status: 'pending',
+    orgId: req.user!.orgId,
+    formType: filing.formType,
+    formName: filing.formName,
     summary: `Founder escalated ${filing.formType} for CPA takeover.`,
     aiRecommendation: 'Founder requested manual CPA review.',
-  }).run()
+    actor: { type: 'founder', id: req.user!.userId },
+    auditReasoning: `Founder requested CPA takeover.`,
+  })
 
-  // Round-robin: select CPAs to notify
-  const selectedCpaIds = selectCpasForEscalation(5)
+  res.json({ message: 'Filing escalated to CPA', notifiedCpaCount: notifiedCpaIds.length })
+}
 
-  // Create notification records and send SSE
-  for (const cpaId of selectedCpaIds) {
-    // Upsert: skip if already notified for this filing
-    const existing = db.select().from(cpaNotifications)
-      .where(and(
-        eq(cpaNotifications.filingId, filing.id),
-        eq(cpaNotifications.cpaUserId, cpaId),
-      )).get()
+// ─── POST /api/filings/:id/escalate-founder ─────────────────────────────────
+// CPA pushes a filing back to the founder: transitions cpa_review → founder_approval,
+// closes any active review lock, creates a founder-queue approval row, notifies founder.
 
-    if (!existing) {
-      db.insert(cpaNotifications).values({
-        filingId: filing.id,
-        cpaUserId: cpaId,
-        status: 'pending',
-      }).run()
-    }
+export function escalateToFounder(req: Request, res: Response) {
+  const filingId = req.params.id as string
+  const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+  if (!filing) return res.status(404).json({ error: 'Filing not found' })
+
+  const role = req.user!.role
+  const hasAccess = role === 'cpa'
+    ? ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)
+    : req.user!.orgId === filing.orgId
+  if (!hasAccess) {
+    return res.status(403).json({ error: 'Not authorized for this organization' })
+  }
+  if (filing.status !== 'cpa_review') {
+    return res.status(400).json({ error: 'Filing is not in cpa_review stage' })
   }
 
-  sendToUsers(selectedCpaIds, {
-    type: 'filing_assigned',
-    data: {
-      filingId: filing.id,
-      formType: filing.formType,
-      formName: filing.formName,
-      orgId: filing.orgId,
-      message: `A new filing (${filing.formType}) has been escalated to CPA review.`,
-    },
-  })
+  const now = new Date().toISOString()
+  const { reason } = (req.body ?? {}) as { reason?: string }
+  const trimmedReason = typeof reason === 'string' ? reason.trim().slice(0, 500) : ''
+
+  db.update(filings).set({
+    status: 'founder_approval',
+    ...(role === 'cpa' ? { cpaAssignedId: req.user!.userId } : {}),
+    updatedAt: now,
+  }).where(eq(filings.id, filingId)).run()
+
+  const lock = getActiveLock(filingId)
+  if (lock && (role === 'cpa' ? lock.cpaUserId === req.user!.userId : true)) {
+    db.update(filingReviewLocks)
+      .set({ status: 'completed', releasedAt: now })
+      .where(eq(filingReviewLocks.id, lock.id)).run()
+  }
+
+  // Founder queue entry so founder sees the action item
+  db.insert(approvalQueue).values({
+    orgId: filing.orgId,
+    filingId: filing.id,
+    queueType: 'founder',
+    status: 'pending',
+    summary: trimmedReason
+      ? `CPA escalated ${filing.formType} back to founder: ${trimmedReason}`
+      : `CPA escalated ${filing.formType} back to founder for review.`,
+    aiRecommendation: null,
+  }).run()
+
+  // Dismiss any other pending CPA notifications for this filing
+  db.update(cpaNotifications).set({ status: 'dismissed', respondedAt: now })
+    .where(and(
+      eq(cpaNotifications.filingId, filingId),
+      eq(cpaNotifications.status, 'pending'),
+    )).run()
+
+  // Notify all founders/team members of the org
+  const orgMembers = db.select({ id: users.id }).from(users)
+    .where(eq(users.orgId, filing.orgId)).all()
+  if (orgMembers.length > 0) {
+    sendToUsers(orgMembers.map(u => u.id), {
+      type: 'filing_needs_founder',
+      data: {
+        filingId: filing.id,
+        formType: filing.formType,
+        formName: filing.formName,
+        reason: trimmedReason,
+        message: `CPA escalated ${filing.formType} back for your review.`,
+      },
+    })
+  }
 
   auditLogger.log({
-    orgId: req.user!.orgId,
-    filingId: filing.id,
-    actorType: 'founder',
+    orgId: filing.orgId,
+    filingId,
+    actorType: role === 'cpa' ? 'cpa' : 'founder',
     actorId: req.user!.userId,
-    action: 'escalated_to_cpa',
-    reasoning: `Founder requested CPA takeover. Notified ${selectedCpaIds.length} CPA(s).`,
+    action: 'escalated_to_founder',
+    reasoning: trimmedReason || `${role} pushed filing to founder approval`,
   })
 
-  res.json({ message: 'Filing escalated to CPA', notifiedCpaCount: selectedCpaIds.length })
+  res.json({ message: 'Filing escalated to founder', reason: trimmedReason })
 }
 
 // ─── POST /api/filings/:id/claim-review ──────────────────────────────────────

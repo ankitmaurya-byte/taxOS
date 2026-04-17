@@ -5,6 +5,7 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/auth'
+import { confirmDialog } from '@/stores/dialogs'
 import {
   ChevronDown,
   ChevronRight,
@@ -133,7 +134,13 @@ export function EntityDetailPage() {
         {entity.status !== 'dissolved' && (
           <button
             onClick={async () => {
-              if (window.confirm(`Dissolve ${entity.legalName}?`)) {
+              const ok = await confirmDialog({
+                title: `Dissolve ${entity.legalName}?`,
+                message: 'This marks the entity as dissolved. You can still view its history afterwards.',
+                confirmLabel: 'Dissolve entity',
+                tone: 'danger',
+              })
+              if (ok) {
                 setDeleteLoading(true)
                 try { await deleteEntity(entityId!) } finally { setDeleteLoading(false) }
                 navigate(fromAdmin ? '/admin/entities' : '/entities/overview')

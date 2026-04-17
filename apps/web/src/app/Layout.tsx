@@ -9,6 +9,7 @@ import { InkleAIPanel } from '@/components/InkleAIPanel'
 import { UpgradePlanModal } from '@/components/UpgradePlanModal'
 import { NotificationsPanel } from '@/components/notifications/NotificationsPanel'
 import { ToastViewport } from '@/components/notifications/ToastViewport'
+import { DialogViewport } from '@/components/notifications/DialogViewport'
 
 export function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -92,6 +93,7 @@ export function Layout() {
       )}
       {showUpgradeModal && <UpgradePlanModal onClose={() => setShowUpgradeModal(false)} />}
       <ToastViewport />
+      <DialogViewport />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
+import { promptDialog } from '@/stores/dialogs'
 import { Pagination, usePagination } from '@/components/ui/pagination'
 import { CheckCircle2, XCircle, MessageSquare, ArrowUpRight, ChevronRight } from 'lucide-react'
 
@@ -154,7 +155,15 @@ export function ApprovalQueue() {
                     disabled={resolveLoading[approval.id]}
                     onClick={async (e) => {
                       e.stopPropagation()
-                      const reason = window.prompt('Rejection reason:')
+                      const reason = await promptDialog({
+                        title: 'Reject approval',
+                        message: 'Share why this request is being rejected.',
+                        placeholder: 'Rejection reason',
+                        multiline: true,
+                        required: true,
+                        confirmLabel: 'Reject',
+                        tone: 'danger',
+                      })
                       if (reason) {
                         setResolveLoading(prev => ({ ...prev, [approval.id]: true }))
                         try { await resolveApproval(approval.id, 'rejected', reason) } finally { setResolveLoading(prev => ({ ...prev, [approval.id]: false })) }

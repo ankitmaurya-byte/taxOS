@@ -88,6 +88,15 @@ function ensureNewTables() {
       created_by_id TEXT NOT NULL REFERENCES users(id),
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`,
+    `CREATE TABLE IF NOT EXISTS ai_chat_conversations (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      org_id TEXT REFERENCES organizations(id),
+      title TEXT NOT NULL DEFAULT 'Untitled',
+      messages TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
     `CREATE TABLE IF NOT EXISTS document_contexts (
       id TEXT PRIMARY KEY NOT NULL,
       document_id TEXT NOT NULL REFERENCES documents(id),
@@ -104,6 +113,23 @@ function ensureNewTables() {
 
   for (const ddl of newTables) {
     sqlite.prepare(ddl).run()
+  }
+}
+
+function ensureFilingColumns() {
+  const tableExists = sqlite
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'filings'")
+    .get() as { name: string } | undefined
+  if (!tableExists) return
+
+  const existingColumns = new Set(
+    (sqlite.prepare('PRAGMA table_info(filings)').all() as Array<{ name: string }>).map((c) => c.name),
+  )
+  if (!existingColumns.has('cpa_review_skipped')) {
+    sqlite.prepare("ALTER TABLE filings ADD COLUMN cpa_review_skipped INTEGER NOT NULL DEFAULT 0").run()
+  }
+  if (!existingColumns.has('paused')) {
+    sqlite.prepare("ALTER TABLE filings ADD COLUMN paused INTEGER NOT NULL DEFAULT 0").run()
   }
 }
 
@@ -133,6 +159,7 @@ function ensureDocumentVaultColumns() {
 ensureEntityColumns()
 ensureNewTables()
 ensureDocumentVaultColumns()
+ensureFilingColumns()
 
 export const db = drizzle(sqlite, { schema })
 export { schema }

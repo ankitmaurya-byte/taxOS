@@ -91,13 +91,9 @@ Filing data so far: ${JSON.stringify(filing.filingData)}
 
     const queuedForCpa = result.overallConfidence < CONFIDENCE_GATE
     const canTransitionFromPrefill = filing.status === 'intake' || filing.status === 'ai_prep'
-
-    // High confidence → skip CPA, jump straight to founder_approval.
-    // Low confidence  → round-robin escalate to CPAs (same flow as founder-initiated escalation).
-    let nextStatus: typeof filing.status = filing.status
-    if (canTransitionFromPrefill) {
-      nextStatus = queuedForCpa ? 'cpa_review' : 'founder_approval'
-    }
+    // Both confidence paths land in cpa_review. High confidence additionally flips the
+    // cpaReviewSkipped flag so the UI can surface a manual "Escalate to founder" shortcut.
+    const nextStatus: typeof filing.status = canTransitionFromPrefill ? 'cpa_review' : filing.status
 
     db.update(filings).set({
       filingData: { ...(filing.filingData || {}), ...fields } as any,

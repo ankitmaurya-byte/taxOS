@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth'
+import { confirmDialog, promptDialog } from '@/stores/dialogs'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -135,6 +137,31 @@ export function FilingRoom() {
   const [chatMessage, setChatMessage] = useState('')
   const [chatHistory, setChatHistory] = useState<Array<{ role: string; content: string }>>([])
   const [streaming, setStreaming] = useState(false)
+
+  // Auth + action state
+  const user = useAuthStore(s => s.user)
+  const claimFilingReview = useAuthStore(s => s.claimFilingReview)
+  const cpaApproveFiling = useAuthStore(s => s.cpaApproveFiling)
+  const cpaRejectFiling = useAuthStore(s => s.cpaRejectFiling)
+  const runAuditRisk = useAuthStore(s => s.runAuditRisk)
+  const pauseFiling = useAuthStore(s => s.pauseFiling)
+  const resumeFiling = useAuthStore(s => s.resumeFiling)
+  const startIntake = useAuthStore(s => s.startIntake)
+  const runPrefill = useAuthStore(s => s.runPrefill)
+  const escalateToCpa = useAuthStore(s => s.escalateToCpa)
+  const updateFilingStatus = useAuthStore(s => s.updateFilingStatus)
+  const [claimLoading, setClaimLoading] = useState(false)
+  const [cpaApproveLoading, setCpaApproveLoading] = useState(false)
+  const [cpaRejectLoading, setCpaRejectLoading] = useState(false)
+  const [auditRiskLoading, setAuditRiskLoading] = useState(false)
+  const [pauseLoading, setPauseLoading] = useState(false)
+  const [resumeLoading, setResumeLoading] = useState(false)
+  const [stopWorkflowLoading, setStopWorkflowLoading] = useState(false)
+  const [escalateFounderLoading, setEscalateFounderLoading] = useState(false)
+  const [startIntakeLoading, setStartIntakeLoading] = useState(false)
+  const [prefillLoading, setPrefillLoading] = useState(false)
+  const [escalateCpaLoading, setEscalateCpaLoading] = useState(false)
+  const [advanceLoading, setAdvanceLoading] = useState(false)
 
   // List view filters
   const [search, setSearch] = useState('')
@@ -363,30 +390,68 @@ export function FilingRoom() {
               <CardTitle>AI Conversation</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto space-y-3">
-              {/* Existing conversation messages */}
-              {filing.conversations?.map((convo: any) =>
-                (convo.messages || []).map((msg: any, i: number) => (
-                  <div key={`${convo.id}-${i}`} className={`rounded-lg p-3 ${
-                    msg.role === 'assistant' ? 'bg-[#EDE9FD] text-[#273951]' : 'bg-[#f6f9fc] text-[#273951] ml-8'
-                  }`}>
-                    <p className="text-xs font-medium text-[#64748d] mb-1">
-                      {msg.role === 'assistant' ? 'TaxOS AI' : 'You'}
-                    </p>
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                  </div>
-                ))
-              )}
-              {/* Live chat messages */}
-              {chatHistory.map((msg, i) => (
-                <div key={`chat-${i}`} className={`rounded-lg p-3 ${
-                  msg.role === 'assistant' ? 'bg-[#EDE9FD] text-[#273951]' : 'bg-[#f6f9fc] text-[#273951] ml-8'
-                }`}>
-                  <p className="text-xs font-medium text-[#64748d] mb-1">
-                    {msg.role === 'assistant' ? 'TaxOS AI' : 'You'}
-                  </p>
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                </div>
-              ))}
+              {(() => {
+                const hasExistingMessages = (filing.conversations || []).some(
+                  (c: any) => (c.messages || []).length > 0,
+                )
+                const isEmpty = !hasExistingMessages && chatHistory.length === 0
+                if (isEmpty) {
+                  const suggestions = [
+                    'What do I need to file this form?',
+                    'Summarize this filing in plain English.',
+                    'What documents should I upload next?',
+                    'Check this filing for audit risk.',
+                  ]
+                  return (
+                    <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                      <p className="text-base font-medium text-[#061b31]">How can I help you?</p>
+                      <p className="mt-1 text-xs text-[#64748d]">
+                        Ask anything about this filing, or pick a prompt to get started.
+                      </p>
+                      <div className="mt-4 flex flex-col gap-2 w-full max-w-md">
+                        {suggestions.map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setChatMessage(s)}
+                            className="rounded-lg border border-[#e5edf5] bg-white px-3 py-2 text-left text-sm text-[#273951] hover:bg-[#f6f9fc]"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                }
+                return (
+                  <>
+                    {/* Existing conversation messages */}
+                    {filing.conversations?.map((convo: any) =>
+                      (convo.messages || []).map((msg: any, i: number) => (
+                        <div key={`${convo.id}-${i}`} className={`rounded-lg p-3 ${
+                          msg.role === 'assistant' ? 'bg-[#EDE9FD] text-[#273951]' : 'bg-[#f6f9fc] text-[#273951] ml-8'
+                        }`}>
+                          <p className="text-xs font-medium text-[#64748d] mb-1">
+                            {msg.role === 'assistant' ? 'TaxOS AI' : 'You'}
+                          </p>
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        </div>
+                      ))
+                    )}
+                    {/* Live chat messages */}
+                    {chatHistory.map((msg, i) => (
+                      <div key={`chat-${i}`} className={`rounded-lg p-3 ${
+                        msg.role === 'assistant' ? 'bg-[#EDE9FD] text-[#273951]' : 'bg-[#f6f9fc] text-[#273951] ml-8'
+                      }`}>
+                        <p className="text-xs font-medium text-[#64748d] mb-1">
+                          {msg.role === 'assistant' ? 'TaxOS AI' : 'You'}
+                        </p>
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+                    ))}
+                  </>
+                )
+              })()}
             </CardContent>
             <div className="border-t p-4 flex gap-2">
               <Input
@@ -425,14 +490,18 @@ export function FilingRoom() {
                   <p className="text-sm text-[#64748d]">{filing.aiReasoning}</p>
                 </div>
               )}
-              {filing.filingData && typeof filing.filingData === 'object' && (
-                <div className='overflow-y-scroll max-h-96'>
-                  <p className="text-sm font-medium text-[#061b31] mb-3">Filing Data</p>
+              <div className='overflow-y-scroll max-h-96'>
+                <p className="text-sm font-medium text-[#061b31] mb-3">Filing Data</p>
+                {filing.filingData && typeof filing.filingData === 'object' && Object.keys(filing.filingData as Record<string, any>).length > 0 ? (
                   <div className="rounded-md border border-[#e5edf5] overflow-hidden">
                     <FilingDataFields data={filing.filingData as Record<string, any>} />
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="rounded-md border border-dashed border-[#e5edf5] px-4 py-6 text-center">
+                    <p className="text-sm text-[#64748d]">No filing data found</p>
+                  </div>
+                )}
+              </div>
 
               {/* Documents */}
               {filing.documents?.length > 0 && (
@@ -449,6 +518,201 @@ export function FilingRoom() {
             </CardContent>
           </Card>
 
+          {/* Action panel — mirrors FilingDetail buttons across every status */}
+          {(() => {
+            const role = user?.role
+            const isFounder = role === 'founder'
+            const isCpa = role === 'cpa'
+            const isTeamMember = role === 'team_member'
+            const status = filing.status as string
+            const isTerminal = status === 'submitted' || status === 'archived'
+            const isPaused = (filing as any).paused === true || (filing as any).paused === 1
+            const reviewLock = (filing as any).reviewLock as { cpaUserId: string } | null | undefined
+            const aiConfidenceScore = (filing as any).aiConfidenceScore as number | null | undefined
+            const cpaReviewSkipped = (filing as any).cpaReviewSkipped === true || (filing as any).cpaReviewSkipped === 1
+            const intakeConversation = (filing as any).conversations?.find((c: any) => c.agentType === 'intake')
+
+            const canStartIntake = !isPaused && (status === 'intake' || status === 'ai_prep') && !intakeConversation && (isFounder || isCpa)
+            const canRunPrefill = !isPaused && status === 'ai_prep' && (isFounder || isCpa)
+            const canRunAuditRisk = !isPaused && (
+              (isFounder && (status === 'ai_prep' || status === 'founder_approval'))
+              || (isCpa && status === 'cpa_review')
+            )
+            const canAdvanceIntake = !isPaused && status === 'intake' && (isFounder || isCpa)
+            const canEscalate = !isPaused && (status === 'intake' || status === 'ai_prep') && isFounder
+            const canCpaClaim = !isPaused && status === 'cpa_review' && isCpa && !reviewLock
+            const canCpaApprove = !isPaused && status === 'cpa_review' && isCpa && reviewLock?.cpaUserId === user?.id
+            const canStopWorkflow = !isPaused && (status === 'ai_prep' || status === 'cpa_review') && isFounder
+            const canPause = !isPaused && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
+            const canResume = isPaused && (status === 'cpa_review' || status === 'founder_approval') && (isFounder || isTeamMember)
+            const canEscalateToFounder = !isPaused
+              && status === 'cpa_review'
+              && cpaReviewSkipped
+              && typeof aiConfidenceScore === 'number' && aiConfidenceScore >= 0.8
+              && (isFounder || isTeamMember)
+
+            const hasAny = canStartIntake || canRunPrefill || canRunAuditRisk || canAdvanceIntake
+              || canEscalate || canCpaClaim || canCpaApprove || canStopWorkflow
+              || canPause || canResume || canEscalateToFounder || isPaused
+            if (isTerminal || !hasAny) return null
+
+            const invalidate = () => queryClient.invalidateQueries({ queryKey: ['filing', id] })
+
+            return (
+              <Card className="mt-4">
+                <CardContent className="p-4 space-y-3">
+                  <p className="text-sm font-medium text-[#061b31]">Actions</p>
+
+                  {isPaused && (
+                    <div className="rounded-md border border-[#ffd7ef] bg-[rgba(234,34,97,0.06)] p-3">
+                      <p className="text-sm font-medium text-[#ea2261]">Workflow paused</p>
+                      <p className="mt-0.5 text-xs text-[#273951]">All actions disabled until resumed.</p>
+                      {canResume && (
+                        <Button
+                          className="mt-2"
+                          disabled={resumeLoading}
+                          onClick={async () => {
+                            if (!id) return
+                            setResumeLoading(true)
+                            try { await resumeFiling(id); invalidate() } finally { setResumeLoading(false) }
+                          }}
+                        >
+                          {resumeLoading ? 'Resuming...' : 'Resume Workflow'}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    {canCpaClaim && (
+                      <Button
+                        disabled={claimLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          setClaimLoading(true)
+                          try { await claimFilingReview(id); invalidate() } finally { setClaimLoading(false) }
+                        }}
+                      >
+                        {claimLoading ? 'Claiming...' : 'Claim Filing'}
+                      </Button>
+                    )}
+
+                    {canCpaApprove && (
+                      <Button
+                        disabled={cpaApproveLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          setCpaApproveLoading(true)
+                          try { await cpaApproveFiling(id); invalidate() } finally { setCpaApproveLoading(false) }
+                        }}
+                      >
+                        {cpaApproveLoading ? 'Approving...' : 'Approve Filing'}
+                      </Button>
+                    )}
+
+                    {canCpaApprove && (
+                      <Button
+                        variant="destructive"
+                        disabled={cpaRejectLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          const reason = await promptDialog({
+                            title: 'Reject filing',
+                            message: 'Filing will be sent back to AI Prep. Share a reason so the preparer knows what to fix.',
+                            placeholder: 'Rejection reason',
+                            multiline: true,
+                            required: true,
+                            confirmLabel: 'Reject filing',
+                            tone: 'danger',
+                          })
+                          if (!reason) return
+                          setCpaRejectLoading(true)
+                          try { await cpaRejectFiling(id, reason); invalidate() } finally { setCpaRejectLoading(false) }
+                        }}
+                      >
+                        {cpaRejectLoading ? 'Rejecting...' : 'Reject Filing'}
+                      </Button>
+                    )}
+
+                    {canRunAuditRisk && (
+                      <Button
+                        variant="outline"
+                        disabled={auditRiskLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          setAuditRiskLoading(true)
+                          try { await runAuditRisk(id); invalidate() } finally { setAuditRiskLoading(false) }
+                        }}
+                      >
+                        {auditRiskLoading ? 'Scoring Risk...' : 'Run Audit Risk'}
+                      </Button>
+                    )}
+
+                    {canEscalateToFounder && (
+                      <Button
+                        variant="outline"
+                        disabled={escalateFounderLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          const reason = await promptDialog({
+                            title: 'Escalate to founder',
+                            message: 'Skip CPA review and send this filing to founder approval. Reason is optional.',
+                            placeholder: 'Reason (optional)',
+                            multiline: true,
+                            confirmLabel: 'Escalate',
+                          })
+                          if (reason === null) return
+                          setEscalateFounderLoading(true)
+                          try {
+                            await api.filings.escalateToFounder(id, reason)
+                            invalidate()
+                          } finally { setEscalateFounderLoading(false) }
+                        }}
+                      >
+                        {escalateFounderLoading ? 'Escalating...' : 'Escalate to Founder'}
+                      </Button>
+                    )}
+
+                    {canStopWorkflow && (
+                      <Button
+                        variant="destructive"
+                        disabled={stopWorkflowLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          const ok = await confirmDialog({
+                            title: 'Stop workflow?',
+                            message: 'This releases the CPA review lock and pauses the filing.',
+                            confirmLabel: 'Stop workflow',
+                            tone: 'danger',
+                          })
+                          if (!ok) return
+                          setStopWorkflowLoading(true)
+                          try { await pauseFiling(id); invalidate() } finally { setStopWorkflowLoading(false) }
+                        }}
+                      >
+                        {stopWorkflowLoading ? 'Stopping...' : 'Stop Workflow'}
+                      </Button>
+                    )}
+
+                    {canPause && (
+                      <Button
+                        variant="outline"
+                        disabled={pauseLoading}
+                        onClick={async () => {
+                          if (!id) return
+                          setPauseLoading(true)
+                          try { await pauseFiling(id); invalidate() } finally { setPauseLoading(false) }
+                        }}
+                      >
+                        {pauseLoading ? 'Pausing...' : 'Pause Workflow'}
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })()}
+
           {/* Approval Card */}
           {filing.status === 'founder_approval' && (
             <Card className="mt-4 border-[rgba(155,104,41,0.3)] bg-[rgba(155,104,41,0.08)]">
@@ -457,8 +721,16 @@ export function FilingRoom() {
                 <p className="text-sm text-[#9b6829]">{filing.aiSummary}</p>
                 <div className="flex gap-2">
                   <Button onClick={() => approveMutation.mutate()}>Approve & Submit</Button>
-                  <Button variant="destructive" onClick={() => {
-                    const reason = prompt('Rejection reason:')
+                  <Button variant="destructive" onClick={async () => {
+                    const reason = await promptDialog({
+                      title: 'Reject filing',
+                      message: 'Filing will be sent back to AI Prep. Share a reason so the preparer can address it.',
+                      placeholder: 'Rejection reason',
+                      multiline: true,
+                      required: true,
+                      confirmLabel: 'Reject filing',
+                      tone: 'danger',
+                    })
                     if (reason) rejectMutation.mutate(reason)
                   }}>
                     Reject

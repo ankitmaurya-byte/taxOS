@@ -21,7 +21,9 @@ import {
   rejectFiling,
   releaseFilingReview,
   pauseFiling,
+  resumeFiling,
   escalateToCpa,
+  escalateToFounder,
 } from '../controllers/filings.controller'
 
 const router: Router = Router()
@@ -39,7 +41,9 @@ router.put('/:id/status', requirePermission('canEditFilings'), updateFilingStatu
 router.put('/:id/data', requirePermission('canEditFilings'), updateFilingData)
 router.post('/:id/approve', requireRole('founder'), requirePermission('canApproveFilings'), approveFiling)
 router.post('/:id/reject', requireRole('founder'), requirePermission('canEditFilings'), rejectFiling)
-router.post('/:id/pause', requireRole('founder'), requirePermission('canEditFilings'), pauseFiling)
+router.post('/:id/pause', requireRole('founder', 'team_member'), requirePermission('canEditFilings'), pauseFiling)
+router.post('/:id/resume', requireRole('founder', 'team_member'), requirePermission('canEditFilings'), resumeFiling)
 router.post('/:id/escalate-cpa', requireRole('founder'), requirePermission('canEditFilings'), escalateToCpa)
+router.post('/:id/escalate-founder', requireRole('founder', 'team_member', 'cpa'), requirePermission('canEditFilings'), escalateToFounder)
 
 export default router
