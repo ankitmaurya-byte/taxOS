@@ -27,7 +27,7 @@ function EditableField({
   return (
     <div>
       <label className="mb-1.5 block text-sm font-medium text-[#273951]">{label}</label>
-      <div className="flex h-11 items-center justify-between rounded-lg border border-gray-200 bg-[#f6f9fc] px-3">
+      <div className="flex h-11 items-center justify-between rounded-lg border border-[#e5edf5] bg-[#f6f9fc] px-3">
         <div className="flex items-center gap-2 text-sm text-[#061b31] min-w-0">
           {icon}
           <span className="truncate">{value}</span>
@@ -36,7 +36,7 @@ function EditableField({
           <button
             type="button"
             onClick={onEdit}
-            className="flex-shrink-0 p-1 text-gray-400 hover:text-[#533afd] transition-colors"
+            className="flex-shrink-0 p-1 text-[#64748d] hover:text-[#533afd] transition-colors"
             aria-label={`Edit ${label}`}
           >
             <Pencil size={14} />
@@ -72,13 +72,13 @@ function FormInput({
         {label}
         {infoTooltip && (
           <span title={infoTooltip} className="cursor-help">
-            <Info size={14} className="text-gray-400" />
+            <Info size={14} className="text-[#64748d]" />
           </span>
         )}
       </label>
-      <div className="flex h-11 items-center rounded-lg border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-[#533afd] focus-within:border-transparent transition-shadow">
+      <div className="flex h-11 items-center rounded-lg border border-[#e5edf5] bg-white focus-within:ring-2 focus-within:ring-[#533afd] focus-within:border-transparent transition-shadow">
         {prefix && (
-          <div className="flex items-center gap-1 border-r border-gray-200 px-3 text-sm text-[#64748d]">
+          <div className="flex items-center gap-1 border-r border-[#e5edf5] px-3 text-sm text-[#64748d]">
             {prefix}
           </div>
         )}
@@ -88,7 +88,7 @@ function FormInput({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className="h-full flex-1 rounded-lg bg-transparent px-3 text-sm text-[#061b31] placeholder:text-gray-400 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-full flex-1 rounded-lg bg-transparent px-3 text-sm text-[#061b31] placeholder:text-[#64748d] outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
     </div>
@@ -154,11 +154,11 @@ export function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-[900px] px-6 py-8">
-      <h1 className="mb-6 text-2xl font-semibold text-[#061b31]">Profile Settings</h1>
+      <h1 className="mb-6 text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Profile Settings</h1>
 
       {/* Profile header */}
       <div className="mb-6 flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EDE9FD] text-lg font-semibold text-[#533afd]">
+        <div className="flex h-16 w-16 items-center justify-center rounded-md bg-[#EDE9FD] text-lg font-semibold text-[#533afd]">
           {initials}
         </div>
         <div>
@@ -168,7 +168,7 @@ export function ProfilePage() {
       </div>
 
       {/* Form card */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-[#e5edf5] bg-white p-6 shadow-sm">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {/* First name */}
           <FormInput
@@ -190,14 +190,14 @@ export function ProfilePage() {
           <EditableField
             label="Email"
             value={profile.email}
-            icon={<Mail size={14} className="text-gray-400" />}
+            icon={<Mail size={14} className="text-[#64748d]" />}
           />
 
           {/* Primary mobile — read-only with edit icon */}
           <EditableField
             label="Primary mobile number"
             value="+1 (555) 000-0000"
-            icon={<Phone size={14} className="text-gray-400" />}
+            icon={<Phone size={14} className="text-[#64748d]" />}
           />
 
           {/* Secondary phone with country code */}
@@ -239,10 +239,10 @@ export function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setShowTimezoneDropdown(!showTimezoneDropdown)}
-                className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-sm text-[#061b31] hover:border-gray-300 transition-colors"
+                className="flex h-11 w-full items-center justify-between rounded-lg border border-[#e5edf5] bg-white px-3 text-sm text-[#061b31] hover:border-[#e5edf5] transition-colors"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <Globe size={14} className="flex-shrink-0 text-gray-400" />
+                  <Globe size={14} className="flex-shrink-0 text-[#64748d]" />
                   <span className="truncate">{selectedTz?.label || 'Select timezone'}</span>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -254,19 +254,19 @@ export function ProfilePage() {
                         setTimezone('')
                         setShowTimezoneDropdown(false)
                       }}
-                      className="p-0.5 text-gray-400 hover:text-gray-600"
+                      className="p-0.5 text-[#64748d] hover:text-[#273951]"
                     >
                       <X size={14} />
                     </button>
                   )}
-                  <ChevronDown size={14} className="text-gray-400" />
+                  <ChevronDown size={14} className="text-[#64748d]" />
                 </div>
               </button>
 
               {showTimezoneDropdown && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowTimezoneDropdown(false)} />
-                  <div className="absolute left-0 top-full z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
+                  <div className="absolute left-0 top-full z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-[#e5edf5] bg-white shadow-lg">
                     {TIMEZONES.map((tz) => (
                       <button
                         key={tz.value}
@@ -290,7 +290,7 @@ export function ProfilePage() {
         </div>
 
         {/* Role & Organization info */}
-        <div className="mt-6 border-t border-gray-100 pt-5">
+        <div className="mt-6 border-t border-[#e5edf5] pt-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-[#64748d]">Role</p>
@@ -310,7 +310,7 @@ export function ProfilePage() {
         {/* Save button */}
         <div className="mt-6 flex items-center justify-end gap-3">
           {saved && (
-            <span className="text-sm text-green-600">Changes saved</span>
+            <span className="text-sm text-[#108c3d]">Changes saved</span>
           )}
           <button
             type="button"

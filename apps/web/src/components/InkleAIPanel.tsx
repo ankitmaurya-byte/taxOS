@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
+import { notify } from '@/stores/notifications'
 import {
   X,
   Pencil,
@@ -43,36 +44,45 @@ interface ActionItem {
 }
 
 // ─── Role-aware action libraries ─────────────────────
+// Spec-compliant accent tones: purple primary, lemon warning, ruby danger, success green.
+const ACCENT = {
+  primary: 'text-[#533afd] bg-[#f6f9fc]',
+  warning: 'text-[#9b6829] bg-[rgba(155,104,41,0.12)]',
+  danger:  'text-[#a3123e] bg-[rgba(234,34,97,0.08)]',
+  success: 'text-[#108c3d] bg-[rgba(21,190,83,0.12)]',
+  info:    'text-[#2e2b8c] bg-[rgba(83,58,253,0.08)]',
+} as const
+
 const FOUNDER_ACTIONS: ActionItem[] = [
-  { icon: FileText, title: 'What filings are due?', description: 'Check upcoming tax filing deadlines for your entities.', prompt: 'What tax filings are due for my company this quarter? List them with deadlines.', color: 'text-[#533afd] bg-[#f6f9fc]' },
-  { icon: Calculator, title: 'Estimate quarterly taxes', description: 'Calculate your estimated quarterly tax payments.', prompt: 'Help me estimate my quarterly estimated tax payments. What information do you need?', color: 'text-[#F59E0B] bg-[#FFFBEB]' },
-  { icon: AlertTriangle, title: 'Audit risk check', description: 'Assess your IRS audit risk based on your profile.', prompt: 'Based on my current filings and entity profile, what is my estimated IRS audit risk?', color: 'text-[#EF4444] bg-[#FEF2F2]' },
-  { icon: Shield, title: 'Compliance health check', description: 'Get an overall compliance status summary.', prompt: 'Give me an overall compliance health check. Are there overdue filings or pending actions?', color: 'text-[#15803D] bg-[#F0FDF4]' },
-  { icon: DollarSign, title: 'R&D tax credits', description: 'Check eligibility for R&D tax credits.', prompt: 'Am I eligible for the R&D tax credit? What qualifying activities should I track?', color: 'text-[#533afd] bg-[#f6f9fc]' },
-  { icon: Zap, title: 'Tax saving strategies', description: 'Find deductions and credits for your company.', prompt: 'What are the top tax deductions and credits available to my type of company?', color: 'text-[#F59E0B] bg-[#FFFBEB]' },
-  { icon: Building2, title: 'C-Corp vs S-Corp', description: 'Compare entity structures and tax implications.', prompt: 'Compare C-Corp vs S-Corp for my situation. What are the tax implications?', color: 'text-[#3B82F6] bg-[#EFF6FF]' },
-  { icon: BookOpen, title: 'Section 174 explained', description: 'Understand R&D amortization rules.', prompt: 'Explain the Section 174 R&D amortization rules. How do they affect my filings?', color: 'text-[#3B82F6] bg-[#EFF6FF]' },
+  { icon: FileText, title: 'What filings are due?', description: 'Check upcoming tax filing deadlines for your entities.', prompt: 'What tax filings are due for my company this quarter? List them with deadlines.', color: ACCENT.primary },
+  { icon: Calculator, title: 'Estimate quarterly taxes', description: 'Calculate your estimated quarterly tax payments.', prompt: 'Help me estimate my quarterly estimated tax payments. What information do you need?', color: ACCENT.warning },
+  { icon: AlertTriangle, title: 'Audit risk check', description: 'Assess your IRS audit risk based on your profile.', prompt: 'Based on my current filings and entity profile, what is my estimated IRS audit risk?', color: ACCENT.danger },
+  { icon: Shield, title: 'Compliance health check', description: 'Get an overall compliance status summary.', prompt: 'Give me an overall compliance health check. Are there overdue filings or pending actions?', color: ACCENT.success },
+  { icon: DollarSign, title: 'R&D tax credits', description: 'Check eligibility for R&D tax credits.', prompt: 'Am I eligible for the R&D tax credit? What qualifying activities should I track?', color: ACCENT.primary },
+  { icon: Zap, title: 'Tax saving strategies', description: 'Find deductions and credits for your company.', prompt: 'What are the top tax deductions and credits available to my type of company?', color: ACCENT.warning },
+  { icon: Building2, title: 'C-Corp vs S-Corp', description: 'Compare entity structures and tax implications.', prompt: 'Compare C-Corp vs S-Corp for my situation. What are the tax implications?', color: ACCENT.info },
+  { icon: BookOpen, title: 'Section 174 explained', description: 'Understand R&D amortization rules.', prompt: 'Explain the Section 174 R&D amortization rules. How do they affect my filings?', color: ACCENT.info },
 ]
 
 const CPA_ACTIONS: ActionItem[] = [
-  { icon: FileText, title: '1120 review checklist', description: 'Comprehensive checklist for corporate return review.', prompt: 'Give me a comprehensive checklist for reviewing a 1120 corporate tax return.', color: 'text-[#533afd] bg-[#f6f9fc]' },
-  { icon: AlertTriangle, title: 'Common audit red flags', description: 'Key IRS audit triggers to watch for.', prompt: 'What are the most common IRS audit triggers for C-Corps?', color: 'text-[#EF4444] bg-[#FEF2F2]' },
-  { icon: Calculator, title: 'Verify estimated taxes', description: 'Validate quarterly payment calculations.', prompt: 'Walk me through how to verify quarterly estimated tax payments for a corporation.', color: 'text-[#F59E0B] bg-[#FFFBEB]' },
-  { icon: Shield, title: 'Document validation', description: 'Best practices for reviewing uploaded documents.', prompt: 'What documents should I verify before approving a filing?', color: 'text-[#15803D] bg-[#F0FDF4]' },
-  { icon: DollarSign, title: 'Officer compensation', description: 'IRS reasonable compensation guidelines.', prompt: 'Explain the IRS reasonable compensation rules for S-Corp officers.', color: 'text-[#533afd] bg-[#f6f9fc]' },
-  { icon: BookOpen, title: 'Form 5472 requirements', description: 'Foreign-owned corporation reporting rules.', prompt: 'When is Form 5472 required? What transactions must be reported?', color: 'text-[#3B82F6] bg-[#EFF6FF]' },
+  { icon: FileText, title: '1120 review checklist', description: 'Comprehensive checklist for corporate return review.', prompt: 'Give me a comprehensive checklist for reviewing a 1120 corporate tax return.', color: ACCENT.primary },
+  { icon: AlertTriangle, title: 'Common audit red flags', description: 'Key IRS audit triggers to watch for.', prompt: 'What are the most common IRS audit triggers for C-Corps?', color: ACCENT.danger },
+  { icon: Calculator, title: 'Verify estimated taxes', description: 'Validate quarterly payment calculations.', prompt: 'Walk me through how to verify quarterly estimated tax payments for a corporation.', color: ACCENT.warning },
+  { icon: Shield, title: 'Document validation', description: 'Best practices for reviewing uploaded documents.', prompt: 'What documents should I verify before approving a filing?', color: ACCENT.success },
+  { icon: DollarSign, title: 'Officer compensation', description: 'IRS reasonable compensation guidelines.', prompt: 'Explain the IRS reasonable compensation rules for S-Corp officers.', color: ACCENT.primary },
+  { icon: BookOpen, title: 'Form 5472 requirements', description: 'Foreign-owned corporation reporting rules.', prompt: 'When is Form 5472 required? What transactions must be reported?', color: ACCENT.info },
 ]
 
 const ADMIN_ACTIONS: ActionItem[] = [
-  { icon: Building2, title: 'Onboarding checklist', description: 'Standard flow for new founder verification.', prompt: 'What is the standard onboarding flow for new founders?', color: 'text-[#533afd] bg-[#f6f9fc]' },
-  { icon: Shield, title: 'CPA assignment guide', description: 'Best practices for assigning CPAs.', prompt: 'How should I assign CPAs to organizations?', color: 'text-[#15803D] bg-[#F0FDF4]' },
-  { icon: AlertTriangle, title: 'Suspicious patterns', description: 'Detect fraudulent applications.', prompt: 'What patterns indicate fraudulent founder applications?', color: 'text-[#EF4444] bg-[#FEF2F2]' },
+  { icon: Building2, title: 'Onboarding checklist', description: 'Standard flow for new founder verification.', prompt: 'What is the standard onboarding flow for new founders?', color: ACCENT.primary },
+  { icon: Shield, title: 'CPA assignment guide', description: 'Best practices for assigning CPAs.', prompt: 'How should I assign CPAs to organizations?', color: ACCENT.success },
+  { icon: AlertTriangle, title: 'Suspicious patterns', description: 'Detect fraudulent applications.', prompt: 'What patterns indicate fraudulent founder applications?', color: ACCENT.danger },
 ]
 
 const TEAM_ACTIONS: ActionItem[] = [
-  { icon: FileText, title: 'Upload a document', description: 'How to upload and tag documents.', prompt: 'Walk me through how to upload and tag a document in TaxOS.', color: 'text-[#533afd] bg-[#f6f9fc]' },
-  { icon: HelpCircle, title: 'What can I access?', description: 'Check your available permissions.', prompt: 'Based on my permissions, what actions can I perform in TaxOS?', color: 'text-[#3B82F6] bg-[#EFF6FF]' },
-  { icon: Calendar, title: 'Upcoming deadlines', description: 'View tax deadlines for your org.', prompt: 'What tax deadlines are coming up for my organization?', color: 'text-[#F59E0B] bg-[#FFFBEB]' },
+  { icon: FileText, title: 'Upload a document', description: 'How to upload and tag documents.', prompt: 'Walk me through how to upload and tag a document in TaxOS.', color: ACCENT.primary },
+  { icon: HelpCircle, title: 'What can I access?', description: 'Check your available permissions.', prompt: 'Based on my permissions, what actions can I perform in TaxOS?', color: ACCENT.info },
+  { icon: Calendar, title: 'Upcoming deadlines', description: 'View tax deadlines for your org.', prompt: 'What tax deadlines are coming up for my organization?', color: ACCENT.warning },
 ]
 
 function getActionsForRole(role: string): ActionItem[] {
@@ -222,13 +232,21 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5edf5]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#533afd] to-[#8B5CF6] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-md bg-gradient-to-br from-[#533afd] to-[#2e2b8c] flex items-center justify-center">
               <Sparkles size={16} className="text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-[#061b31]">{config.title}</h3>
-                <span className="text-[10px] font-semibold text-[#10B981] bg-[#D1FAE5] px-1.5 py-0.5 rounded">Beta</span>
+                <h3 className="text-sm text-[#061b31]" style={{ fontWeight: 400 }}>{config.title}</h3>
+                <span
+                  className="text-[10px] rounded px-1.5 py-0.5"
+                  style={{
+                    color: '#108c3d',
+                    background: 'rgba(21,190,83,0.2)',
+                    border: '1px solid rgba(21,190,83,0.4)',
+                    fontWeight: 300,
+                  }}
+                >Beta</span>
               </div>
               <p className="text-xs text-[#64748d]">{config.subtitle}</p>
             </div>
@@ -249,7 +267,7 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-[#FAFAFA]">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#533afd] to-[#8B5CF6] flex items-center justify-center mb-3">
+                  <div className="w-12 h-12 rounded-md bg-gradient-to-br from-[#533afd] to-[#2e2b8c] flex items-center justify-center mb-3">
                     <Sparkles size={20} className="text-white" />
                   </div>
                   <p className="text-sm text-[#64748d] max-w-xs mb-4">{config.empty}</p>
@@ -288,7 +306,7 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
                   </div>
                 ) : (
                   <div key={i} className="flex gap-2">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#533afd] to-[#8B5CF6] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#533afd] to-[#2e2b8c] flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Sparkles size={12} className="text-white" />
                     </div>
                     <div className="max-w-[280px]">
@@ -297,8 +315,18 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-[10px] text-[#64748d]">{msg.timestamp}</p>
-                        <button className="text-[#64748d] hover:text-[#64748d]"><ThumbsUp size={12} /></button>
-                        <button className="text-[#64748d] hover:text-[#64748d]"><ThumbsDown size={12} /></button>
+                        <button
+                          type="button"
+                          onClick={() => notify({ title: 'Thanks for the feedback', message: 'We log thumbs-up to improve answers.', tone: 'success' })}
+                          className="text-[#64748d] hover:text-[#108c3d] transition-colors"
+                          aria-label="Helpful response"
+                        ><ThumbsUp size={12} /></button>
+                        <button
+                          type="button"
+                          onClick={() => notify({ title: 'Thanks for flagging', message: 'We use thumbs-down to route tough questions to CPAs.', tone: 'info' })}
+                          className="text-[#64748d] hover:text-[#ea2261] transition-colors"
+                          aria-label="Not helpful"
+                        ><ThumbsDown size={12} /></button>
                       </div>
                     </div>
                   </div>
@@ -330,7 +358,12 @@ export function InkleAIPanel({ onClose }: InkleAIPanelProps) {
                   className="w-full px-4 py-3 text-[13px] text-[#061b31] placeholder:text-[#64748d] outline-none resize-none"
                 />
                 <div className="flex items-center justify-between px-3 pb-2">
-                  <button className="text-[#64748d] hover:text-[#64748d]">
+                  <button
+                    type="button"
+                    onClick={() => notify({ title: 'Attach documents', message: 'Upload files in the Documents vault; the assistant will read them automatically.', tone: 'info' })}
+                    className="text-[#64748d] hover:text-[#273951] transition-colors"
+                    aria-label="Attach document"
+                  >
                     <Paperclip size={16} />
                   </button>
                   <button
@@ -373,7 +406,7 @@ function ActionLibraryView({ actions, onAction, onBack }: { actions: ActionItem[
               <action.icon size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-semibold text-[#061b31]">{action.title}</h4>
+              <h4 className="text-sm font-normal text-[#061b31]">{action.title}</h4>
               <p className="text-xs text-[#64748d] mt-0.5">{action.description}</p>
             </div>
             <ChevronRight size={16} className="text-[#64748d] group-hover:text-[#533afd] flex-shrink-0" />
@@ -388,7 +421,7 @@ function ActionLibraryView({ actions, onAction, onBack }: { actions: ActionItem[
 function HistoryView() {
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
-      <h3 className="text-sm font-semibold text-[#061b31] mb-4">Chat History</h3>
+      <h3 className="text-sm font-normal text-[#061b31] mb-4">Chat History</h3>
       <div className="text-center py-12">
         <History size={32} className="text-[#e5edf5] mx-auto mb-2" />
         <p className="text-sm text-[#64748d]">No previous conversations yet.</p>

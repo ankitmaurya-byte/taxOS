@@ -16,7 +16,7 @@ export function TopBar({ onUpgradeClick, onGetHelpClick, onInkleAIClick, onNotif
   return (
     <div className="flex items-center gap-2">
       {/* Upgrade */}
-      <button onClick={onUpgradeClick} className="flex items-center gap-1.5 border border-[#533afd] text-[#533afd] rounded-full px-3.5 py-1.5 text-[13px] font-medium hover:bg-[#EDE9FD] transition-colors">
+      <button onClick={onUpgradeClick} className="flex items-center gap-1.5 border border-[#b9b9f9] text-[#533afd] rounded px-3.5 py-1.5 text-[13px] font-normal hover:bg-[rgba(83,58,253,0.05)] transition-colors">
         <Rocket size={14} />
         Upgrade
       </button>
@@ -26,7 +26,7 @@ export function TopBar({ onUpgradeClick, onGetHelpClick, onInkleAIClick, onNotif
       {/* Inkle AI — opens AI chat panel */}
       <button
         onClick={onInkleAIClick}
-        className="flex items-center gap-1.5 border border-[#533afd] bg-[#EDE9FD] text-[#533afd] rounded-full px-3.5 py-1.5 text-[13px] font-medium hover:bg-[#DDD6FE] transition-colors"
+        className="flex items-center gap-1.5 border border-[#b9b9f9] bg-[#EDE9FD] text-[#533afd] rounded px-3.5 py-1.5 text-[13px] font-normal hover:bg-[#DDD6FE] transition-colors"
       >
         <Sparkles size={14} />
         Inkle AI

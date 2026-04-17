@@ -19,7 +19,6 @@ import { EntitiesOverviewPage } from '@/pages/EntitiesOverview'
 import { AddressBookPage } from '@/pages/AddressBook'
 import { EntityDetailPage } from '@/pages/EntityDetail'
 import { ChatPage } from '@/pages/Chat'
-import { AIAdvisor } from '@/pages/AIAdvisor'
 import { ActionCentrePage } from '@/pages/ActionCentre'
 import { DocumentsPage } from '@/pages/Documents'
 import { DocumentVault } from '@/pages/DocumentVault'
@@ -106,7 +105,7 @@ const protectedRoutes = [
   { path: 'profile',           element: <ProfilePage /> },
   { path: 'chat',              element: <ChatPage /> },
   { path: 'chat-hub',          element: <ChatHubPage /> },
-  { path: 'advisor',           element: <AIAdvisor /> },
+  { path: 'advisor',           element: <Navigate to="/chat" replace /> },
   { path: 'audit',             element: <AuditTrail /> },
   { path: 'documents',         element: <DocumentsPage /> },
   { path: 'documents/vault',   element: <DocumentVault /> },

@@ -29,7 +29,12 @@ function Frame({ children, testimonialIndex = 0 }: { children: React.ReactNode; 
           <div className="mb-10 flex items-center justify-between">
             <div className="text-[26px] font-light tracking-[-0.26px] text-[#533afd]">inkle</div>
             <div className="flex items-center gap-5 text-[#64748d]">
-              <button className="flex items-center gap-1.5 text-[14px] font-normal"><HelpCircle size={15} strokeWidth={1.8} /> Help</button>
+              <a
+                href="mailto:support@inkle.io?subject=TaxOS onboarding help"
+                className="flex items-center gap-1.5 text-[14px] font-normal hover:text-[#533afd] transition-colors"
+              >
+                <HelpCircle size={15} strokeWidth={1.8} /> Help
+              </a>
               <button onClick={logout} className="flex items-center gap-1.5 text-[14px] font-normal"><LogOut size={15} strokeWidth={1.8} /> Logout</button>
             </div>
           </div>
@@ -83,7 +88,12 @@ function PendingReview({ organizationName }: { organizationName: string }) {
 
           <div className="mt-6 border-t border-[#e5edf5] pt-5">
             <p className="mb-3 text-[12px] text-[#64748d]">While we set up for you</p>
-            <button className="rounded-sm bg-[#533afd] px-4 py-2 text-[14px] font-normal text-white hover:bg-[#4434d4] transition-colors">Meet our expert</button>
+            <a
+              href="https://calendly.com/inkle-support"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-sm bg-[#533afd] px-4 py-2 text-[14px] font-normal text-white hover:bg-[#4434d4] transition-colors"
+            >Meet our expert</a>
           </div>
         </div>
       </div>

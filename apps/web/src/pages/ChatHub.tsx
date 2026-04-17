@@ -35,7 +35,7 @@ export function ChatHubPage() {
 
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col gap-0">
-      <h1 className="text-xl font-bold text-[#061b31] mb-4">Chat</h1>
+      <h1 className="text-xl font-normal text-[#061b31] mb-4" style={{ fontWeight: 300 }}>Chat</h1>
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-4 bg-[#f6f9fc] p-1 rounded-md w-fit">

@@ -7,22 +7,22 @@ import { useState } from 'react'
 function RegBadge({ label, status }: { label: string; status: string }) {
   const styles =
     status === 'green'
-      ? 'text-[#065F46]'
+      ? 'text-[#108c3d]'
       : status === 'amber'
-        ? 'text-[#92400E]'
+        ? 'text-[#9b6829]'
         : 'text-[#64748d]'
   const dot =
     status === 'green'
-      ? 'bg-[#10B981]'
+      ? 'bg-[#15be53]'
       : status === 'amber'
-        ? 'bg-[#F59E0B]'
+        ? 'bg-[#9b6829]'
         : 'bg-[#64748d]'
 
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center gap-1.5">
         {status === 'amber' ? (
-          <AlertTriangle size={12} className="text-[#F59E0B]" />
+          <AlertTriangle size={12} className="text-[#9b6829]" />
         ) : (
           <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
         )}
@@ -65,11 +65,13 @@ export function RegistrationsPage() {
       title: 'EIN Registration',
       department: 'Department: IRS (Internal Revenue Service)',
       registered: hasEin,
+      href: 'https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online',
     },
     {
       title: 'EFTPS Registration',
       department: 'Department: IRS (Internal Revenue Service)',
       registered: false,
+      href: 'https://www.eftps.gov/eftps/',
     },
   ]
 
@@ -96,7 +98,7 @@ export function RegistrationsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-[#061b31]">Registrations</h1>
+        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Registrations</h1>
         {entities.length > 1 && (
           <select
             value={selectedId || entities[0]?.id}
@@ -117,27 +119,34 @@ export function RegistrationsPage() {
       ) : (
         <>
           {/* Federal */}
-          <h2 className="text-base font-semibold text-[#061b31] mb-4">Federal Registrations</h2>
+          <h2 className="text-base font-normal text-[#061b31] mb-4" style={{ fontWeight: 400 }}>Federal Registrations</h2>
           <div className="grid grid-cols-2 gap-4 mb-8">
             {federalItems.map((item) => (
               <div
                 key={item.title}
                 className="bg-white border border-[#e5edf5] rounded-[10px] p-5 relative"
               >
-                <button className="absolute top-4 right-4 text-[#64748d] hover:text-[#273951]">
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute top-4 right-4 text-[#64748d] hover:text-[#533afd] transition-colors"
+                  aria-label={`Open ${item.title} site`}
+                  title={`Open ${item.title}`}
+                >
                   <ArrowUpRight size={16} />
-                </button>
+                </a>
                 <h3 className="text-sm font-medium text-[#061b31] mb-1">{item.title}</h3>
                 <p className="text-xs text-[#64748d] mb-4">{item.department}</p>
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
-                      item.registered ? 'bg-[#10B981]' : 'bg-[#64748d]'
+                      item.registered ? 'bg-[#15be53]' : 'bg-[#64748d]'
                     }`}
                   />
                   <span
                     className={`text-xs font-medium ${
-                      item.registered ? 'text-[#065F46]' : 'text-[#64748d]'
+                      item.registered ? 'text-[#108c3d]' : 'text-[#64748d]'
                     }`}
                   >
                     {item.registered ? 'Registered' : 'Not registered'}
@@ -148,14 +157,14 @@ export function RegistrationsPage() {
           </div>
 
           {/* State */}
-          <h2 className="text-base font-semibold text-[#061b31] mb-4">State Registrations</h2>
+          <h2 className="text-base font-normal text-[#061b31] mb-4" style={{ fontWeight: 400 }}>State Registrations</h2>
           <div className="bg-white border border-[#e5edf5] rounded-md overflow-hidden">
             {/* Header */}
             <div className="grid grid-cols-4 px-4 py-2.5 border-b border-[#e5edf5]">
               {['State', 'Secretary of State', 'Registered Agent', 'Payroll'].map((h) => (
                 <span
                   key={h}
-                  className="text-[11px] font-semibold text-[#64748d] uppercase tracking-wider"
+                  className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider"
                 >
                   {h}
                 </span>

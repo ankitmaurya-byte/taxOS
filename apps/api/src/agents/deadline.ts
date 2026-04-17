@@ -3,6 +3,7 @@ import { db } from '../db'
 import { deadlines, entities } from '../db/schema'
 import { eq } from 'drizzle-orm'
 import { getApplicableDeadlines, calculateUrgencyScore } from '../lib/deadlineEngine'
+import { safeJsonParse } from './lib/json'
 
 export class DeadlineAgent extends BaseAgent {
   async calculateDeadlines(entityId: string, orgId: string): Promise<void> {
@@ -12,29 +13,22 @@ export class DeadlineAgent extends BaseAgent {
     const taxYear = new Date().getFullYear() - 1
     const applicable = getApplicableDeadlines(entity.entityType, taxYear, entity.stateOfIncorporation)
 
-    // Check for complex cases needing AI
-    const hasForeignSubs = entity.foreignSubsidiaries &&
-      (typeof entity.foreignSubsidiaries === 'string'
-        ? JSON.parse(entity.foreignSubsidiaries as string)
-        : entity.foreignSubsidiaries
-      ).length > 0
-
-    if (hasForeignSubs) {
-      // Add Form 5471 if not already included
+    const foreignSubs = safeJsonParse<string[]>(entity.foreignSubsidiaries as unknown, [])
+    if (Array.isArray(foreignSubs) && foreignSubs.length > 0) {
       const has5471 = applicable.some(d => d.formType === '5471')
       if (!has5471) {
-        const dueDate = `${taxYear + 1}-04-15`
         applicable.push({
           formType: '5471',
           formName: 'Information Return — Foreign Corporations',
-          dueDate,
+          dueDate: `${taxYear + 1}-04-15`,
           description: 'Required for foreign subsidiary reporting',
         })
       }
     }
 
-    // Upsert deadlines
     for (const dl of applicable) {
+      const urgency = calculateUrgencyScore(dl.dueDate)
+      const status = urgency === 100 ? 'overdue' : 'upcoming'
       const existing = db.select().from(deadlines)
         .where(eq(deadlines.entityId, entityId))
         .all()
@@ -43,8 +37,8 @@ export class DeadlineAgent extends BaseAgent {
       if (existing) {
         db.update(deadlines).set({
           dueDate: dl.dueDate,
-          urgencyScore: calculateUrgencyScore(dl.dueDate),
-          status: calculateUrgencyScore(dl.dueDate) === 100 ? 'overdue' : 'upcoming',
+          urgencyScore: urgency,
+          status,
         }).where(eq(deadlines.id, existing.id)).run()
       } else {
         db.insert(deadlines).values({
@@ -52,8 +46,8 @@ export class DeadlineAgent extends BaseAgent {
           formType: dl.formType,
           formName: dl.formName,
           dueDate: dl.dueDate,
-          urgencyScore: calculateUrgencyScore(dl.dueDate),
-          status: calculateUrgencyScore(dl.dueDate) === 100 ? 'overdue' : 'upcoming',
+          urgencyScore: urgency,
+          status,
           description: dl.description,
           aiPredicted: true,
         }).run()

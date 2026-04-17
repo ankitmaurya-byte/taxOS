@@ -32,6 +32,23 @@ import {
 } from 'lucide-react'
 import { LogoIcon, LogoFull, ChevronUpDown } from './icons'
 import type { LucideIcon } from 'lucide-react'
+import { notify } from '@/stores/notifications'
+
+const WORKSPACE_STORAGE_KEY = 'taxos_active_workspace'
+const WORKSPACES = [
+  { id: 'books',     label: 'Books',      icon: BookOpen, available: false },
+  { id: 'tax',       label: 'Tax',        icon: Receipt,  available: true  },
+  { id: 'sales-tax', label: 'Sales Tax',  icon: Percent,  available: false },
+  { id: 'mailroom',  label: 'Mailroom',   icon: Mail,     available: false },
+  { id: 'community', label: 'Community',  icon: Users,    available: false },
+] as const
+type WorkspaceId = typeof WORKSPACES[number]['id']
+const DEFAULT_WORKSPACE: WorkspaceId = 'tax'
+
+function loadWorkspace(): WorkspaceId {
+  const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(WORKSPACE_STORAGE_KEY) : null
+  return WORKSPACES.some(w => w.id === saved) ? (saved as WorkspaceId) : DEFAULT_WORKSPACE
+}
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -112,8 +129,23 @@ export function Sidebar({ collapsed }: SidebarProps) {
   const navigate = useNavigate()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false)
-  const [activeWorkspace, setActiveWorkspace] = useState('Tax')
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>(() => loadWorkspace())
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+
+  const selectWorkspace = (id: WorkspaceId) => {
+    const target = WORKSPACES.find(w => w.id === id)!
+    setShowWorkspaceMenu(false)
+    if (!target.available) {
+      notify({
+        title: `${target.label} is coming soon`,
+        message: `The ${target.label} workspace is not yet available in TaxOS. We'll let you know when it launches.`,
+        tone: 'info',
+      })
+      return
+    }
+    setActiveWorkspace(id)
+    try { localStorage.setItem(WORKSPACE_STORAGE_KEY, id) } catch { /* ignore */ }
+  }
 
   const toggleGroup = (label: string) =>
     setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }))
@@ -167,25 +199,24 @@ export function Sidebar({ collapsed }: SidebarProps) {
             className="absolute left-2 right-2 top-[calc(100%-2px)] z-50 rounded-[6px] bg-white border border-[#e5edf5] py-1 overflow-hidden"
             style={{ boxShadow: 'rgba(50,50,93,0.25) 0px 30px 45px -30px, rgba(0,0,0,0.1) 0px 18px 36px -18px' }}
           >
-            {[
-              { label: 'Books -',     icon: BookOpen },
-              { label: 'Tax -',       icon: Receipt  },
-              { label: 'Sales Tax -', icon: Percent  },
-              { label: 'Mailroom -',  icon: Mail     },
-              { label: 'Community',   icon: Users    },
-            ].map(({ label, icon: Icon }) => {
-              const active = activeWorkspace === label
+            {WORKSPACES.map(({ id, label, icon: Icon, available }) => {
+              const active = activeWorkspace === id
               return (
                 <button
-                  key={label}
-                  onClick={() => { setActiveWorkspace(label); setShowWorkspaceMenu(false) }}
+                  key={id}
+                  type="button"
+                  onClick={() => selectWorkspace(id)}
                   className={`flex w-full items-center gap-2.5 px-3 py-2 text-[14px] font-normal transition-colors rounded-[4px] mx-auto ${
                     active ? 'text-[#533afd] bg-[rgba(83,58,253,0.06)]' : 'text-[#273951] hover:bg-[#f6f9fc]'
                   }`}
                   style={{ width: 'calc(100% - 8px)', marginLeft: 4 }}
+                  title={available ? undefined : `${label} workspace coming soon`}
                 >
                   <Icon size={16} className={active ? 'text-[#533afd]' : 'text-[#64748d]'} strokeWidth={1.8} />
                   <span className="flex-1 text-left">{label}</span>
+                  {!available && (
+                    <span className="text-[10px] text-[#64748d]" style={{ fontWeight: 300 }}>soon</span>
+                  )}
                   {active && <Check size={14} className="text-[#533afd] flex-shrink-0" strokeWidth={2} />}
                 </button>
               )

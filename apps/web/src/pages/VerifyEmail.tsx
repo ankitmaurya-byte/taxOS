@@ -43,7 +43,12 @@ export function VerifyEmailPage() {
       <div className="flex min-h-screen flex-col px-6 py-8 lg:px-16 lg:py-12">
         <div className="flex items-center justify-between">
           <div className="text-[26px] font-light tracking-[-0.26px] text-[#533afd]">inkle</div>
-          <button className="flex items-center gap-1.5 text-[14px] font-normal text-[#64748d]"><HelpCircle size={15} strokeWidth={1.8} /> Help</button>
+          <a
+            href="mailto:support@inkle.io?subject=TaxOS email verification help"
+            className="flex items-center gap-1.5 text-[14px] font-normal text-[#64748d] hover:text-[#533afd] transition-colors"
+          >
+            <HelpCircle size={15} strokeWidth={1.8} /> Help
+          </a>
         </div>
 
         <div className="flex flex-1 items-center">

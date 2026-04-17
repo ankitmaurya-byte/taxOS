@@ -8,7 +8,7 @@ import { formatDate } from '@/lib/utils'
 import type { ApiFiling } from 'shared'
 
 function FounderHome() {
-  const { user, filings, approvals, fetchFilings, fetchApprovals, filingsLoading, approvalsLoading } = useAuthStore()
+  const { user, filings, approvals, fetchFilings, fetchApprovals, filingsLoading } = useAuthStore()
   const navigate = useNavigate()
   const [filingTab, setFilingTab] = useState<'not_started' | 'all' | 'archived'>('all')
   useEffect(() => {
@@ -31,11 +31,11 @@ function FounderHome() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-[#061b31]">Welcome {firstName}</h1>
+      <h1 className="mb-6 text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Welcome {firstName}</h1>
 
       <div className="mb-6 rounded-md border border-[#e5edf5] bg-white p-6">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[#061b31]">Founder Action Centre</h2>
+          <h2 className="text-base font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Founder Action Centre</h2>
           <Link to="/action-centre" className="flex items-center gap-1 text-[13px] font-medium text-[#533afd] hover:text-[#4434d4]">View all <ArrowRight size={13} /></Link>
         </div>
         <div className="flex min-h-[200px]">
@@ -46,7 +46,7 @@ function FounderHome() {
                   {[70, 60, 70].map((w, i) => (
                     <div key={i} className="flex items-center justify-center gap-3">
                       <div className="h-2 rounded bg-[#e5edf5]" style={{ width: `${w}%` }} />
-                      <CheckCircle2 size={18} className="text-[#10B981]" />
+                      <CheckCircle2 size={18} className="text-[#15be53]" />
                     </div>
                   ))}
                 </div>
@@ -57,7 +57,7 @@ function FounderHome() {
                 {actionItems.slice(0, 5).map((item) => (
                   <div key={item.id} className="flex cursor-pointer items-center justify-between rounded-lg px-4 py-3 transition-colors hover:bg-[#f6f9fc]" onClick={() => navigate('/approvals')}>
                     <div className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#F59E0B]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#9b6829]" />
                       <span className="text-sm text-[#061b31]">{item.summary}</span>
                     </div>
                     <StatusBadge status={item.status} />
@@ -79,7 +79,7 @@ function FounderHome() {
               </>
             ) : actionPending.length > 0 ? (
               <>
-                <AlertTriangle size={36} className="mb-3 text-[#F59E0B]" />
+                <AlertTriangle size={36} className="mb-3 text-[#9b6829]" />
                 <p className="mb-1 text-[15px] font-medium text-[#061b31]">
                   {actionPending.length} filing{actionPending.length > 1 ? 's' : ''} need{actionPending.length === 1 ? 's' : ''} your approval
                 </p>
@@ -95,7 +95,7 @@ function FounderHome() {
               </>
             ) : inProgress.length > 0 ? (
               <>
-                <Clock size={36} className="mb-3 text-[#3B82F6]" />
+                <Clock size={36} className="mb-3 text-[#533afd]" />
                 <p className="mb-1 text-[15px] font-medium text-[#061b31]">
                   {inProgress.length} filing{inProgress.length > 1 ? 's' : ''} in review
                 </p>
@@ -106,7 +106,7 @@ function FounderHome() {
                 </p>
                 <div className="mb-3 w-full space-y-1.5">
                   {inProgress.slice(0, 3).map((f) => (
-                    <button key={f.id} onClick={() => navigate(`/filings/${f.id}`)} className="w-full rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-left text-[12px] font-medium text-[#1E40AF] hover:bg-[#DBEAFE] transition-colors">
+                    <button key={f.id} onClick={() => navigate(`/filings/${f.id}`)} className="w-full rounded-lg border border-[#b9b9f9] bg-[#EDE9FD] px-3 py-2 text-left text-[12px] font-medium text-[#533afd] hover:bg-[#ddd5fc] transition-colors">
                       {f.formType} — {f.formName}
                     </button>
                   ))}
@@ -130,23 +130,23 @@ function FounderHome() {
       </div>
 
       <div className="mb-6 overflow-hidden rounded-lg border border-[#e5edf5] bg-white">
-        <div className="border-b border-[#e5edf5] px-6 py-5"><h2 className="text-base font-semibold text-[#061b31]">Filing Status</h2></div>
+        <div className="border-b border-[#e5edf5] px-6 py-5"><h2 className="text-base font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Filing Status</h2></div>
         <div className="grid lg:grid-cols-[1.05fr_1fr]">
           <div className="border-b border-[#e5edf5] p-6 lg:border-b-0 lg:border-r">
             <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
-              <div className="mb-3 text-5xl font-semibold tracking-tight text-[#2D2850]">{completed.length}/{filings.length}</div>
+              <div className="mb-3 text-5xl font-normal tracking-tight text-[#2D2850] font-tnum" style={{ fontWeight: 300 }}>{completed.length}/{filings.length}</div>
               <p className="text-[15px] text-[#5B5878]">Filings completed</p>
-              <p className="mt-2 text-sm font-medium text-[#15803D]">{filings.length === 0 ? 'Start your first filing to track compliance.' : 'You are on top of compliance.'}</p>
+              <p className="mt-2 text-sm font-medium text-[#108c3d]">{filings.length === 0 ? 'Start your first filing to track compliance.' : 'You are on top of compliance.'}</p>
             </div>
             <div className="grid grid-cols-2 gap-y-5 border-t border-[#e5edf5] pt-6 md:grid-cols-4 md:gap-0">
               {[
-                { label: 'Completed', value: completed.length, color: 'text-[#4C9A67]' },
-                { label: 'In progress', value: inProgress.length, color: 'text-[#3490DC]' },
-                { label: 'Action pending', value: actionPending.length, color: 'text-[#F59E0B]' },
-                { label: 'Not started', value: notStarted.length, color: 'text-[#C94B60]' },
+                { label: 'Completed', value: completed.length, color: 'text-[#108c3d]' },
+                { label: 'In progress', value: inProgress.length, color: 'text-[#533afd]' },
+                { label: 'Action pending', value: actionPending.length, color: 'text-[#9b6829]' },
+                { label: 'Not started', value: notStarted.length, color: 'text-[#ea2261]' },
               ].map((item) => (
                 <div key={item.label} className="text-center md:border-r last:md:border-r-0 md:border-[#EDEAF8]">
-                  <div className={`text-[40px] font-semibold leading-none ${item.color}`}>{item.value}</div>
+                  <div className={`text-[40px] font-normal leading-none font-tnum ${item.color}`} style={{ fontWeight: 300 }}>{item.value}</div>
                   <div className="mt-2 text-sm text-[#64748d]">{item.label}</div>
                 </div>
               ))}
@@ -169,7 +169,7 @@ function FounderHome() {
                 {visibleFilings.slice(0, 5).map((filing: ApiFiling) => (
                   <button key={filing.id} className="flex w-full items-center justify-between rounded-lg border border-[#EEEAFB] bg-[#FCFBFF] px-4 py-3 text-left transition-colors hover:border-[#D8D1F7] hover:bg-white" onClick={() => navigate(`/filings/${filing.id}`)}>
                     <div>
-                      <p className="text-sm font-semibold text-[#2D2850]">{filing.formType} - {filing.formName}</p>
+                      <p className="text-sm font-medium text-[#2D2850]">{filing.formType} - {filing.formName}</p>
                       <p className="mt-1 text-xs text-[#64748d]">Tax Year {filing.taxYear || '2025'} • Updated {formatDate(filing.updatedAt || filing.createdAt)}</p>
                     </div>
                     <StatusBadge status={filing.status} />
@@ -213,7 +213,7 @@ function TeamMemberHome() {
   return (
     <div className="space-y-6 p-1">
       <div>
-        <h1 className="text-2xl font-semibold text-[#061b31]">Welcome back, {user?.name?.split(' ')[0]}</h1>
+        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Welcome back, {user?.name?.split(' ')[0]}</h1>
         <p className="mt-1 text-sm text-[#64748d]">Your workspace is filtered to the modules your founder enabled for you.</p>
       </div>
 
@@ -221,7 +221,7 @@ function TeamMemberHome() {
         {cards.map((card) => (
           <button key={card.label} onClick={() => navigate(card.action)} className="rounded-md border border-[#e5edf5] bg-white p-5 text-left transition-colors hover:border-[#D8D1F7]">
             <p className="text-sm text-[#64748d]">{card.label}</p>
-            <p className="mt-2 text-3xl font-semibold text-[#061b31]">{card.value}</p>
+            <p className="mt-2 text-3xl font-normal text-[#061b31] font-tnum" style={{ fontWeight: 300 }}>{card.value}</p>
             <p className="mt-4 flex items-center gap-1 text-sm font-medium text-[#533afd]">Open <ArrowRight size={14} /></p>
           </button>
         ))}
@@ -233,7 +233,7 @@ function TeamMemberHome() {
           {Object.entries(user?.permissions || {}).map(([key, value]) => (
             <div key={key} className="flex items-center justify-between rounded-lg bg-[#f6f9fc] px-4 py-3">
               <span className="text-sm text-[#273951]">{key}</span>
-              <span className={`text-xs font-medium ${value ? 'text-green-600' : 'text-[#64748d]'}`}>{value ? 'Allowed' : 'Blocked'}</span>
+              <span className={`text-xs font-medium ${value ? 'text-[#108c3d]' : 'text-[#64748d]'}`}>{value ? 'Allowed' : 'Blocked'}</span>
             </div>
           ))}
         </div>

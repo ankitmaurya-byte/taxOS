@@ -68,7 +68,7 @@ function FilingDataFields({ data, depth = 0 }: { data: Record<string, any>; dept
           return (
             <div key={key} className={!isLast ? 'border-b border-[#f6f9fc]' : ''}>
               <div className="bg-[#f6f9fc] px-4 py-2.5">
-                <p className="text-xs font-semibold text-[#64748d] uppercase tracking-wide">{formatFieldLabel(key)}</p>
+                <p className="text-xs font-medium text-[#64748d] uppercase tracking-wide">{formatFieldLabel(key)}</p>
               </div>
               <div className="px-4 py-2">
                 <FilingDataFields data={value} depth={depth + 1} />
@@ -82,7 +82,7 @@ function FilingDataFields({ data, depth = 0 }: { data: Record<string, any>; dept
           return (
             <div key={key} className={!isLast ? 'border-b border-[#f6f9fc]' : ''}>
               <div className="bg-[#f6f9fc] px-4 py-2.5">
-                <p className="text-xs font-semibold text-[#64748d] uppercase tracking-wide">{formatFieldLabel(key)}</p>
+                <p className="text-xs font-medium text-[#64748d] uppercase tracking-wide">{formatFieldLabel(key)}</p>
               </div>
               <div className="px-4 py-2 space-y-2">
                 {value.map((item: any, i: number) => (
@@ -208,7 +208,7 @@ export function FilingRoom() {
         </div>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-light tracking-tight text-[#061b31]">Filing Room</h1>
+          <h1 className="text-2xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Filing Room</h1>
           <span className="text-sm text-[#64748d]">{filtered.length} filing{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
@@ -327,7 +327,7 @@ export function FilingRoom() {
         <span className="text-[#061b31]">{filing.formType}</span>
       </div>
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">{filing.formType} — {filing.formName}</h1>
+        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>{filing.formType} — {filing.formName}</h1>
         <StatusBadge status={filing.status} />
       </div>
 
@@ -339,14 +339,14 @@ export function FilingRoom() {
               <div className="space-y-4">
                 {STAGES.map((stage, i) => (
                   <div key={stage.status} className="flex items-center gap-2">
-                    <div className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                      i < stageIndex ? 'bg-green-500 text-white' :
-                      i === stageIndex ? 'bg-primary text-white' :
-                      'bg-gray-200 text-gray-500'
+                    <div className={`flex h-6 w-6 items-center justify-center rounded-md text-xs font-bold ${
+                      i < stageIndex ? 'bg-[#15be53] text-white' :
+                      i === stageIndex ? 'bg-[#533afd] text-white' :
+                      'bg-[#e5edf5] text-[#64748d]'
                     }`}>
                       {i < stageIndex ? '✓' : i + 1}
                     </div>
-                    <span className={`text-sm ${i === stageIndex ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>
+                    <span className={`text-sm ${i === stageIndex ? 'font-medium text-[#061b31]' : 'text-[#64748d]'}`}>
                       {stage.label}
                     </span>
                   </div>
@@ -367,9 +367,9 @@ export function FilingRoom() {
               {filing.conversations?.map((convo: any) =>
                 (convo.messages || []).map((msg: any, i: number) => (
                   <div key={`${convo.id}-${i}`} className={`rounded-lg p-3 ${
-                    msg.role === 'assistant' ? 'bg-blue-50 text-gray-800' : 'bg-gray-100 text-gray-800 ml-8'
+                    msg.role === 'assistant' ? 'bg-[#EDE9FD] text-[#273951]' : 'bg-[#f6f9fc] text-[#273951] ml-8'
                   }`}>
-                    <p className="text-xs font-medium text-gray-500 mb-1">
+                    <p className="text-xs font-medium text-[#64748d] mb-1">
                       {msg.role === 'assistant' ? 'TaxOS AI' : 'You'}
                     </p>
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -379,9 +379,9 @@ export function FilingRoom() {
               {/* Live chat messages */}
               {chatHistory.map((msg, i) => (
                 <div key={`chat-${i}`} className={`rounded-lg p-3 ${
-                  msg.role === 'assistant' ? 'bg-blue-50 text-gray-800' : 'bg-gray-100 text-gray-800 ml-8'
+                  msg.role === 'assistant' ? 'bg-[#EDE9FD] text-[#273951]' : 'bg-[#f6f9fc] text-[#273951] ml-8'
                 }`}>
-                  <p className="text-xs font-medium text-gray-500 mb-1">
+                  <p className="text-xs font-medium text-[#64748d] mb-1">
                     {msg.role === 'assistant' ? 'TaxOS AI' : 'You'}
                   </p>
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -414,15 +414,15 @@ export function FilingRoom() {
             </CardHeader>
             <CardContent className="space-y-4">
               {filing.aiSummary && (
-                <div className="rounded-md bg-blue-50 p-3">
-                  <p className="text-sm font-medium text-blue-800 mb-1">AI Summary</p>
-                  <p className="text-sm text-blue-700">{filing.aiSummary}</p>
+                <div className="rounded-md bg-[#EDE9FD] p-3">
+                  <p className="text-sm font-medium text-[#533afd] mb-1">AI Summary</p>
+                  <p className="text-sm text-[#273951]">{filing.aiSummary}</p>
                 </div>
               )}
               {filing.aiReasoning && (
-                <div className="rounded-md bg-gray-50 p-3">
-                  <p className="text-sm font-medium text-gray-700 mb-1">AI Reasoning</p>
-                  <p className="text-sm text-gray-600">{filing.aiReasoning}</p>
+                <div className="rounded-md bg-[#f6f9fc] p-3">
+                  <p className="text-sm font-medium text-[#273951] mb-1">AI Reasoning</p>
+                  <p className="text-sm text-[#64748d]">{filing.aiReasoning}</p>
                 </div>
               )}
               {filing.filingData && typeof filing.filingData === 'object' && (
@@ -437,7 +437,7 @@ export function FilingRoom() {
               {/* Documents */}
               {filing.documents?.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Attached Documents</p>
+                  <p className="text-sm font-medium text-[#273951] mb-2">Attached Documents</p>
                   {filing.documents.map((doc: any) => (
                     <div key={doc.id} className="flex items-center gap-2 rounded-md border px-3 py-2 mb-1">
                       <span className="text-sm">{doc.fileName}</span>
@@ -451,10 +451,10 @@ export function FilingRoom() {
 
           {/* Approval Card */}
           {filing.status === 'founder_approval' && (
-            <Card className="mt-4 border-orange-200 bg-orange-50">
+            <Card className="mt-4 border-[rgba(155,104,41,0.3)] bg-[rgba(155,104,41,0.08)]">
               <CardContent className="p-4 space-y-3">
-                <p className="font-medium text-orange-800">Founder Approval Required</p>
-                <p className="text-sm text-orange-700">{filing.aiSummary}</p>
+                <p className="font-medium text-[#9b6829]">Founder Approval Required</p>
+                <p className="text-sm text-[#9b6829]">{filing.aiSummary}</p>
                 <div className="flex gap-2">
                   <Button onClick={() => approveMutation.mutate()}>Approve & Submit</Button>
                   <Button variant="destructive" onClick={() => {

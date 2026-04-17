@@ -128,7 +128,7 @@ export function ChatRoom({ channel, orgId, title }: ChatRoomProps) {
     <div className="flex flex-col h-full bg-white rounded-md border border-[#e5edf5] overflow-hidden">
       {/* Header */}
       <div className="px-5 py-3 border-b border-[#e5edf5] bg-[#f6f9fc]">
-        <h2 className="text-sm font-semibold text-[#061b31]">{title}</h2>
+        <h2 className="text-sm font-normal text-[#061b31]" style={{ fontWeight: 400 }}>{title}</h2>
         <p className="text-xs text-[#64748d]">{messages.length} messages</p>
       </div>
 
@@ -145,7 +145,7 @@ export function ChatRoom({ channel, orgId, title }: ChatRoomProps) {
               <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[75%] rounded-lg px-4 py-2 text-sm ${isMe ? 'bg-[#533afd] text-white' : 'bg-[#f6f9fc] text-[#061b31]'}`}>
                   {!isMe && (
-                    <p className="text-[10px] font-semibold mb-1 opacity-70">{msg.sender.name}</p>
+                    <p className="text-[10px] font-medium mb-1 opacity-70">{msg.sender.name}</p>
                   )}
                   <p>{msg.message}</p>
                   <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70' : 'text-[#64748d]'} text-right`}>

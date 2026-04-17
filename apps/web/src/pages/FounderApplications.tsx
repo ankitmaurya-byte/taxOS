@@ -61,7 +61,7 @@ export function FounderApplicationsPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#061b31]">Founder Applications</h1>
+        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Founder Applications</h1>
         <p className="mt-1 text-sm text-[#64748d]">Review Certificate of Incorporation details before creating the organization.</p>
       </div>
 
@@ -69,15 +69,15 @@ export function FounderApplicationsPage() {
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs text-[#64748d]">Pending</p>
-          <p className="mt-1 text-2xl font-semibold text-[#92400E]">{pendingCount}</p>
+          <p className="mt-1 text-2xl font-normal text-[#9b6829] font-tnum" style={{ fontWeight: 300 }}>{pendingCount}</p>
         </div>
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs text-[#64748d]">Approved</p>
-          <p className="mt-1 text-2xl font-semibold text-[#166534]">{approvedCount}</p>
+          <p className="mt-1 text-2xl font-normal text-[#108c3d] font-tnum" style={{ fontWeight: 300 }}>{approvedCount}</p>
         </div>
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs text-[#64748d]">Rejected</p>
-          <p className="mt-1 text-2xl font-semibold text-[#991B1B]">{rejectedCount}</p>
+          <p className="mt-1 text-2xl font-normal text-[#ea2261] font-tnum" style={{ fontWeight: 300 }}>{rejectedCount}</p>
         </div>
       </div>
 
@@ -134,7 +134,7 @@ export function FounderApplicationsPage() {
                 <h2 className="text-lg font-medium text-[#061b31]">{application.organizationName}</h2>
                 <p className="text-sm text-[#64748d]">{application.name} · {application.email}</p>
               </div>
-              <span className={`rounded-full px-3 py-1 text-xs ${application.status === 'pending' ? 'bg-[#FEF3C7] text-[#92400E]' : application.status === 'approved' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-[#FEE2E2] text-[#991B1B]'}`}>
+              <span className={`rounded-md px-3 py-1 text-xs ${application.status === 'pending' ? 'bg-[rgba(155,104,41,0.12)] text-[#9b6829]' : application.status === 'approved' ? 'bg-[rgba(21,190,83,0.12)] text-[#108c3d]' : 'bg-[rgba(234,34,97,0.08)] text-[#ea2261]'}`}>
                 {application.status}
               </span>
             </div>
@@ -189,7 +189,7 @@ export function FounderApplicationsPage() {
       {rejectPopupId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-md bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-[#061b31]">Reject Application</h3>
+            <h3 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Reject Application</h3>
             <p className="mt-1 text-sm text-[#64748d]">Please provide a reason for rejecting this application.</p>
             <textarea
               value={rejectReason}

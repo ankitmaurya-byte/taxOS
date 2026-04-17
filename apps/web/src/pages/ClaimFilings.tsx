@@ -36,7 +36,7 @@ export function ClaimFilings() {
           <Inbox size={20} className="text-[#533afd]" />
         </div>
         <div>
-          <h1 className="text-2xl font-light tracking-tight text-[#061b31]">Claim Filings</h1>
+          <h1 className="text-2xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Claim Filings</h1>
           <p className="text-sm text-[#64748d]">
             Filings available for CPA review. Claim a filing to start reviewing.
           </p>
@@ -45,12 +45,12 @@ export function ClaimFilings() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-5 py-4">
-          <p className="text-2xl font-bold text-amber-600">{claimable.length}</p>
-          <p className="mt-0.5 text-xs font-medium text-amber-600 opacity-80">Available to Claim</p>
+        <div className="rounded-md border border-[rgba(155,104,41,0.25)] bg-[rgba(155,104,41,0.06)] px-5 py-4">
+          <p className="text-2xl font-normal text-[#9b6829] font-tnum" style={{ fontWeight: 300 }}>{claimable.length}</p>
+          <p className="mt-0.5 text-xs font-medium text-[#9b6829] opacity-80">Available to Claim</p>
         </div>
-        <div className="rounded-md border border-[#C4B5FD] bg-[#EDE9FD] px-5 py-4">
-          <p className="text-2xl font-bold text-[#533afd]">{filingsList.filter((f: any) => f.status === 'cpa_review').length}</p>
+        <div className="rounded-md border border-[#b9b9f9] bg-[#EDE9FD] px-5 py-4">
+          <p className="text-2xl font-normal text-[#533afd] font-tnum" style={{ fontWeight: 300 }}>{filingsList.filter((f: any) => f.status === 'cpa_review').length}</p>
           <p className="mt-0.5 text-xs font-medium text-[#533afd] opacity-80">Total in CPA Review</p>
         </div>
       </div>
@@ -68,7 +68,7 @@ export function ClaimFilings() {
           {claimable.map((filing: any) => (
             <div
               key={filing.id}
-              className="flex items-center gap-4 rounded-md border border-amber-200 bg-amber-50/50 px-5 py-4 transition-all hover:shadow-sm hover:border-[#C4B5FD]"
+              className="flex items-center gap-4 rounded-md border border-[rgba(155,104,41,0.25)] bg-[rgba(155,104,41,0.06)] px-5 py-4 transition-all hover:shadow-sm hover:border-[#b9b9f9]"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white flex-shrink-0">
                 <FileText size={16} className="text-[#64748d]" />

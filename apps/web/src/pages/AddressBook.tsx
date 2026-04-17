@@ -49,7 +49,7 @@ export function AddressBookPage() {
   if (!searchParams.get('view')) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-[#061b31] mb-6">Address Book</h1>
+        <h1 className="text-2xl font-normal text-[#061b31] mb-6" style={{ fontWeight: 300 }}>Address Book</h1>
         <div className="grid grid-cols-3 gap-4">
           {VIEW_TABS.map((tab) => (
             <button
@@ -89,7 +89,7 @@ export function AddressBookPage() {
 
       {/* Header with entity selector */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-[#061b31]">{viewLabel}</h1>
+        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>{viewLabel}</h1>
         <div className="flex items-center gap-3">
           {/* Entity selector dropdown */}
           <EntitySelector
@@ -260,7 +260,7 @@ function AddressesView() {
       {/* Add/Edit Form */}
       {showForm && (
         <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
-          <h3 className="text-sm font-semibold text-[#061b31] mb-3">
+          <h3 className="text-sm font-normal text-[#061b31] mb-3" style={{ fontWeight: 400 }}>
             {editIndex !== null ? 'Edit Address' : 'New Address'}
           </h3>
           <div className="grid grid-cols-2 gap-4 mb-3">
@@ -318,7 +318,7 @@ function AddressesView() {
                 setEditIndex(null)
                 setForm({ street: '', city: '', state: '', zip: '', country: 'India' })
               }}
-              className="h-8 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#64748d] hover:bg-gray-50"
+              className="h-8 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#64748d] hover:bg-[#f6f9fc]"
             >
               Cancel
             </button>
@@ -364,13 +364,13 @@ function AddressesView() {
                           setEditIndex(i)
                           setShowForm(true)
                         }}
-                        className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-[#061b31] hover:bg-gray-50"
+                        className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-[#061b31] hover:bg-[#f6f9fc]"
                       >
                         <Pencil size={14} />
                       </button>
                       <button
                         onClick={() => setAddresses((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-red-500 hover:bg-gray-50"
+                        className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-[#ea2261] hover:bg-[#f6f9fc]"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -410,7 +410,7 @@ function BankAccountsView() {
       {/* Add Form */}
       {showForm && (
         <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
-          <h3 className="text-sm font-semibold text-[#061b31] mb-3">New Bank Account</h3>
+          <h3 className="text-sm font-normal text-[#061b31] mb-3" style={{ fontWeight: 400 }}>New Bank Account</h3>
           <div className="grid grid-cols-2 gap-4 mb-3">
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Bank Name</label>
@@ -439,7 +439,7 @@ function BankAccountsView() {
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Account Type</label>
               <select
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
+                className="flex h-10 w-full rounded-md border border-[#e5edf5] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
                 value={form.accountType}
                 onChange={(e) => setForm((f) => ({ ...f, accountType: e.target.value }))}
               >
@@ -458,7 +458,7 @@ function BankAccountsView() {
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="h-8 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#64748d] hover:bg-gray-50"
+              className="h-8 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#64748d] hover:bg-[#f6f9fc]"
             >
               Cancel
             </button>
@@ -514,7 +514,7 @@ function BankAccountsView() {
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => setAccounts((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-red-500 hover:bg-gray-50"
+                      className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-[#ea2261] hover:bg-[#f6f9fc]"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -553,7 +553,7 @@ function AuthorizedPersonsView() {
       {/* Add Form */}
       {showForm && (
         <div className="bg-[#f6f9fc] border border-[#e5edf5] rounded-md p-4 mb-4">
-          <h3 className="text-sm font-semibold text-[#061b31] mb-3">New Authorized Person</h3>
+          <h3 className="text-sm font-normal text-[#061b31] mb-3" style={{ fontWeight: 400 }}>New Authorized Person</h3>
           <div className="grid grid-cols-2 gap-4 mb-3">
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Name</label>
@@ -598,7 +598,7 @@ function AuthorizedPersonsView() {
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="h-8 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#64748d] hover:bg-gray-50"
+              className="h-8 px-4 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#64748d] hover:bg-[#f6f9fc]"
             >
               Cancel
             </button>
@@ -652,7 +652,7 @@ function AuthorizedPersonsView() {
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => setPersons((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-red-500 hover:bg-gray-50"
+                      className="w-8 h-8 flex items-center justify-center border border-[#e5edf5] rounded-lg text-[#64748d] hover:text-[#ea2261] hover:bg-[#f6f9fc]"
                     >
                       <Trash2 size={14} />
                     </button>

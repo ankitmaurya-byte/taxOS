@@ -352,9 +352,9 @@ const renderValue = (value: any): React.ReactNode => {
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-[#061b31]">{String(value.value ?? '—')}</span>
         {conf != null && (
-          <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-            conf >= 90 ? 'bg-green-100 text-green-700' :
-            conf >= 75 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+          <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium font-tnum ${
+            conf >= 90 ? 'bg-[rgba(21,190,83,0.12)] text-[#108c3d]' :
+            conf >= 75 ? 'bg-[rgba(155,104,41,0.12)] text-[#9b6829]' : 'bg-[rgba(234,34,97,0.08)] text-[#ea2261]'
           }`}>
             {conf}%
           </span>
@@ -363,7 +363,7 @@ const renderValue = (value: any): React.ReactNode => {
           <span className="text-[10px] text-[#64748d]">via {value.source}</span>
         )}
         {value.needsCpaReview && (
-          <span className="inline-flex items-center rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700">Review</span>
+          <span className="inline-flex items-center rounded-md bg-[rgba(155,104,41,0.12)] px-1.5 py-0.5 text-[10px] font-medium text-[#9b6829]">Review</span>
         )}
       </div>
     );
@@ -396,14 +396,14 @@ const renderValue = (value: any): React.ReactNode => {
     }
     if (isSubmitted) {
       return {
-        icon: <ShieldCheck size={40} className="text-[#15803D] mb-4" />,
+        icon: <ShieldCheck size={40} className="text-[#108c3d] mb-4" />,
         title: 'Filing submitted',
         description: 'This filing has been approved and submitted successfully. You can archive it when ready.',
       }
     }
     if (status === 'founder_approval') {
       return {
-        icon: <AlertTriangle size={40} className="text-[#F59E0B] mb-4" />,
+        icon: <AlertTriangle size={40} className="text-[#9b6829] mb-4" />,
         title: 'Awaiting founder approval',
         description: 'CPA review is complete. The founder must approve or reject this filing before it can be submitted.',
       }
@@ -433,7 +433,7 @@ const renderValue = (value: any): React.ReactNode => {
         {/* Filing header */}
         <div className="flex items-center justify-between px-8 pb-4">
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-[#061b31]">
+            <h1 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>
               {filing.formType} ({filing.formName})
             </h1>
             <span className="text-lg">🇺🇸</span>
@@ -489,7 +489,7 @@ const renderValue = (value: any): React.ReactNode => {
 
           {/* Center content — adapts to status */}
           {centerContent.icon}
-          <h2 className="text-lg font-semibold text-[#061b31] mb-2">{centerContent.title}</h2>
+          <h2 className="text-lg font-normal text-[#061b31] mb-2" style={{ fontWeight: 400 }}>{centerContent.title}</h2>
           <p className="text-sm text-[#64748d] text-center max-w-md mb-6">
             {centerContent.description}
           </p>

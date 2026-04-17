@@ -49,7 +49,7 @@ export function EntitiesOverviewPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-xs text-[#64748d]">Overall Brand</p>
-          <h1 className="text-xl font-semibold text-[#061b31]">{user?.name || 'My Brand'}</h1>
+          <h1 className="text-xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>{user?.name || 'My Brand'}</h1>
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
@@ -63,7 +63,7 @@ export function EntitiesOverviewPage() {
       {/* Add Entity form */}
       {showAddForm && (
         <div className="bg-white border border-[#e5edf5] rounded-md p-5 mb-6">
-          <h3 className="text-sm font-semibold text-[#061b31] mb-4">New Entity</h3>
+          <h3 className="text-sm font-normal text-[#061b31] mb-4" style={{ fontWeight: 400 }}>New Entity</h3>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Legal Name</label>
@@ -76,7 +76,7 @@ export function EntitiesOverviewPage() {
             <div>
               <label className="block text-xs text-[#64748d] mb-1">Entity Type</label>
               <select
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
+                className="flex h-10 w-full rounded-md border border-[#e5edf5] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
                 value={form.entityType}
                 onChange={(e) => setForm((f) => ({ ...f, entityType: e.target.value }))}
               >
@@ -129,7 +129,7 @@ export function EntitiesOverviewPage() {
       )}
 
       {/* Section */}
-      <h2 className="text-base font-semibold text-[#061b31] mb-4">Your Brand Entities</h2>
+      <h2 className="text-base font-normal text-[#061b31] mb-4" style={{ fontWeight: 400 }}>Your Brand Entities</h2>
 
       {/* Entity cards */}
       <div className="space-y-4">
@@ -164,7 +164,7 @@ export function EntitiesOverviewPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{flag}</span>
-                    <h3 className="text-[15px] font-semibold text-[#061b31] uppercase">
+                    <h3 className="text-[15px] font-medium text-[#061b31] uppercase">
                       {entity.legalName}
                     </h3>
                   </div>

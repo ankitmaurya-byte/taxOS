@@ -5,11 +5,10 @@ export abstract class BaseAgent {
   protected client: GoogleGenerativeAI
   protected modelVersion = 'gemini-2.5-flash'
 
-constructor() {
-  const apiKey = process.env.GEMINI_API_KEY
-
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not set')
+  constructor() {
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) throw new Error('GEMINI_API_KEY is not set')
+    this.client = new GoogleGenerativeAI(apiKey)
   }
 
   this.client = new GoogleGenerativeAI(apiKey)

@@ -57,7 +57,7 @@ function ReferralCard() {
         <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-[#533afd] shadow-sm">
           <Gift size={18} />
         </div>
-        <h3 className="text-lg font-semibold text-[#061b31]">
+        <h3 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>
           Invite a founder, earn $100 each
         </h3>
         <p className="mt-1 text-sm text-[#64748d]">
@@ -66,7 +66,7 @@ function ReferralCard() {
         </p>
 
         {/* Referral link box */}
-        <div className="mt-4 flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5">
+        <div className="mt-4 flex items-center justify-between gap-2 rounded-lg border border-[#e5edf5] bg-white px-4 py-2.5">
           <span className="min-w-0 truncate text-sm text-[#273951]">
             {referralLink}
           </span>
@@ -79,7 +79,7 @@ function ReferralCard() {
           </button>
         </div>
         {copied && (
-          <span className="mt-2 inline-block rounded-full bg-[#EDE9FD] px-2.5 py-1 text-xs font-medium text-[#533afd]">
+          <span className="mt-2 inline-block rounded-md bg-[#EDE9FD] px-2.5 py-1 text-xs font-medium text-[#533afd]">
             Copied to clipboard!
           </span>
         )}
@@ -106,7 +106,7 @@ function ReferralCard() {
       </div>
 
       {/* Background decoration */}
-      <div className="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-[#E9E4FF] opacity-50" />
+      <div className="absolute -right-6 -bottom-6 h-32 w-32 rounded-md bg-[#E9E4FF] opacity-50" />
       <div className="absolute -right-2 -bottom-2 h-20 w-20 rounded-lg bg-[#DDD6FE] opacity-30 rotate-12" />
     </div>
   );
@@ -125,6 +125,7 @@ function PromoCard() {
       subtitle:
         "Switch to Brex and earn up to 4.35%+ with same-hour liquidity, no minimums, no hidden fees.",
       cta: "Apply now",
+      href: "https://www.brex.com/",
       bg: "bg-[#EEF6FF]",
     },
     {
@@ -135,6 +136,7 @@ function PromoCard() {
         "Exclusive Offer: 25 bps fee discount through Inkle",
       ],
       cta: "Reveal Instructions",
+      href: "https://www.efficientcapitallabs.com/",
       bg: "bg-[#FFF7ED]",
     },
     {
@@ -142,6 +144,7 @@ function PromoCard() {
       subtitle:
         "Get access to 50+ perks from top brands to maximize your company benefits",
       cta: "View perks",
+      href: "/action-centre",
       bg: "bg-[#f6f9fc]",
     },
   ];
@@ -174,7 +177,7 @@ function PromoCard() {
             className={`min-w-full h-full p-6 ${slide.bg} flex flex-col justify-between relative`}
           >
             <div>
-              <h3 className="text-lg font-semibold text-[#061b31]">
+              <h3 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>
                 {slide.title}
               </h3>
 
@@ -193,12 +196,17 @@ function PromoCard() {
               )}
             </div>
 
-            <button className="mt-4 inline-flex items-center gap-1 text-sm">
+            <a
+              href={slide.href}
+              target={slide.href.startsWith('http') ? '_blank' : undefined}
+              rel={slide.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+              className="mt-4 inline-flex items-center gap-1 text-sm text-[#533afd] hover:underline"
+            >
               {slide.cta}
               <ChevronRight size={14} />
-            </button>
+            </a>
 
-            <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full bg-white/30" />
+            <div className="absolute -right-8 -top-8 h-36 w-36 rounded-md bg-white/30" />
           </div>
         ))}
       </div>

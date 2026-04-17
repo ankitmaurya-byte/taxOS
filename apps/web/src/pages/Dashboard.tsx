@@ -42,7 +42,7 @@ export function DashboardPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-light tracking-tight text-[#061b31]">Dashboard</h1>
+        <h1 className="text-2xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Dashboard</h1>
         <p className="mt-1 text-sm text-[#64748d]">
           {isAdmin
             ? 'Platform oversight for founders, team members, and CPA coverage.'
@@ -224,7 +224,7 @@ export function DashboardPage() {
                         <span className="text-xs text-[#64748d]">{Math.round(doc.confidenceScore * 100)}%</span>
                       )}
                       {doc.reviewedByHuman && (
-                        <span className="rounded-sm bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">Reviewed</span>
+                        <span className="rounded-sm bg-[rgba(21,190,83,0.12)] px-2 py-0.5 text-[10px] font-medium text-[#108c3d]">Reviewed</span>
                       )}
                     </div>
                   </div>

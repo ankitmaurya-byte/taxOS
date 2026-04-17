@@ -132,9 +132,12 @@ export function LoginPage() {
           <div className="text-3xl font-semibold tracking-[-0.03em] text-[#533afd]">
             inkle
           </div>
-          <button className="flex items-center gap-1.5 text-sm text-[#64748d]">
+          <a
+            href="mailto:support@inkle.io?subject=TaxOS login help"
+            className="flex items-center gap-1.5 text-sm text-[#64748d] hover:text-[#533afd] transition-colors"
+          >
             <HelpCircle size={15} /> Help
-          </button>
+          </a>
         </div>
 
         <div className="flex flex-1 items-center">

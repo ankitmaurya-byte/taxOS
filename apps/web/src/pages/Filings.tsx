@@ -116,7 +116,7 @@ export function FilingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-light tracking-tight text-[#061b31] mb-5">Filings</h1>
+      <h1 className="text-2xl font-normal tracking-tight text-[#061b31] mb-5" style={{ fontWeight: 300 }}>Filings</h1>
 
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-5">
@@ -268,7 +268,7 @@ export function FilingsPage() {
           </button>
           <button
             onClick={() => setPendingOnMe(!pendingOnMe)}
-            className={`flex items-center gap-2 h-9 px-4 rounded-full text-sm font-medium border transition-colors ${
+            className={`flex items-center gap-2 h-9 px-4 rounded-md text-sm font-medium border transition-colors ${
               pendingOnMe
                 ? 'bg-[#EDE9FD] text-[#533afd] border-[#533afd]'
                 : 'bg-[#f6f9fc] text-[#273951] border-[#e5edf5]'
@@ -303,7 +303,7 @@ export function FilingsPage() {
             }`}
           >
             <p className="text-xs font-medium text-[#64748d] mb-1">{stat.label}</p>
-            <p className="text-2xl font-bold text-[#061b31]">{stat.count}</p>
+            <p className="text-2xl font-normal text-[#061b31] font-tnum" style={{ fontWeight: 300 }}>{stat.count}</p>
           </button>
         ))}
       </div>

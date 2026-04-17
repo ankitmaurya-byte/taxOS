@@ -1,138 +1,176 @@
 // Used in: Layout.tsx — popup panel triggered by "Get help" button in TopBar
-import { Phone, Calendar, Globe, Lock } from 'lucide-react'
+import { Phone, Calendar, Globe, User, FileText, LayoutGrid } from 'lucide-react'
+import { notify } from '@/stores/notifications'
 
 interface GetHelpPanelProps {
   onClose: () => void
 }
 
+const SUPPORT_EMAIL = 'support@inkle.io'
+const SUPPORT_PHONE = '+1-415-555-0134'
+const CEO_EMAIL = 'ceo@inkle.io'
+
 export function GetHelpPanel({ onClose }: GetHelpPanelProps) {
+  const handleScheduleSupport = () => {
+    window.open('https://calendly.com/inkle-support', '_blank', 'noopener,noreferrer')
+    onClose()
+  }
+  const handleComingSoon = (label: string) => {
+    notify({
+      title: `${label} not available yet`,
+      message: 'Upgrade to Inkle Standard to unlock this concierge channel.',
+      tone: 'info',
+    })
+  }
+  const handleMailto = (email: string) => {
+    window.location.href = `mailto:${email}`
+  }
+  const handleTel = (phone: string) => {
+    window.location.href = `tel:${phone.replace(/\s|-/g, '')}`
+  }
+
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 z-40" onClick={onClose} />
 
-      {/* Panel */}
-      <div className="absolute right-0 top-full mt-2 w-[520px] bg-white border border-[#e5edf5] rounded-md shadow-xl z-50 overflow-hidden">
-        {/* Account Manager + Support Team row */}
+      <div
+        role="dialog"
+        aria-label="Get help"
+        className="absolute right-0 top-full mt-2 w-[520px] bg-white border border-[#e5edf5] rounded-md z-50 overflow-hidden"
+        style={{ boxShadow: 'rgba(50,50,93,0.25) 0px 30px 45px -30px, rgba(0,0,0,0.1) 0px 18px 36px -18px' }}
+      >
         <div className="flex border-b border-[#e5edf5]">
-          {/* Account Manager */}
-          <div className="flex-1 p-5 flex items-start gap-3">
-            <div className="w-12 h-12 rounded-full bg-[#e5edf5] flex items-center justify-center flex-shrink-0">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"
-                  fill="#64748d"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-[#061b31]">Account manager</h3>
-              <p className="text-xs text-[#64748d] mb-2">Not assigned yet</p>
-              <button className="flex items-center gap-1 text-xs text-[#64748d] hover:text-[#273951]">
-                <Phone size={12} />
-                Call
-              </button>
-            </div>
-          </div>
-
-          {/* Support Team */}
-          <div className="flex-1 p-5 flex items-start gap-3 border-l border-[#e5edf5]">
-            <div className="w-12 h-12 rounded-full bg-[#f6f9fc] flex items-center justify-center flex-shrink-0">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z"
-                  fill="#533afd"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-[#061b31]">Support Team</h3>
-              <p className="text-xs text-[#64748d] italic mb-2">Available soon</p>
-              <div className="flex items-center gap-3">
-                <button className="flex items-center gap-1 text-xs text-[#533afd] font-medium hover:underline">
-                  <Calendar size={12} />
-                  Schedule
-                </button>
-                <button className="flex items-center gap-1 text-xs text-[#64748d] hover:text-[#273951]">
-                  <Phone size={12} />
-                  Call
-                </button>
-              </div>
-            </div>
-          </div>
+          <HelpCard
+            icon={<User size={22} className="text-[#64748d]" strokeWidth={1.8} />}
+            iconBg="#f6f9fc"
+            title="Account manager"
+            subtitle="Not assigned yet"
+            actions={[{ icon: <Phone size={12} />, label: 'Call', onClick: () => handleTel(SUPPORT_PHONE), tone: 'muted' }]}
+          />
+          <div className="border-l border-[#e5edf5]" />
+          <HelpCard
+            icon={<User size={22} className="text-[#533afd]" strokeWidth={1.8} />}
+            iconBg="#EDE9FD"
+            title="Support team"
+            subtitle="Mon–Fri, 9am–6pm PT"
+            actions={[
+              { icon: <Calendar size={12} />, label: 'Schedule', onClick: handleScheduleSupport, tone: 'primary' },
+              { icon: <Phone size={12} />, label: 'Call', onClick: () => handleTel(SUPPORT_PHONE), tone: 'muted' },
+            ]}
+          />
         </div>
 
-        {/* Tax Preparer */}
-        <div className="p-5 border-b border-[#e5edf5] flex items-start gap-3">
-          <div className="w-12 h-12 rounded-full bg-[#f6f9fc] flex items-center justify-center flex-shrink-0">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM6 20V4H13V9H18V20H6Z"
-                fill="#64748d"
-              />
-              <path d="M8 14H16V16H8V14ZM8 10H16V12H8V10Z" fill="#64748d" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-[#061b31]">Tax Preparer</h3>
-            <p className="text-xs text-[#64748d] mb-2">
-              An active subscription is required to enable a call with our tax expert
-            </p>
-            <button className="flex items-center gap-1 text-xs text-[#533afd] font-medium hover:underline">
-              <Globe size={12} />
-              Upgrade for access
-            </button>
-          </div>
-        </div>
+        <HelpRow
+          icon={<FileText size={22} className="text-[#64748d]" strokeWidth={1.8} />}
+          iconBg="#f6f9fc"
+          title="Tax preparer"
+          subtitle="An active subscription is required to enable a call with our tax expert."
+          actions={[{ icon: <Globe size={12} />, label: 'Upgrade for access', onClick: () => handleComingSoon('Tax preparer'), tone: 'primary' }]}
+        />
 
-        {/* Bookkeeping Expert */}
-        <div className="p-5 border-b border-[#e5edf5] flex items-start gap-3">
-          <div className="w-12 h-12 rounded-full bg-[#f6f9fc] flex items-center justify-center flex-shrink-0">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19Z"
-                fill="#64748d"
-              />
-              <path d="M7 7H11V11H7V7ZM13 7H17V9H13V7ZM13 11H17V13H13V11ZM7 13H11V17H7V13ZM13 15H17V17H13V15Z" fill="#64748d" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-[#061b31]">Bookkeeping Expert</h3>
-            <p className="text-xs text-[#64748d] mb-2">
-              An active bookkeeping service is required to enable a call with our bookkeeping expert
-            </p>
-            <button className="flex items-center gap-1 text-xs text-[#533afd] font-medium hover:underline">
-              <Globe size={12} />
-              Upgrade for access
-            </button>
-          </div>
-        </div>
+        <HelpRow
+          icon={<LayoutGrid size={22} className="text-[#64748d]" strokeWidth={1.8} />}
+          iconBg="#f6f9fc"
+          title="Bookkeeping expert"
+          subtitle="An active bookkeeping service is required to enable a call with our bookkeeping expert."
+          actions={[{ icon: <Globe size={12} />, label: 'Upgrade for access', onClick: () => handleComingSoon('Bookkeeping expert'), tone: 'primary' }]}
+          border={false}
+        />
 
-        {/* CEO */}
+        <div className="border-t border-[#e5edf5]" />
+
         <div className="p-5 flex items-start gap-3">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#533afd] to-[#4434d4] flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+          <div className="relative flex-shrink-0">
+            <div
+              className="w-12 h-12 rounded-md bg-gradient-to-br from-[#533afd] to-[#2e2b8c] flex items-center justify-center text-white text-sm"
+              style={{ fontWeight: 400 }}
+            >
               AK
             </div>
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-[#10B981] border-2 border-white rounded-full" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#15be53] border-2 border-white rounded-full" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-[#061b31]">CEO</h3>
+            <h3 className="text-sm text-[#061b31]" style={{ fontWeight: 400 }}>CEO</h3>
             <p className="text-xs text-[#64748d] mb-2">Anand Krishna</p>
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-1 text-xs text-[#533afd] font-medium hover:underline">
+              <button type="button" onClick={handleScheduleSupport} className="flex items-center gap-1 text-xs text-[#533afd] hover:underline" style={{ fontWeight: 400 }}>
                 <Calendar size={12} />
                 Schedule
               </button>
               <span className="text-[#e5edf5]">|</span>
-              <button className="flex items-center gap-1 text-xs text-[#533afd] font-medium hover:underline">
+              <button type="button" onClick={() => handleMailto(CEO_EMAIL)} className="flex items-center gap-1 text-xs text-[#533afd] hover:underline" style={{ fontWeight: 400 }}>
                 <Phone size={12} />
-                Call
+                Email
               </button>
             </div>
           </div>
         </div>
       </div>
     </>
+  )
+}
+
+interface HelpAction {
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+  tone: 'primary' | 'muted'
+}
+
+interface HelpCardContent {
+  icon: React.ReactNode
+  iconBg: string
+  title: string
+  subtitle: string
+  actions: HelpAction[]
+}
+
+function HelpCard({ icon, iconBg, title, subtitle, actions }: HelpCardContent) {
+  return (
+    <div className="flex-1 p-5 flex items-start gap-3">
+      <div className="w-12 h-12 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
+        {icon}
+      </div>
+      <div>
+        <h3 className="text-sm text-[#061b31]" style={{ fontWeight: 400 }}>{title}</h3>
+        <p className="text-xs text-[#64748d] mb-2">{subtitle}</p>
+        <HelpActions actions={actions} />
+      </div>
+    </div>
+  )
+}
+
+function HelpRow(props: HelpCardContent & { border?: boolean }) {
+  const { icon, iconBg, title, subtitle, actions, border = true } = props
+  return (
+    <div className={`p-5 flex items-start gap-3 ${border ? 'border-b border-[#e5edf5]' : ''}`}>
+      <div className="w-12 h-12 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
+        {icon}
+      </div>
+      <div>
+        <h3 className="text-sm text-[#061b31]" style={{ fontWeight: 400 }}>{title}</h3>
+        <p className="text-xs text-[#64748d] mb-2">{subtitle}</p>
+        <HelpActions actions={actions} />
+      </div>
+    </div>
+  )
+}
+
+function HelpActions({ actions }: { actions: HelpAction[] }) {
+  return (
+    <div className="flex items-center gap-3">
+      {actions.map((a, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={a.onClick}
+          className={`flex items-center gap-1 text-xs hover:underline ${a.tone === 'primary' ? 'text-[#533afd]' : 'text-[#64748d] hover:text-[#273951]'}`}
+          style={{ fontWeight: 400 }}
+        >
+          {a.icon}
+          {a.label}
+        </button>
+      ))}
+    </div>
   )
 }

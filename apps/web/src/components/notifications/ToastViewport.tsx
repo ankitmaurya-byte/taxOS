@@ -4,18 +4,18 @@ import { useNotificationStore } from '@/stores/notifications'
 const TONE_STYLES = {
   success: {
     icon: CheckCircle2,
-    iconClass: 'text-[#16A34A]',
-    accentClass: 'border-[#DCFCE7] bg-white',
+    iconClass: 'text-[#108c3d]',
+    accentClass: 'border-[rgba(21,190,83,0.12)] bg-white',
   },
   error: {
     icon: TriangleAlert,
-    iconClass: 'text-[#DC2626]',
-    accentClass: 'border-[#FEE2E2] bg-white',
+    iconClass: 'text-[#ea2261]',
+    accentClass: 'border-[#ffd7ef] bg-white',
   },
   info: {
     icon: Info,
     iconClass: 'text-[#533afd]',
-    accentClass: 'border-[#E9E5FF] bg-white',
+    accentClass: 'border-[#EDE9FD] bg-white',
   },
 } as const
 
@@ -34,11 +34,11 @@ export function ToastViewport() {
             className={`pointer-events-auto rounded-lg border px-4 py-3 shadow-[0_12px_32px_rgba(17,24,39,0.12)] ${tone.accentClass}`}
           >
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 rounded-full bg-[#F8FAFC] p-1.5">
+              <div className="mt-0.5 rounded-md bg-[#f6f9fc] p-1.5">
                 <Icon size={16} className={tone.iconClass} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-[#061b31]">{toast.title}</p>
+                <p className="text-sm font-medium text-[#061b31]">{toast.title}</p>
                 <p className="mt-1 text-sm leading-6 text-[#64748d]">{toast.message}</p>
               </div>
               <button

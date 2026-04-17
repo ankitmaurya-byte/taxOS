@@ -80,7 +80,7 @@ export function ApprovalQueue() {
   return (
     <div className="space-y-8 p-6 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-semibold text-[#061b31]">Approval Queue</h1>
+        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Approval Queue</h1>
         <p className="mt-1 text-sm text-[#64748d]">Review and action pending filing approvals.</p>
       </div>
 
@@ -88,24 +88,24 @@ export function ApprovalQueue() {
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs font-medium text-[#64748d] uppercase tracking-wide">Pending</p>
-          <p className="mt-1 text-2xl font-semibold text-[#92400E]">{pending.length}</p>
+          <p className="mt-1 text-2xl font-normal text-[#9b6829] font-tnum" style={{ fontWeight: 300 }}>{pending.length}</p>
         </div>
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs font-medium text-[#64748d] uppercase tracking-wide">Approved</p>
-          <p className="mt-1 text-2xl font-semibold text-[#166534]">{resolved.filter(a => a.status === 'approved').length}</p>
+          <p className="mt-1 text-2xl font-normal text-[#108c3d] font-tnum" style={{ fontWeight: 300 }}>{resolved.filter(a => a.status === 'approved').length}</p>
         </div>
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs font-medium text-[#64748d] uppercase tracking-wide">Rejected</p>
-          <p className="mt-1 text-2xl font-semibold text-[#991B1B]">{resolved.filter(a => a.status === 'rejected').length}</p>
+          <p className="mt-1 text-2xl font-normal text-[#ea2261] font-tnum" style={{ fontWeight: 300 }}>{resolved.filter(a => a.status === 'rejected').length}</p>
         </div>
       </div>
 
       {/* Pending section */}
       <div>
-        <h2 className="text-sm font-semibold text-[#273951] uppercase tracking-wide mb-3">Pending Review</h2>
+        <h2 className="text-sm font-medium text-[#273951] uppercase tracking-wide mb-3">Pending Review</h2>
         {pending.length === 0 ? (
           <div className="rounded-md border border-[#e5edf5] bg-white p-12 text-center">
-            <CheckCircle2 size={32} className="mx-auto text-[#10B981] mb-3" />
+            <CheckCircle2 size={32} className="mx-auto text-[#15be53] mb-3" />
             <p className="text-sm font-medium text-[#061b31]">All caught up</p>
             <p className="text-xs text-[#64748d] mt-1">No pending approvals at this time.</p>
           </div>
@@ -128,7 +128,7 @@ export function ApprovalQueue() {
                     <p className="text-sm text-[#061b31] leading-relaxed">{approval.summary}</p>
                     {approval.aiRecommendation && (
                       <div className="mt-2 flex items-start gap-2 rounded-lg bg-[#F0F9FF] px-3 py-2">
-                        <span className="text-[10px] font-semibold text-[#0369A1] uppercase tracking-wide mt-0.5 shrink-0">AI</span>
+                        <span className="text-[10px] font-medium text-[#533afd] uppercase tracking-wide mt-0.5 shrink-0">AI</span>
                         <p className="text-xs text-[#0C4A6E] leading-relaxed">{approval.aiRecommendation}</p>
                       </div>
                     )}
@@ -145,7 +145,7 @@ export function ApprovalQueue() {
                       setResolveLoading(prev => ({ ...prev, [approval.id]: true }))
                       try { await resolveApproval(approval.id, 'approved') } finally { setResolveLoading(prev => ({ ...prev, [approval.id]: false })) }
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#166534] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#15803D] disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#108c3d] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0a6b2e] disabled:opacity-50 transition-colors"
                   >
                     <CheckCircle2 size={13} />
                     Approve
@@ -210,7 +210,7 @@ export function ApprovalQueue() {
                     )}
                     {chatResponses[approval.id] && (
                       <div className="mt-3 rounded-lg border border-[#E0E7FF] bg-white p-3">
-                        <p className="mb-1 text-[10px] font-semibold text-[#533afd] uppercase tracking-wide">AI Response</p>
+                        <p className="mb-1 text-[10px] font-medium text-[#533afd] uppercase tracking-wide">AI Response</p>
                         <p className="whitespace-pre-wrap text-sm text-[#273951] leading-relaxed">{chatResponses[approval.id]}</p>
                       </div>
                     )}

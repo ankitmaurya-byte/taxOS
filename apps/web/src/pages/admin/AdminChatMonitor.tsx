@@ -110,12 +110,12 @@ function ChatMessages({ fetchFn, selectedUserId, channel }: {
       <div className="space-y-2">
         {filtered.map((m: any, i: number) => (
           <div key={m.id || i} className="flex items-start gap-3 py-2 border-b border-[#f6f9fc] last:border-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EDE9FD] text-[10px] font-semibold text-[#533afd]">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#EDE9FD] text-[10px] font-semibold text-[#533afd]">
               {(m.sender?.name || m.senderId || '?').slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-semibold text-[#061b31]">{m.sender?.name || m.senderId || 'Unknown'}</span>
+                <span className="text-sm font-medium text-[#061b31]">{m.sender?.name || m.senderId || 'Unknown'}</span>
                 <span className="text-xs text-[#64748d] capitalize">{m.sender?.role || ''}</span>
                 <span className="ml-auto text-xs text-[#64748d] whitespace-nowrap">{formatTs(m.createdAt)}</span>
               </div>
@@ -291,7 +291,7 @@ function AiConversationList({ fetchFn, aiUserFilter, expandedConvo, setExpandedC
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`text-xs px-2 py-0.5 rounded ${conv.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+              <span className={`text-xs px-2 py-0.5 rounded ${conv.status === 'active' ? 'bg-[rgba(21,190,83,0.12)] text-[#108c3d]' : 'bg-[#f6f9fc] text-[#64748d]'}`}>
                 {conv.status}
               </span>
               {conv.filingId && (
@@ -366,7 +366,7 @@ export function AdminChatMonitor() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-[#061b31]">Chat Monitor</h1>
+        <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Chat Monitor</h1>
         <p className="mt-1 text-sm text-[#64748d]">Read-only view of all chat channels across the platform.</p>
       </div>
 
@@ -388,7 +388,7 @@ export function AdminChatMonitor() {
       <div className="grid grid-cols-[260px_1fr] gap-5">
         {/* Left: user filter panel */}
         <div className="bg-white border border-[#e5edf5] rounded-md p-4 h-fit">
-          <h3 className="text-sm font-semibold text-[#273951] mb-3">
+          <h3 className="text-sm font-normal text-[#273951] mb-3" style={{ fontWeight: 400 }}>
             {tab === 'ai' ? 'Filter by User (Org)' : 'Filter by User'}
           </h3>
 

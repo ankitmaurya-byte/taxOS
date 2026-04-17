@@ -160,20 +160,20 @@ function MetaFooter({ meta }: { meta: Record<string, unknown> }) {
     <div className="mt-3 pt-3 border-t border-[#e5edf5] space-y-2">
       <div className="flex flex-wrap gap-1.5">
         {conf && (
-          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${confStyle}`}>
+          <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border ${confStyle}`} style={{ fontWeight: 400 }}>
             <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
             {conf} CONFIDENCE
           </span>
         )}
-        {meta.requiresCpaReview && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border text-[#92400E] bg-[#FEF3C7] border-[#FDE68A]">
+        {Boolean(meta.requiresCpaReview) && (
+          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border text-[#7a4f1f] bg-[rgba(155,104,41,0.12)] border-[rgba(155,104,41,0.25)]" style={{ fontWeight: 400 }}>
             <AlertTriangle size={9} />
             CPA Review Recommended
           </span>
         )}
       </div>
-      {meta.cpaEscalationReason && (
-        <p className="text-[11px] text-[#64748d] leading-relaxed">{meta.cpaEscalationReason as string}</p>
+      {typeof meta.cpaEscalationReason === 'string' && meta.cpaEscalationReason && (
+        <p className="text-[11px] text-[#64748d] leading-relaxed">{meta.cpaEscalationReason}</p>
       )}
       {sources.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -604,10 +604,10 @@ export function ChatPage() {
           {active?.messages.length === 0 && showActionLibrary && (
             <div className="flex flex-col items-center pt-4">
               {/* Header */}
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-md bg-gradient-to-br from-[#533afd] to-[#2e2b8c] flex items-center justify-center mb-4">
                 <Bot size={24} className="text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-[#061b31] mb-1">{config.title}</h3>
+              <h3 className="text-lg text-[#061b31] mb-1" style={{ fontWeight: 300, letterSpacing: '-0.18px' }}>{config.title}</h3>
               <p className="text-sm text-[#64748d] max-w-md text-center mb-8">
                 {config.description}
               </p>
@@ -660,7 +660,7 @@ export function ChatPage() {
               </div>
             ) : (
               <div key={i} className="flex gap-2">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#533afd] to-[#2e2b8c] flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Bot size={14} className="text-white" />
                 </div>
                 <div className="max-w-2xl min-w-0">
@@ -668,10 +668,20 @@ export function ChatPage() {
                     <MessageContent content={msg.content} />
                   </div>
                   <div className="flex items-center gap-2 mt-1.5">
-                    <button className="text-[#64748d] hover:text-[#64748d]">
+                    <button
+                      type="button"
+                      onClick={() => notify({ title: 'Thanks for the feedback', message: 'We log thumbs-up to improve answers.', tone: 'success' })}
+                      className="text-[#64748d] hover:text-[#108c3d] transition-colors"
+                      aria-label="Helpful response"
+                    >
                       <ThumbsUp size={13} />
                     </button>
-                    <button className="text-[#64748d] hover:text-[#64748d]">
+                    <button
+                      type="button"
+                      onClick={() => notify({ title: 'Thanks for flagging', message: 'We use thumbs-down to route tough questions to CPAs.', tone: 'info' })}
+                      className="text-[#64748d] hover:text-[#ea2261] transition-colors"
+                      aria-label="Not helpful"
+                    >
                       <ThumbsDown size={13} />
                     </button>
                     <span className="text-[11px] text-[#64748d]">{msg.timestamp}</span>
@@ -690,7 +700,7 @@ export function ChatPage() {
               <button
                 key={action.label}
                 onClick={() => handleActionClick(action.prompt)}
-                className="flex items-center gap-1.5 rounded-full border border-[#e5edf5] bg-white px-3 py-1.5 text-xs text-[#64748d] hover:border-[#D8D3FF] hover:text-[#533afd] transition-colors whitespace-nowrap flex-shrink-0"
+                className="flex items-center gap-1.5 rounded border border-[#e5edf5] bg-white px-3 py-1.5 text-xs text-[#64748d] hover:border-[#b9b9f9] hover:text-[#533afd] transition-colors whitespace-nowrap flex-shrink-0"
               >
                 <action.icon size={12} />
                 {action.label.length > 35 ? action.label.slice(0, 35) + '...' : action.label}

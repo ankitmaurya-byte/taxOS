@@ -48,8 +48,8 @@ export function CommandCenter() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Command Center</h1>
-          <p className="mt-1 text-sm text-[#6B7280]">Track active work and start new filings from one place.</p>
+          <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Command Center</h1>
+          <p className="mt-1 text-sm text-[#64748d]">Track active work and start new filings from one place.</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           <Plus size={16} className="mr-2" />
@@ -59,13 +59,13 @@ export function CommandCenter() {
 
       {/* Urgency Strip */}
       {urgentItems.length > 0 && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-          <h2 className="text-sm font-semibold text-red-800 mb-2">Needs Attention Today</h2>
+        <div className="rounded-lg bg-[rgba(234,34,97,0.06)] border border-[#ffd7ef] p-4">
+          <h2 className="text-sm font-normal text-[#ea2261] mb-2" style={{ fontWeight: 400 }}>Needs Attention Today</h2>
           <div className="flex gap-3 overflow-x-auto">
             {urgentItems.map(d => (
-              <div key={d.id} className="flex-shrink-0 rounded-md bg-white border border-red-200 px-3 py-2">
-                <p className="text-sm font-medium text-gray-900">{d.formName}</p>
-                <p className="text-xs text-red-600">
+              <div key={d.id} className="flex-shrink-0 rounded-md bg-white border border-[#ffd7ef] px-3 py-2">
+                <p className="text-sm font-medium text-[#061b31]">{d.formName}</p>
+                <p className="text-xs text-[#ea2261]">
                   {daysUntil(d.dueDate) < 0
                     ? `${Math.abs(daysUntil(d.dueDate))} days overdue`
                     : `${daysUntil(d.dueDate)} days left`}
@@ -94,7 +94,7 @@ export function CommandCenter() {
                     <div key={status} className="min-w-[160px] flex-1">
                       <div className="mb-2 flex items-center gap-2">
                         <StatusBadge status={status} />
-                        <span className="text-xs text-gray-500">{items.length}</span>
+                        <span className="text-xs text-[#64748d] font-tnum">{items.length}</span>
                       </div>
                       <div className="space-y-2">
                         {visible.map(filing => (
@@ -104,7 +104,7 @@ export function CommandCenter() {
                             onClick={() => navigate(`/filings/${filing.id}`)}
                           >
                             <p className="text-sm font-medium">{filing.formType}</p>
-                            <p className="text-xs text-gray-500">{filing.formName}</p>
+                            <p className="text-xs text-[#64748d]">{filing.formName}</p>
                             {filing.aiConfidenceScore != null && (
                               <div className="mt-1">
                                 <ConfidenceBadge score={filing.aiConfidenceScore} />
@@ -142,9 +142,9 @@ export function CommandCenter() {
                   <div key={d.id} className="flex items-center justify-between rounded-md border p-3">
                     <div>
                       <p className="text-sm font-medium">{d.formType}</p>
-                      <p className="text-xs text-gray-500">{formatDate(d.dueDate)}</p>
+                      <p className="text-xs text-[#64748d] font-tnum">{formatDate(d.dueDate)}</p>
                     </div>
-                    <Badge className={(d.urgencyScore || 0) >= 90 ? 'bg-red-100 text-red-700' : (d.urgencyScore || 0) >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}>
+                    <Badge className={(d.urgencyScore || 0) >= 90 ? 'bg-[rgba(234,34,97,0.08)] text-[#ea2261]' : (d.urgencyScore || 0) >= 60 ? 'bg-[rgba(155,104,41,0.12)] text-[#9b6829]' : 'bg-[rgba(21,190,83,0.12)] text-[#108c3d]'}>
                       {daysUntil(d.dueDate) < 0 ? 'Overdue' : `${daysUntil(d.dueDate)}d`}
                     </Badge>
                   </div>
@@ -161,11 +161,11 @@ export function CommandCenter() {
             <CardContent>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {recentActivity.map(entry => (
-                  <div key={entry.id} className="border-l-2 border-blue-300 pl-3 py-1">
-                    <p className="text-xs text-gray-500">{formatDate(entry.createdAt)}</p>
-                    <p className="text-sm text-gray-700">{entry.action.replace(/_/g, ' ')}</p>
+                  <div key={entry.id} className="border-l-2 border-[#b9b9f9] pl-3 py-1">
+                    <p className="text-xs text-[#64748d] font-tnum">{formatDate(entry.createdAt)}</p>
+                    <p className="text-sm text-[#273951]">{entry.action.replace(/_/g, ' ')}</p>
                     {entry.reasoning && (
-                      <p className="text-xs text-gray-400 line-clamp-2">{entry.reasoning}</p>
+                      <p className="text-xs text-[#64748d] line-clamp-2">{entry.reasoning}</p>
                     )}
                   </div>
                 ))}
@@ -181,16 +181,16 @@ export function CommandCenter() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <CardTitle>Pending Approvals</CardTitle>
-              <Badge className="bg-red-100 text-red-700">{pendingApprovals.length}</Badge>
+              <Badge className="bg-[rgba(234,34,97,0.08)] text-[#ea2261]">{pendingApprovals.length}</Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-2">
               {pagedApprovals.map(a => (
                 <div key={a.id} className="rounded-md border p-4 cursor-pointer hover:shadow-sm" onClick={() => navigate('/approvals')}>
-                  <p className="text-sm font-medium text-gray-900">{a.summary}</p>
+                  <p className="text-sm font-medium text-[#061b31]">{a.summary}</p>
                   {a.aiRecommendation && (
-                    <p className="mt-1 text-xs text-gray-500">AI: {a.aiRecommendation}</p>
+                    <p className="mt-1 text-xs text-[#64748d]">AI: {a.aiRecommendation}</p>
                   )}
                 </div>
               ))}

@@ -41,7 +41,7 @@ export function ActionCentrePage() {
 
   return (
     <div className="relative min-h-[calc(100vh-7rem)]">
-      <h1 className="text-xl font-bold text-[#061b31] mb-5">Action Centre</h1>
+      <h1 className="text-xl font-normal text-[#061b31] mb-5" style={{ fontWeight: 300 }}>Action Centre</h1>
 
       {/* Content */}
       {items.length === 0 ? (
@@ -59,7 +59,7 @@ export function ActionCentrePage() {
                     />
                   ))}
                 </div>
-                <CheckCircle2 size={20} className="text-[#10B981] fill-[#10B981] stroke-white" />
+                <CheckCircle2 size={20} className="text-[#15be53] fill-[#15be53] stroke-white" />
               </div>
             ))}
           </div>
@@ -77,7 +77,7 @@ export function ActionCentrePage() {
               }
             >
               <div className="flex items-start gap-3 flex-1 min-w-0">
-                <span className="w-2 h-2 rounded-full mt-1.5 bg-[#EF4444] flex-shrink-0" />
+                <span className="w-2 h-2 rounded-full mt-1.5 bg-[#ea2261] flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-[#061b31] truncate">{item.title}</p>
                   <p className="text-xs text-[#64748d] mt-0.5 truncate">{item.description}</p>
@@ -98,7 +98,7 @@ export function ActionCentrePage() {
       {user?.role !== 'team_member' && (
         <button
           onClick={() => navigate('/chat')}
-          className="fixed bottom-8 right-8 w-14 h-14 bg-[#533afd] text-white rounded-full shadow-lg hover:bg-[#4434d4] transition-colors flex items-center justify-center"
+          className="fixed bottom-8 right-8 w-14 h-14 bg-[#533afd] text-white rounded-md shadow-lg hover:bg-[#4434d4] transition-colors flex items-center justify-center"
         >
           <MessageCircle size={24} />
         </button>

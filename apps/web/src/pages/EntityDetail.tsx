@@ -129,7 +129,7 @@ export function EntityDetailPage() {
       </div>
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-[#061b31] uppercase">{entity.legalName}</h1>
+        <h1 className="text-2xl font-normal text-[#061b31] uppercase" style={{ fontWeight: 300 }}>{entity.legalName}</h1>
         {entity.status !== 'dissolved' && (
           <button
             onClick={async () => {
@@ -140,7 +140,7 @@ export function EntityDetailPage() {
               }
             }}
             disabled={deleteLoading}
-            className="h-9 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+            className="h-9 rounded-lg border border-[#ffd7ef] px-4 text-sm font-medium text-[#ea2261] hover:bg-[rgba(234,34,97,0.08)] disabled:opacity-50"
           >
             {deleteLoading ? 'Dissolving...' : 'Dissolve Entity'}
           </button>
@@ -197,10 +197,10 @@ export function EntityDetailPage() {
             <div className="border border-[#e5edf5] rounded-md bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-[#061b31]">Supporting Docs</h3>
+                  <h3 className="text-sm font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Supporting Docs</h3>
                   <p className="mt-1 text-xs text-[#64748d]">Documents linked through this entity's filings.</p>
                 </div>
-                <span className="rounded-full bg-[#f6f9fc] px-2.5 py-1 text-xs font-medium text-[#533afd]">
+                <span className="rounded-md bg-[#f6f9fc] px-2.5 py-1 text-xs font-medium text-[#533afd] font-tnum">
                   {supportingDocs.length}
                 </span>
               </div>
@@ -237,11 +237,11 @@ export function EntityDetailPage() {
                           {doc.mimeType?.includes('pdf') ? 'PDF' : doc.mimeType?.includes('sheet') || doc.mimeType?.includes('csv') ? 'Spreadsheet' : 'Document'}
                         </span>
                         {doc.reviewedByHuman ? (
-                          <span className="inline-flex items-center gap-1 font-medium text-[#15803D]">
+                          <span className="inline-flex items-center gap-1 font-medium text-[#108c3d]">
                             <CheckCircle2 size={12} /> Reviewed
                           </span>
                         ) : (
-                          <span className="font-medium text-[#B45309]">Needs review</span>
+                          <span className="font-medium text-[#9b6829]">Needs review</span>
                         )}
                       </div>
                     </a>
@@ -281,19 +281,19 @@ function OverviewTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
         <div className="grid grid-cols-3 gap-6 mb-5">
           <div>
             <p className="text-xs text-[#64748d] mb-1">Business name</p>
-            <p className="text-sm font-semibold text-[#061b31] uppercase">
+            <p className="text-sm font-medium text-[#061b31] uppercase">
               {entity.legalName}
             </p>
           </div>
           <div>
             <p className="text-xs text-[#64748d] mb-1">Entity type</p>
-            <p className="text-sm font-semibold text-[#061b31]">
+            <p className="text-sm font-medium text-[#061b31]">
               {ENTITY_TYPE_LABELS[entity.entityType] || entity.entityType}
             </p>
           </div>
           <div>
             <p className="text-xs text-[#64748d] mb-1">Country</p>
-            <p className="text-sm font-semibold text-[#061b31]">
+            <p className="text-sm font-medium text-[#061b31]">
               {COUNTRY_LABELS[entity.country] || entity.country}
             </p>
           </div>
@@ -439,11 +439,11 @@ function CollapsibleSection({
         className="w-full flex items-center justify-between"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#f6f9fc] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-md bg-[#f6f9fc] flex items-center justify-center">
             {icon}
           </div>
           <div className="text-left">
-            <h3 className="text-sm font-semibold text-[#061b31]">{title}</h3>
+            <h3 className="text-sm font-normal text-[#061b31]" style={{ fontWeight: 400 }}>{title}</h3>
             <p className="text-xs text-[#64748d]">{description}</p>
           </div>
         </div>
@@ -504,10 +504,10 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
       {/* Directors */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-[#061b31]">Directors</h2>
+          <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Directors</h2>
           <button
             onClick={() => setShowDirectorForm(!showDirectorForm)}
-            className="px-4 py-2 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#061b31] hover:bg-gray-50"
+            className="px-4 py-2 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#061b31] hover:bg-[#f6f9fc]"
           >
             {showDirectorForm ? 'Cancel' : 'Add director'}
           </button>
@@ -533,7 +533,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
                   onChange={(e) =>
                     setDirectorForm((f) => ({ ...f, dateAppointed: e.target.value }))
                   }
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
+                  className="flex h-10 w-full rounded-md border border-[#e5edf5] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
                 />
               </div>
             </div>
@@ -583,7 +583,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
                         : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#D1FAE5] text-[#065F46]">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[rgba(21,190,83,0.12)] text-[#108c3d]">
                         {d.status || 'Active'}
                       </span>
                     </td>
@@ -603,10 +603,10 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
       {/* Officers */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-[#061b31]">Officers</h2>
+          <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Officers</h2>
           <button
             onClick={() => setShowOfficerForm(!showOfficerForm)}
-            className="px-4 py-2 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#061b31] hover:bg-gray-50"
+            className="px-4 py-2 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#061b31] hover:bg-[#f6f9fc]"
           >
             {showOfficerForm ? 'Cancel' : 'Add officer'}
           </button>
@@ -640,7 +640,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
                   onChange={(e) =>
                     setOfficerForm((f) => ({ ...f, dateAppointed: e.target.value }))
                   }
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
+                  className="flex h-10 w-full rounded-md border border-[#e5edf5] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#533afd]"
                 />
               </div>
               <div className="flex items-center gap-2 pt-5">
@@ -651,7 +651,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
                   onChange={(e) =>
                     setOfficerForm((f) => ({ ...f, authorisedSignatory: e.target.checked }))
                   }
-                  className="rounded border-gray-300"
+                  className="rounded border-[#e5edf5]"
                 />
                 <label htmlFor="authorisedSignatory" className="text-sm text-[#061b31]">
                   Authorised Signatory
@@ -714,7 +714,7 @@ function DirectorsOfficersTab({ entity, onUpdate }: { entity: any; onUpdate: (da
                       {o.authorisedSignatory ? 'Yes' : 'No'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#D1FAE5] text-[#065F46]">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[rgba(21,190,83,0.12)] text-[#108c3d]">
                         {o.status || 'Active'}
                       </span>
                     </td>
@@ -763,10 +763,10 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-[#061b31]">Shareholders</h2>
+        <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Shareholders</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-1.5 px-4 py-2 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#061b31] hover:bg-gray-50"
+          className="flex items-center gap-1.5 px-4 py-2 border border-[#e5edf5] rounded-lg text-sm font-medium text-[#061b31] hover:bg-[#f6f9fc]"
         >
           <Plus size={14} />
           {showForm ? 'Cancel' : 'Add shareholder'}
@@ -887,7 +887,7 @@ function ShareholdersTab({ entity, onUpdate }: { entity: any; onUpdate: (data: a
                           await onUpdate({ shareholders: nextShareholders })
                         })()
                       }
-                      className="hover:text-red-500"
+                      className="hover:text-[#ea2261]"
                     >
                       &#8942;
                     </button>
@@ -939,7 +939,7 @@ function CapTableTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-[#061b31]">Cap Table</h2>
+        <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Cap Table</h2>
         <label className="flex items-center gap-1.5 h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4] cursor-pointer">
           Upload
           <input type="file" className="hidden" accept=".xls,.xlsx,.csv" onChange={handleUpload} />
@@ -1004,7 +1004,7 @@ function CapTableTab({ entity, onUpdate }: { entity: any; onUpdate: (data: any) 
                   </td>
                   <td className="px-4 py-3 text-sm text-[#061b31]">{entry.note || '-'}</td>
                   <td className="px-4 py-3 text-right">
-                    <FileSpreadsheet size={20} className="inline text-[#10B981]" />
+                    <FileSpreadsheet size={20} className="inline text-[#15be53]" />
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -1062,7 +1062,7 @@ function SensitiveDataTab({ entity, onUpdate }: { entity: any; onUpdate: (data: 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-[#061b31]">Sensitive Data</h2>
+        <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Sensitive Data</h2>
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-1.5 h-9 px-4 bg-[#533afd] text-white rounded-lg text-sm font-medium hover:bg-[#4434d4]"
@@ -1142,7 +1142,7 @@ function SensitiveDataTab({ entity, onUpdate }: { entity: any; onUpdate: (data: 
                           await onUpdate({ sensitiveData: nextSensitiveData })
                         })()
                       }
-                      className="hover:text-red-500"
+                      className="hover:text-[#ea2261]"
                     >
                       &#8942;
                     </button>

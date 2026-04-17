@@ -72,13 +72,13 @@ export function EstimatedTaxPage() {
     ? {
         title: 'Needs attention',
         detail: `${overdueDeadlines.length} deadline${overdueDeadlines.length === 1 ? '' : 's'} need action now.`,
-        color: 'text-[#B45309]',
+        color: 'text-[#9b6829]',
       }
     : nextDeadline
       ? {
           title: 'On track',
           detail: `Next deadline is ${nextDeadline.formType} on ${formatDate(nextDeadline.dueDate)}.`,
-          color: 'text-[#15803D]',
+          color: 'text-[#108c3d]',
         }
       : {
           title: 'No active deadlines',
@@ -90,7 +90,7 @@ export function EstimatedTaxPage() {
     <div>
       <div className="mb-8 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-light tracking-tight text-[#061b31]">Estimated Tax</h1>
+          <h1 className="text-2xl font-normal tracking-tight text-[#061b31]" style={{ fontWeight: 300 }}>Estimated Tax</h1>
           <p className="mt-1 text-sm text-[#64748d]">Track live filing activity and upcoming deadline pressure by entity.</p>
         </div>
 
@@ -122,12 +122,12 @@ export function EstimatedTaxPage() {
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-[#64748d]">Selected entity</p>
-                  <h2 className="mt-2 text-xl font-semibold text-[#061b31]">{selectedEntity.legalName}</h2>
+                  <h2 className="mt-2 text-xl font-normal text-[#061b31]" style={{ fontWeight: 400 }}>{selectedEntity.legalName}</h2>
                   <p className="mt-1 text-sm text-[#64748d]">
                     {selectedEntity.entityType} • {selectedEntity.stateOfIncorporation} • Fiscal year end {selectedEntity.fiscalYearEnd}
                   </p>
                 </div>
-                <div className={`rounded-full px-3 py-1 text-xs font-medium ${statusTone.color} bg-[#f6f9fc]`}>
+                <div className={`rounded-md px-3 py-1 text-xs font-medium ${statusTone.color} bg-[#f6f9fc]`}>
                   {statusTone.title}
                 </div>
               </div>
@@ -135,13 +135,13 @@ export function EstimatedTaxPage() {
               <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
                 {[
                   { label: 'Projected tax', value: formatCurrency(annualProjectedTax), accent: 'text-[#533afd]' },
-                  { label: 'Taxable income', value: projection?.taxableIncome != null ? formatCurrency(projection.taxableIncome) : 'N/A', accent: 'text-[#10B981]' },
-                  { label: 'Next payment', value: nextQuarterPayment ? formatCurrency(nextQuarterPayment.amount) : '$0', accent: 'text-[#3B82F6]' },
-                  { label: 'Effective rate', value: `${Math.round((projection?.effectiveTaxRate ?? 0) * 100)}%`, accent: 'text-[#F59E0B]' },
+                  { label: 'Taxable income', value: projection?.taxableIncome != null ? formatCurrency(projection.taxableIncome) : 'N/A', accent: 'text-[#15be53]' },
+                  { label: 'Next payment', value: nextQuarterPayment ? formatCurrency(nextQuarterPayment.amount) : '$0', accent: 'text-[#533afd]' },
+                  { label: 'Effective rate', value: `${Math.round((projection?.effectiveTaxRate ?? 0) * 100)}%`, accent: 'text-[#9b6829]' },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-md bg-[#FAFAFB] p-4">
+                  <div key={item.label} className="rounded-md bg-[#f6f9fc] p-4">
                     <p className="text-[11px] uppercase tracking-[0.16em] text-[#64748d]">{item.label}</p>
-                    <p className={`mt-2 text-2xl font-semibold ${item.accent}`}>{item.value}</p>
+                    <p className={`mt-2 text-2xl font-normal font-tnum ${item.accent}`} style={{ fontWeight: 300 }}>{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -149,7 +149,7 @@ export function EstimatedTaxPage() {
               <div className="rounded-lg border border-[#EEEAFB] bg-[linear-gradient(180deg,#FCFBFF_0%,#F7F4FF_100%)] p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-[#061b31]">Quarterly payment schedule</p>
+                    <p className="text-sm font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Quarterly payment schedule</p>
                     <p className="mt-1 text-sm text-[#64748d]">Projected from live filing data for tax year {projection?.taxYear ?? currentTaxYear}.</p>
                   </div>
                   <BarChart3 size={18} className="text-[#533afd]" />
@@ -162,7 +162,7 @@ export function EstimatedTaxPage() {
                         {payment.amount ? formatCurrency(payment.amount) : Math.max(payment.urgencyScore || 0, 20)}
                       </div>
                       <div
-                        className={`w-full rounded-t-2xl bg-gradient-to-t ${payment.status === 'overdue' ? 'from-[#F59E0B] to-[#F9BF67]' : 'from-[#533afd] to-[#A594FF]'}`}
+                        className={`w-full rounded-t-2xl bg-gradient-to-t ${payment.status === 'overdue' ? 'from-[#9b6829] to-[#d4a76a]' : 'from-[#533afd] to-[#b9b9f9]'}`}
                         style={{
                           height: `${quarterlyPayments.length > 0
                             ? Math.max((payment.amount / Math.max(annualProjectedTax, 1)) * 100 * 4, 20)
@@ -183,11 +183,11 @@ export function EstimatedTaxPage() {
             <div className="space-y-6">
               <div className="rounded-lg border border-[#e5edf5] bg-white p-6 shadow-sm">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#EEF4FF] text-[#3B82F6]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#EDE9FD] text-[#533afd]">
                     <CalendarClock size={18} />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-[#061b31]">Next payment due</h3>
+                    <h3 className="text-base font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Next payment due</h3>
                     <p className="mt-1 text-sm text-[#64748d]">{statusTone.detail}</p>
                   </div>
                 </div>
@@ -199,12 +199,12 @@ export function EstimatedTaxPage() {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-[#061b31]">{nextQuarterPayment.quarter} estimated payment</p>
+                        <p className="text-sm font-medium text-[#061b31]">{nextQuarterPayment.quarter} estimated payment</p>
                         <p className="mt-1 text-sm text-[#64748d]">Due {formatDate(nextQuarterPayment.dueDate)}</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-semibold text-[#061b31]">{formatCurrency(nextQuarterPayment.amount)}</div>
-                        <div className={`text-sm font-semibold ${daysUntil(nextQuarterPayment.dueDate) <= 7 ? 'text-[#B45309]' : 'text-[#15803D]'}`}>
+                        <div className="text-sm font-medium text-[#061b31] font-tnum">{formatCurrency(nextQuarterPayment.amount)}</div>
+                        <div className={`text-sm font-medium font-tnum ${daysUntil(nextQuarterPayment.dueDate) <= 7 ? 'text-[#9b6829]' : 'text-[#108c3d]'}`}>
                           {daysUntil(nextQuarterPayment.dueDate) === 0 ? 'Today' : `${daysUntil(nextQuarterPayment.dueDate)}d`}
                         </div>
                       </div>
@@ -218,7 +218,7 @@ export function EstimatedTaxPage() {
               </div>
 
               <div className="rounded-lg border border-[#e5edf5] bg-white p-6 shadow-sm">
-                <h3 className="text-base font-semibold text-[#061b31]">What TaxOS is using</h3>
+                <h3 className="text-base font-normal text-[#061b31]" style={{ fontWeight: 400 }}>What TaxOS is using</h3>
                 <div className="mt-4 space-y-4">
                   {[
                     { icon: BarChart3, text: `${deadlines.length} real deadlines linked to this entity` },
@@ -240,7 +240,7 @@ export function EstimatedTaxPage() {
           <div className="rounded-lg border border-[#e5edf5] bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-[#061b31]">Estimated-tax related activity</h2>
+                <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Estimated-tax related activity</h2>
                 <p className="mt-1 text-sm text-[#64748d]">Live deadlines and filing records for the selected entity.</p>
               </div>
               <button
@@ -262,16 +262,16 @@ export function EstimatedTaxPage() {
                   <div key={deadline.id} className="rounded-md border border-[#e5edf5] p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-[#061b31]">{deadline.formType} • {deadline.formName}</p>
+                        <p className="text-sm font-medium text-[#061b31]">{deadline.formType} • {deadline.formName}</p>
                         <p className="mt-1 text-sm text-[#64748d]">{deadline.description || 'Upcoming estimated-tax deadline'}</p>
                       </div>
-                      <span className="rounded-full bg-[#f6f9fc] px-2.5 py-1 text-xs font-medium text-[#273951]">
+                      <span className="rounded-md bg-[#f6f9fc] px-2.5 py-1 text-xs font-medium text-[#273951]">
                         {deadline.status}
                       </span>
                     </div>
                     <div className="mt-4 flex items-center justify-between text-sm text-[#64748d]">
                       <span>{formatDate(deadline.dueDate)}</span>
-                      <span className={daysUntil(deadline.dueDate) <= 7 ? 'font-medium text-[#B45309]' : 'font-medium text-[#15803D]'}>
+                      <span className={daysUntil(deadline.dueDate) <= 7 ? 'font-medium text-[#9b6829]' : 'font-medium text-[#108c3d]'}>
                         {daysUntil(deadline.dueDate) < 0 ? `${Math.abs(daysUntil(deadline.dueDate))} days overdue` : `${daysUntil(deadline.dueDate)} days left`}
                       </span>
                     </div>

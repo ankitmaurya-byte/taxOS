@@ -13,10 +13,7 @@ Return a JSON object with:
   "documentType": "string (e.g. W-2, 1099-NEC, bank statement)",
   "taxYear": number,
   "fields": {
-    "fieldName": {
-      "value": "extracted value",
-      "confidence": 0.0-1.0
-    }
+    "fieldName": { "value": "extracted value", "confidence": 0.0-1.0 }
   },
   "overallConfidence": 0.0-1.0,
   "flaggedIssues": ["any anomalies or unclear data"],
@@ -33,19 +30,19 @@ Your goal is to create a comprehensive text representation that can be used as c
 
 Return a JSON object with:
 {
-  "rawText": "Full text content extracted from the document. Include all readable text, numbers, dates, names, addresses, amounts, etc.",
-  "summary": "A 2-3 sentence summary of what this document is about and its key information.",
+  "rawText": "Full text content extracted from the document.",
+  "summary": "A 2-3 sentence summary.",
   "keyEntities": ["list of key entities/names/organizations/amounts mentioned"],
   "metadata": {
     "documentType": "type of document",
     "date": "any date found",
-    "parties": ["any parties/people/organizations involved"],
+    "parties": ["any parties involved"],
     "amounts": ["any monetary amounts found"],
-    "references": ["any reference numbers, account numbers, etc."]
+    "references": ["any reference numbers"]
   }
 }
 
-Extract EVERYTHING possible. Be thorough. Return ONLY the JSON object.
+Extract EVERYTHING possible. Return ONLY the JSON object.
 `
 
 export class DocumentAgent extends BaseAgent {

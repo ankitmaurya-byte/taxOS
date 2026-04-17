@@ -131,7 +131,7 @@ export function TeamManagementPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#061b31]">Team Management</h1>
+          <h1 className="text-2xl font-normal text-[#061b31]" style={{ fontWeight: 300 }}>Team Management</h1>
           <p className="mt-1 text-sm text-[#64748d]">
             Invite members, manage permissions, and configure role templates.
           </p>
@@ -158,19 +158,19 @@ export function TeamManagementPage() {
       <div className="grid grid-cols-4 gap-4">
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs text-[#64748d]">Total members</p>
-          <p className="mt-1 text-2xl font-semibold text-[#061b31]">{members.length - 1}</p>
+          <p className="mt-1 text-2xl font-normal text-[#061b31] font-tnum" style={{ fontWeight: 300 }}>{members.length - 1}</p>
         </div>
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs text-[#64748d]">Active</p>
-          <p className="mt-1 text-2xl font-semibold text-[#15803D]">{activeCount}</p>
+          <p className="mt-1 text-2xl font-normal text-[#108c3d] font-tnum" style={{ fontWeight: 300 }}>{activeCount}</p>
         </div>
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs text-[#64748d]">Team members</p>
-          <p className="mt-1 text-2xl font-semibold text-[#061b31]">{teamMembers.length}</p>
+          <p className="mt-1 text-2xl font-normal text-[#061b31] font-tnum" style={{ fontWeight: 300 }}>{teamMembers.length}</p>
         </div>
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <p className="text-xs text-[#64748d]">Pending invites</p>
-          <p className="mt-1 text-2xl font-semibold text-[#F59E0B]">{pendingCount}</p>
+          <p className="mt-1 text-2xl font-normal text-[#9b6829] font-tnum" style={{ fontWeight: 300 }}>{pendingCount}</p>
         </div>
       </div>
 
@@ -332,7 +332,7 @@ function MemberCard({
         onClick={onToggle}
         className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-[#f6f9fc] transition-colors"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDE9FD] text-xs font-semibold text-[#533afd] flex-shrink-0">
+        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#EDE9FD] text-xs font-semibold text-[#533afd] flex-shrink-0">
           {member.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '??'}
         </div>
         <div className="flex-1 min-w-0">
@@ -554,7 +554,7 @@ function InviteModal({
         <div className="w-full max-w-lg rounded-lg bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-[#e5edf5] px-6 py-4">
             <div>
-              <h2 className="text-lg font-semibold text-[#061b31]">Invite Team Member</h2>
+              <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Invite Team Member</h2>
               <p className="text-xs text-[#64748d]">They must accept within 24 hours.</p>
             </div>
             <button onClick={requestClose} className="p-1 text-[#64748d] hover:text-[#273951]"><X size={18} /></button>
@@ -673,12 +673,12 @@ function InviteModal({
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              <div className="flex items-center gap-2 rounded-lg bg-[rgba(234,34,97,0.08)] px-3 py-2 text-sm text-[#ea2261]">
                 <AlertCircle size={14} /> {error}
               </div>
             )}
             {success && (
-              <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+              <div className="flex items-center gap-2 rounded-lg bg-[rgba(21,190,83,0.12)] px-3 py-2 text-sm text-[#108c3d]">
                 <Check size={14} /> Invite sent successfully!
               </div>
             )}
@@ -741,7 +741,7 @@ function TemplateModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-[#e5edf5] px-6 py-4">
-            <h2 className="text-lg font-semibold text-[#061b31]">Role Templates</h2>
+            <h2 className="text-lg font-normal text-[#061b31]" style={{ fontWeight: 400 }}>Role Templates</h2>
             <button onClick={requestClose} className="p-1 text-[#64748d] hover:text-[#273951]"><X size={18} /></button>
           </div>
 
@@ -754,14 +754,14 @@ function TemplateModal({
                     <Shield size={16} className="text-[#533afd]" />
                     <span className="text-sm font-medium text-[#061b31]">{t.name}</span>
                     {t.isSystemTemplate && (
-                      <span className="rounded-full bg-[#f6f9fc] px-2 py-0.5 text-[10px] text-[#64748d]">System</span>
+                      <span className="rounded-md bg-[#f6f9fc] px-2 py-0.5 text-[10px] text-[#64748d]">System</span>
                     )}
                   </div>
                   <span className="text-[10px] uppercase tracking-wide text-[#64748d]">{t.scope}</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {PERMISSION_KEYS.filter(k => t.permissions?.[k]).map(k => (
-                    <span key={k} className="rounded-full bg-[#EDE9FD] px-2 py-0.5 text-[10px] font-medium text-[#533afd]">
+                    <span key={k} className="rounded-md bg-[#EDE9FD] px-2 py-0.5 text-[10px] font-medium text-[#533afd]">
                       {PERMISSION_LABELS[k]}
                     </span>
                   ))}
@@ -789,7 +789,7 @@ function TemplateModal({
                         type="checkbox"
                         checked={newPerms[key] || false}
                         onChange={(e) => setNewPerms({ ...newPerms, [key]: e.target.checked })}
-                        className="h-4 w-4 rounded border-gray-300 text-[#533afd] focus:ring-[#533afd]"
+                        className="h-4 w-4 rounded border-[#e5edf5] text-[#533afd] focus:ring-[#533afd]"
                       />
                       {PERMISSION_LABELS[key]}
                     </label>
