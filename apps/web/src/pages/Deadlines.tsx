@@ -1,9 +1,26 @@
 // Used in: App.tsx — route /deadlines (tax deadlines calendar)
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { Pagination } from '@/components/Pagination'
 import { formatDate, daysUntil } from '@/lib/utils'
-import { Search, X, CalendarClock, AlertTriangle, CheckCircle2, Clock, Zap, ChevronDown, Filter } from 'lucide-react'
+import { api } from '@/lib/api'
+import { promptDialog, confirmDialog } from '@/stores/dialogs'
+import { notify } from '@/stores/notifications'
+import {
+  Search,
+  X,
+  CalendarClock,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Zap,
+  SkipForward,
+  Undo2,
+  CalendarPlus,
+  BellOff,
+  MoreHorizontal,
+  Loader2,
+} from 'lucide-react'
 
 const PAGE_SIZE = 15
 
@@ -12,6 +29,7 @@ const STATUS_STYLES: Record<string, { dot: string; badge: string; label: string 
   overdue:  { dot: 'bg-[#ea2261]', badge: 'bg-[#ffd7ef] text-[#ea2261]', label: 'Overdue' },
   filed:    { dot: 'bg-[#15be53]', badge: 'bg-[rgba(21,190,83,0.2)] text-[#108c3d]', label: 'Filed' },
   extended: { dot: 'bg-[#9b6829]', badge: 'bg-[#fef3c7] text-[#9b6829]', label: 'Extended' },
+  skipped:  { dot: 'bg-[#64748d]', badge: 'bg-[#f6f9fc] text-[#64748d]', label: 'Skipped' },
 }
 
 const STATUS_KEYS = Object.keys(STATUS_STYLES) as (keyof typeof STATUS_STYLES)[]
@@ -29,6 +47,85 @@ export function DeadlinesPage() {
   const fetchDeadlines = useAuthStore(s => s.fetchDeadlines)
   const fetchEntities = useAuthStore(s => s.fetchEntities)
   const runDeadlines = useAuthStore(s => s.runDeadlines)
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [menuId, setMenuId] = useState<string | null>(null)
+
+  async function actOn(id: string, fn: () => Promise<unknown>) {
+    setBusyId(id)
+    try {
+      await fn()
+      await fetchDeadlines()
+    } catch (err: any) {
+      notify({ title: 'Action failed', message: err?.message || 'Could not update deadline.', tone: 'error' })
+    } finally {
+      setBusyId(null)
+      setMenuId(null)
+    }
+  }
+
+  const handleComplete = (id: string) =>
+    actOn(id, async () => {
+      const note = await promptDialog({
+        title: 'Mark deadline as filed?',
+        message: 'Optional — note a confirmation number, filing link, or any context worth keeping.',
+        placeholder: 'Confirmation / filing notes (optional)',
+        multiline: true,
+        confirmLabel: 'Mark filed',
+      })
+      if (note === null) throw new Error('cancelled')
+      await api.deadlines.complete(id, note)
+    }).catch(() => { setBusyId(null) })
+
+  const handleSkip = (id: string) =>
+    actOn(id, async () => {
+      const reason = await promptDialog({
+        title: 'Skip this deadline?',
+        message: 'Explain why. CPAs and auditors can see this remark later.',
+        placeholder: 'Remark',
+        multiline: true,
+        required: true,
+        confirmLabel: 'Skip',
+        tone: 'danger',
+      })
+      if (!reason) throw new Error('cancelled')
+      await api.deadlines.skip(id, reason)
+    }).catch(() => { setBusyId(null) })
+
+  const handleExtend = (id: string) =>
+    actOn(id, async () => {
+      const date = await promptDialog({
+        title: 'Extend deadline',
+        message: 'Enter the new due date (YYYY-MM-DD). Leave blank to mark extended without a date change.',
+        placeholder: 'YYYY-MM-DD',
+        confirmLabel: 'Extend',
+      })
+      if (date === null) throw new Error('cancelled')
+      await api.deadlines.extend(id, date.trim() || undefined)
+    }).catch(() => { setBusyId(null) })
+
+  const handleSnooze = (id: string) =>
+    actOn(id, async () => {
+      const date = await promptDialog({
+        title: 'Snooze until…',
+        message: 'Hide from "due soon" lists until this date. Enter as YYYY-MM-DD.',
+        placeholder: 'YYYY-MM-DD',
+        required: true,
+        confirmLabel: 'Snooze',
+      })
+      if (!date) throw new Error('cancelled')
+      await api.deadlines.snooze(id, date.trim())
+    }).catch(() => { setBusyId(null) })
+
+  const handleReopen = (id: string) =>
+    actOn(id, async () => {
+      const ok = await confirmDialog({
+        title: 'Reopen deadline?',
+        message: 'This clears completion + skip state and marks the deadline upcoming again.',
+        confirmLabel: 'Reopen',
+      })
+      if (!ok) throw new Error('cancelled')
+      await api.deadlines.reopen(id)
+    }).catch(() => { setBusyId(null) })
 
   useEffect(() => { fetchDeadlines(); fetchEntities() }, [fetchDeadlines, fetchEntities])
 
@@ -57,6 +154,7 @@ export function DeadlinesPage() {
   const overdueCount = (deadlines as any[]).filter(d => d.status === 'overdue').length
   const upcomingSoon = (deadlines as any[]).filter(d => d.status === 'upcoming' && daysUntil(d.dueDate) <= 14).length
   const filedCount = (deadlines as any[]).filter(d => d.status === 'filed').length
+  const skippedCount = (deadlines as any[]).filter(d => d.status === 'skipped').length
 
   function urgencyBar(score: number) {
     if (score >= 90) return 'bg-[#ea2261]'
@@ -89,9 +187,9 @@ export function DeadlinesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
-          <div className="flex items-center gap-2 mb-2"><CalendarClock size={14} className="text-[#64748d]" /><p className="text-[12px] text-[#64748d]">Total deadlines</p></div>
+          <div className="flex items-center gap-2 mb-2"><CalendarClock size={14} className="text-[#64748d]" /><p className="text-[12px] text-[#64748d]">Total</p></div>
           <p className="text-[22px] font-light text-[#061b31] font-tnum">{(deadlines as any[]).length}</p>
         </div>
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
@@ -99,12 +197,16 @@ export function DeadlinesPage() {
           <p className="text-[22px] font-light text-[#ea2261] font-tnum">{overdueCount}</p>
         </div>
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
-          <div className="flex items-center gap-2 mb-2"><Clock size={14} className="text-[#9b6829]" /><p className="text-[12px] text-[#64748d]">Due within 14 days</p></div>
+          <div className="flex items-center gap-2 mb-2"><Clock size={14} className="text-[#9b6829]" /><p className="text-[12px] text-[#64748d]">Due ≤ 14d</p></div>
           <p className="text-[22px] font-light text-[#9b6829] font-tnum">{upcomingSoon}</p>
         </div>
         <div className="rounded-md border border-[#e5edf5] bg-white p-4">
           <div className="flex items-center gap-2 mb-2"><CheckCircle2 size={14} className="text-[#15be53]" /><p className="text-[12px] text-[#64748d]">Filed</p></div>
           <p className="text-[22px] font-light text-[#108c3d] font-tnum">{filedCount}</p>
+        </div>
+        <div className="rounded-md border border-[#e5edf5] bg-white p-4">
+          <div className="flex items-center gap-2 mb-2"><SkipForward size={14} className="text-[#64748d]" /><p className="text-[12px] text-[#64748d]">Skipped</p></div>
+          <p className="text-[22px] font-light text-[#273951] font-tnum">{skippedCount}</p>
         </div>
       </div>
 
@@ -139,11 +241,12 @@ export function DeadlinesPage() {
               <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide text-right">Days</th>
               <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide text-right">Urgency</th>
               <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide text-right">Source</th>
+              <th className="px-4 py-3 text-[12px] font-normal text-[#64748d] uppercase tracking-wide text-right w-16">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#e5edf5]">
             {paginated.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-[#64748d]">No deadlines match your filters.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-[#64748d]">No deadlines match your filters.</td></tr>
             ) : paginated.map((deadline: any) => {
               const days = daysUntil(deadline.dueDate)
               const s = STATUS_STYLES[deadline.status] || STATUS_STYLES.upcoming
@@ -179,6 +282,68 @@ export function DeadlinesPage() {
                       <span className="text-[12px] text-[#64748d]">Manual</span>
                     )}
                   </td>
+                  <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
+                    <div className="relative inline-block">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setMenuId(menuId === deadline.id ? null : deadline.id) }}
+                        disabled={busyId === deadline.id}
+                        className="p-1 rounded-sm text-[#64748d] hover:bg-[#f6f9fc] hover:text-[#273951] disabled:opacity-50"
+                        aria-label="Deadline actions"
+                      >
+                        {busyId === deadline.id ? <Loader2 size={14} className="animate-spin" /> : <MoreHorizontal size={14} />}
+                      </button>
+                      {menuId === deadline.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setMenuId(null)} />
+                          <div
+                            className="absolute right-0 top-full mt-1 z-20 w-48 rounded-[6px] border border-[#e5edf5] bg-white py-1"
+                            style={{ boxShadow: 'rgba(50,50,93,0.25) 0px 30px 45px -30px, rgba(0,0,0,0.1) 0px 18px 36px -18px' }}
+                          >
+                            {deadline.status !== 'filed' && (
+                              <button
+                                onClick={() => handleComplete(deadline.id)}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-[#108c3d] hover:bg-[#f6f9fc]"
+                              >
+                                <CheckCircle2 size={13} /> Mark filed
+                              </button>
+                            )}
+                            {deadline.status !== 'extended' && deadline.status !== 'filed' && (
+                              <button
+                                onClick={() => handleExtend(deadline.id)}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-[#9b6829] hover:bg-[#f6f9fc]"
+                              >
+                                <CalendarPlus size={13} /> Extend
+                              </button>
+                            )}
+                            {deadline.status === 'upcoming' && (
+                              <button
+                                onClick={() => handleSnooze(deadline.id)}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-[#273951] hover:bg-[#f6f9fc]"
+                              >
+                                <BellOff size={13} /> Snooze
+                              </button>
+                            )}
+                            {deadline.status !== 'skipped' && deadline.status !== 'filed' && (
+                              <button
+                                onClick={() => handleSkip(deadline.id)}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-[#ea2261] hover:bg-[rgba(234,34,97,0.05)]"
+                              >
+                                <SkipForward size={13} /> Skip
+                              </button>
+                            )}
+                            {(deadline.status === 'filed' || deadline.status === 'skipped' || deadline.status === 'extended') && (
+                              <button
+                                onClick={() => handleReopen(deadline.id)}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-[#533afd] hover:bg-[#f6f9fc]"
+                              >
+                                <Undo2 size={13} /> Reopen
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               )
             })}
@@ -202,23 +367,82 @@ export function DeadlinesPage() {
             </div>
 
             <div className="mt-6 space-y-3">
-              {[
+              {([
                 ['Due date', formatDate(selectedDeadline.dueDate)],
                 ['Days remaining', (() => { const d = daysUntil(selectedDeadline.dueDate); return d < 0 ? `${Math.abs(d)} days overdue` : d === 0 ? 'Due today' : `${d} days` })()],
                 ['Urgency score', String(selectedDeadline.urgencyScore ?? 0)],
                 ['Source', selectedDeadline.aiPredicted ? 'AI predicted' : 'Manual'],
-              ].map(([label, value]) => (
+                selectedDeadline.completedAt ? ['Filed at', formatDate(selectedDeadline.completedAt)] : null,
+                selectedDeadline.snoozedUntil ? ['Snoozed / extended until', formatDate(selectedDeadline.snoozedUntil)] : null,
+              ].filter(Boolean) as [string, string][]).map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between py-2 border-b border-[#e5edf5] last:border-0">
                   <span className="text-sm text-[#64748d]">{label}</span>
                   <span className="text-sm text-[#061b31] font-tnum">{value}</span>
                 </div>
               ))}
+              {selectedDeadline.skipReason && (
+                <div className="rounded-sm bg-[#f6f9fc] border border-[#e5edf5] p-3 text-sm text-[#9b6829]">
+                  <p className="text-[11px] font-medium text-[#64748d] uppercase tracking-wide mb-1">Skip remark</p>
+                  {selectedDeadline.skipReason}
+                </div>
+              )}
+              {selectedDeadline.note && (
+                <div className="rounded-sm bg-[#f6f9fc] border border-[#e5edf5] p-3 text-sm text-[#273951]">
+                  <p className="text-[11px] font-medium text-[#64748d] uppercase tracking-wide mb-1">Note</p>
+                  {selectedDeadline.note}
+                </div>
+              )}
               {selectedDeadline.description && (
                 <div className="rounded-sm bg-[#f6f9fc] border border-[#e5edf5] p-3 text-sm text-[#273951]">{selectedDeadline.description}</div>
               )}
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex flex-wrap justify-end gap-2">
+              {selectedDeadline.status !== 'filed' && (
+                <button
+                  onClick={() => handleComplete(selectedDeadline.id)}
+                  disabled={busyId === selectedDeadline.id}
+                  className="inline-flex items-center gap-1.5 h-9 rounded-sm bg-[#108c3d] px-3 text-sm font-normal text-white hover:bg-[#0a6b2e] disabled:opacity-50"
+                >
+                  <CheckCircle2 size={14} /> Mark filed
+                </button>
+              )}
+              {selectedDeadline.status !== 'extended' && selectedDeadline.status !== 'filed' && (
+                <button
+                  onClick={() => handleExtend(selectedDeadline.id)}
+                  disabled={busyId === selectedDeadline.id}
+                  className="inline-flex items-center gap-1.5 h-9 rounded-sm border border-[#e5edf5] bg-white px-3 text-sm font-normal text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-50"
+                >
+                  <CalendarPlus size={14} /> Extend
+                </button>
+              )}
+              {selectedDeadline.status === 'upcoming' && (
+                <button
+                  onClick={() => handleSnooze(selectedDeadline.id)}
+                  disabled={busyId === selectedDeadline.id}
+                  className="inline-flex items-center gap-1.5 h-9 rounded-sm border border-[#e5edf5] bg-white px-3 text-sm font-normal text-[#273951] hover:bg-[#f6f9fc] disabled:opacity-50"
+                >
+                  <BellOff size={14} /> Snooze
+                </button>
+              )}
+              {selectedDeadline.status !== 'skipped' && selectedDeadline.status !== 'filed' && (
+                <button
+                  onClick={() => handleSkip(selectedDeadline.id)}
+                  disabled={busyId === selectedDeadline.id}
+                  className="inline-flex items-center gap-1.5 h-9 rounded-sm border border-[#ffd7ef] bg-white px-3 text-sm font-normal text-[#ea2261] hover:bg-[rgba(234,34,97,0.05)] disabled:opacity-50"
+                >
+                  <SkipForward size={14} /> Skip
+                </button>
+              )}
+              {(selectedDeadline.status === 'filed' || selectedDeadline.status === 'skipped' || selectedDeadline.status === 'extended') && (
+                <button
+                  onClick={() => handleReopen(selectedDeadline.id)}
+                  disabled={busyId === selectedDeadline.id}
+                  className="inline-flex items-center gap-1.5 h-9 rounded-sm border border-[#b9b9f9] bg-white px-3 text-sm font-normal text-[#533afd] hover:bg-[rgba(83,58,253,0.05)] disabled:opacity-50"
+                >
+                  <Undo2 size={14} /> Reopen
+                </button>
+              )}
               <button onClick={() => setSelectedId(null)} className="h-9 rounded-sm bg-[#533afd] px-4 text-sm font-normal text-white hover:bg-[#4434d4] transition-colors">Close</button>
             </div>
           </div>

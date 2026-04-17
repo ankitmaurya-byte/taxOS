@@ -256,13 +256,18 @@ interface Deadline {
   description: string | null
   dueDate: string
   type: string
-  status: 'pending' | 'completed' | 'missed' | 'upcoming' | 'overdue' | 'filed' | 'extended'
+  status: 'pending' | 'completed' | 'missed' | 'upcoming' | 'overdue' | 'filed' | 'extended' | 'skipped'
   filingId: string | null
   createdAt: string
   urgencyScore?: number
   formType?: string
   formName?: string
   aiPredicted?: boolean
+  completedAt?: string | null
+  completedById?: string | null
+  skipReason?: string | null
+  snoozedUntil?: string | null
+  note?: string | null
 }
 
 interface EstimatedTaxProjection {

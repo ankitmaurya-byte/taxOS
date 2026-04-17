@@ -166,10 +166,15 @@ export const deadlines = sqliteTable('deadlines', {
   formType: text('form_type').notNull(),
   formName: text('form_name').notNull(),
   dueDate: text('due_date').notNull(),
-  status: text('status', { enum: ['upcoming', 'overdue', 'filed', 'extended'] }).default('upcoming').notNull(),
+  status: text('status', { enum: ['upcoming', 'overdue', 'filed', 'extended', 'skipped'] }).default('upcoming').notNull(),
   aiPredicted: integer('ai_predicted', { mode: 'boolean' }).default(true),
   urgencyScore: integer('urgency_score').default(0),
   description: text('description'),
+  completedAt: text('completed_at'),
+  completedById: text('completed_by_id').references(() => users.id),
+  skipReason: text('skip_reason'),
+  snoozedUntil: text('snoozed_until'),
+  note: text('note'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 })
 

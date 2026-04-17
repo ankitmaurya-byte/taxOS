@@ -252,11 +252,28 @@ function ensureDocumentStorageUrlNullable() {
   }
 }
 
+function ensureDeadlineColumns() {
+  const tableExists = sqlite
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'deadlines'")
+    .get() as { name: string } | undefined
+  if (!tableExists) return
+  const existing = new Set(
+    (sqlite.prepare('PRAGMA table_info(deadlines)').all() as Array<{ name: string }>).map(c => c.name),
+  )
+  const add = (col: string, ddl: string) => { if (!existing.has(col)) sqlite.prepare(ddl).run() }
+  add('completed_at', "ALTER TABLE deadlines ADD COLUMN completed_at TEXT")
+  add('completed_by_id', "ALTER TABLE deadlines ADD COLUMN completed_by_id TEXT")
+  add('skip_reason', "ALTER TABLE deadlines ADD COLUMN skip_reason TEXT")
+  add('snoozed_until', "ALTER TABLE deadlines ADD COLUMN snoozed_until TEXT")
+  add('note', "ALTER TABLE deadlines ADD COLUMN note TEXT")
+}
+
 ensureEntityColumns()
 ensureNewTables()
 ensureDocumentVaultColumns()
 ensureDocumentStorageUrlNullable()
 ensureFilingColumns()
+ensureDeadlineColumns()
 
 export const db = drizzle(sqlite, { schema })
 export { schema }

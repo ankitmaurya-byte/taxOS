@@ -1,67 +1,153 @@
 /**
  * Deadlines Controller
  *
- * Read-only endpoints for tax filing deadlines.
- * Deadlines are auto-created when entities are created (see entities.controller.ts).
- *
- * Declared in : controllers/deadlines.controller.ts
- * Used in     : routes/deadlines.ts
- * API Prefix  : /api/deadlines
- *
- * Functions:
- *   listDeadlines  → GET  /api/deadlines      (list deadlines, optional entityId filter)
- *                    Frontend: api.getDeadlines() → pages/Deadlines.tsx, pages/CommandCenter.tsx, pages/ActionCentre.tsx
- *   getDeadline    → GET  /api/deadlines/:id   (single deadline by ID)
- *                    Frontend: (available, not currently called by a page)
- *
- * Connected tables:
- *   - deadlines (db/schema.ts)  → main query target
- *   - entities (db/schema.ts)   → used to scope deadlines to the user's org
- *
- * Note: Deadlines are org-scoped indirectly — we first fetch all entity IDs
- * belonging to the org, then filter deadlines by those entity IDs.
+ * Read + action endpoints for tax filing deadlines.
  */
 
-import { Request, Response } from 'express'
-import { eq } from 'drizzle-orm'
+import { Request, Response, NextFunction } from 'express'
+import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '../db'
 import { deadlines, entities } from '../db/schema'
+import { AppError, withContext } from '../lib/errors'
+import { auditLogger } from '../lib/auditLog'
+
+function orgEntityIds(orgId: string): string[] {
+  return db.select({ id: entities.id }).from(entities)
+    .where(eq(entities.orgId, orgId))
+    .all()
+    .map(e => e.id)
+}
+
+function loadDeadline(req: Request) {
+  const row = db.select().from(deadlines).where(eq(deadlines.id, req.params.id as string)).get()
+  if (!row) throw new AppError('Deadline not found', 404)
+  if (!orgEntityIds(req.user!.orgId).includes(row.entityId)) {
+    throw new AppError('Deadline not found', 404)
+  }
+  return row
+}
+
+function logAction(deadlineId: string, orgId: string, actorId: string, action: string, reasoning: string) {
+  auditLogger.log({
+    orgId,
+    actorType: 'founder',
+    actorId,
+    action,
+    reasoning: `[deadline ${deadlineId.slice(0, 8)}] ${reasoning}`,
+  })
+}
 
 // ─── GET /api/deadlines ──────────────────────────────
-// Frontend caller: api.getDeadlines() → pages/Deadlines.tsx, CommandCenter.tsx, ActionCentre.tsx
-// Lists all deadlines for entities owned by the user's org.
-// Optional query: ?entityId=ent_123 to filter by a specific entity.
-// Connected fields:
-//   entities.orgId       ← req.user.orgId (org scope)
-//   deadlines.entityId   ← entities.id (indirect scope)
 export function listDeadlines(req: Request, res: Response) {
   const { entityId } = req.query
-
-  // First get all entity IDs for this org (deadlines don't have orgId directly)
-  const orgEntities = db.select({ id: entities.id }).from(entities)
-    .where(eq(entities.orgId, req.user!.orgId))
-    .all()
-  const entityIds = orgEntities.map(e => e.id)
+  const ids = orgEntityIds(req.user!.orgId)
+  if (ids.length === 0) return res.json([])
 
   const results = db.select().from(deadlines)
+    .where(inArray(deadlines.entityId, ids))
     .orderBy(deadlines.dueDate)
     .all()
-    .filter(d => {
-      if (!entityIds.includes(d.entityId)) return false
-      if (entityId && d.entityId !== entityId) return false
-      return true
-    })
+    .filter(d => (entityId ? d.entityId === entityId : true))
 
   res.json(results)
 }
 
 // ─── GET /api/deadlines/:id ──────────────────────────
-// Returns a single deadline by ID.
-// Connected fields: req.params.id as string → deadlines.id
-export function getDeadline(req: Request, res: Response) {
-  const deadline = db.select().from(deadlines)
-    .where(eq(deadlines.id, req.params.id as string))
-    .get()
-  if (!deadline) return res.status(404).json({ error: 'Deadline not found' })
-  res.json(deadline)
+export function getDeadline(req: Request, res: Response, next: NextFunction) {
+  try {
+    const d = loadDeadline(req)
+    res.json(d)
+  } catch (err) { next(withContext(err as Error, 'getDeadline')) }
+}
+
+// ─── POST /api/deadlines/:id/complete ────────────────
+// Mark as filed — captures note (optional), completedAt, completedById.
+export function markDeadlineComplete(req: Request, res: Response, next: NextFunction) {
+  try {
+    const d = loadDeadline(req)
+    const { note } = req.body as { note?: string }
+    const now = new Date().toISOString()
+    db.update(deadlines).set({
+      status: 'filed',
+      completedAt: now,
+      completedById: req.user!.userId,
+      note: (note ?? null) || d.note,
+      skipReason: null,
+      snoozedUntil: null,
+    }).where(eq(deadlines.id, d.id)).run()
+    logAction(d.id, req.user!.orgId, req.user!.userId, 'deadline_completed', `Marked ${d.formType} filed${note ? `: ${note}` : ''}`)
+    res.json({ ok: true })
+  } catch (err) { next(withContext(err as Error, 'markDeadlineComplete')) }
+}
+
+// ─── POST /api/deadlines/:id/skip ────────────────────
+// Skip with required remark. Keeps data around for auditors.
+export function skipDeadline(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { reason } = req.body as { reason?: string }
+    const trimmed = (reason ?? '').trim()
+    if (!trimmed) throw new AppError('A remark is required to skip a deadline.', 400)
+
+    const d = loadDeadline(req)
+    db.update(deadlines).set({
+      status: 'skipped',
+      skipReason: trimmed,
+      completedAt: null,
+      completedById: null,
+      snoozedUntil: null,
+    }).where(eq(deadlines.id, d.id)).run()
+    logAction(d.id, req.user!.orgId, req.user!.userId, 'deadline_skipped', `Skipped ${d.formType}: ${trimmed}`)
+    res.json({ ok: true })
+  } catch (err) { next(withContext(err as Error, 'skipDeadline')) }
+}
+
+// ─── POST /api/deadlines/:id/extend ──────────────────
+// Mark extended. Optional `newDueDate` (ISO-ish) and optional `note`.
+export function extendDeadline(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { newDueDate, note } = req.body as { newDueDate?: string; note?: string }
+    const d = loadDeadline(req)
+    const patch: Record<string, unknown> = {
+      status: 'extended',
+      snoozedUntil: (typeof newDueDate === 'string' && newDueDate.trim()) ? newDueDate.trim() : null,
+      note: (note ?? null) || d.note,
+      skipReason: null,
+    }
+    if (typeof newDueDate === 'string' && newDueDate.trim()) {
+      patch.dueDate = newDueDate.trim()
+    }
+    db.update(deadlines).set(patch).where(eq(deadlines.id, d.id)).run()
+    logAction(d.id, req.user!.orgId, req.user!.userId, 'deadline_extended', `Extended ${d.formType}${newDueDate ? ` to ${newDueDate}` : ''}${note ? ` — ${note}` : ''}`)
+    res.json({ ok: true })
+  } catch (err) { next(withContext(err as Error, 'extendDeadline')) }
+}
+
+// ─── POST /api/deadlines/:id/snooze ──────────────────
+// Stay upcoming, but remember a nudge date for the UI to show.
+export function snoozeDeadline(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { until } = req.body as { until?: string }
+    if (!until || typeof until !== 'string') throw new AppError('`until` (ISO date) is required', 400)
+    const d = loadDeadline(req)
+    db.update(deadlines).set({ snoozedUntil: until }).where(eq(deadlines.id, d.id)).run()
+    logAction(d.id, req.user!.orgId, req.user!.userId, 'deadline_snoozed', `Snoozed ${d.formType} until ${until}`)
+    res.json({ ok: true })
+  } catch (err) { next(withContext(err as Error, 'snoozeDeadline')) }
+}
+
+// ─── POST /api/deadlines/:id/reopen ──────────────────
+// Return to upcoming and clear completion/skip markers.
+export function reopenDeadline(req: Request, res: Response, next: NextFunction) {
+  try {
+    const d = loadDeadline(req)
+    db.update(deadlines).set({
+      status: 'upcoming',
+      completedAt: null,
+      completedById: null,
+      skipReason: null,
+      snoozedUntil: null,
+    }).where(eq(deadlines.id, d.id)).run()
+    logAction(d.id, req.user!.orgId, req.user!.userId, 'deadline_reopened', `Reopened ${d.formType}`)
+    res.json({ ok: true })
+  } catch (err) { next(withContext(err as Error, 'reopenDeadline')) }
 }

@@ -405,6 +405,35 @@ const getDeadlines = (entityId?: string) => {
 
 const getDeadline = (id: string) => request<any>(`/deadlines/${id}`)
 
+const completeDeadline = (id: string, note?: string) =>
+  request<{ ok: true }>(`/deadlines/${id}/complete`, {
+    method: 'POST',
+    data: { note: note ?? '' },
+  }, { successMessage: 'Deadline marked filed.' })
+
+const skipDeadlineApi = (id: string, reason: string) =>
+  request<{ ok: true }>(`/deadlines/${id}/skip`, {
+    method: 'POST',
+    data: { reason },
+  }, { successMessage: 'Deadline skipped.' })
+
+const extendDeadlineApi = (id: string, newDueDate?: string, note?: string) =>
+  request<{ ok: true }>(`/deadlines/${id}/extend`, {
+    method: 'POST',
+    data: { newDueDate: newDueDate ?? '', note: note ?? '' },
+  }, { successMessage: 'Deadline extended.' })
+
+const snoozeDeadlineApi = (id: string, until: string) =>
+  request<{ ok: true }>(`/deadlines/${id}/snooze`, {
+    method: 'POST',
+    data: { until },
+  }, { successMessage: 'Deadline snoozed.' })
+
+const reopenDeadlineApi = (id: string) =>
+  request<{ ok: true }>(`/deadlines/${id}/reopen`, {
+    method: 'POST',
+  }, { successMessage: 'Deadline reopened.' })
+
 // ─── Documents ───────────────────────────────────────────────────────────────
 
 const getDocuments = (params?: Record<string, string>) => {
@@ -786,6 +815,11 @@ export const api = {
   // Deadlines
   getDeadlines,
   getDeadline,
+  completeDeadline,
+  skipDeadlineApi,
+  extendDeadlineApi,
+  snoozeDeadlineApi,
+  reopenDeadlineApi,
 
   // Documents
   getDocuments,
@@ -936,6 +970,11 @@ export const api = {
   deadlines: {
     getAll: getDeadlines,
     get: getDeadline,
+    complete: completeDeadline,
+    skip: skipDeadlineApi,
+    extend: extendDeadlineApi,
+    snooze: snoozeDeadlineApi,
+    reopen: reopenDeadlineApi,
   },
   documents: {
     getAll: getDocuments,

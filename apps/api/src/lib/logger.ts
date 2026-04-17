@@ -179,7 +179,7 @@ function log(level: LogLevel, msg: string, meta?: Record<string, unknown>) {
   out(output)
 
   // File output
-  writeToFile(getLogFilePath(level), output)
+  // writeToFile(getLogFilePath(level), output)
 }
 
 // ─── HTTP request logger ─────────────────────────────────────────────────────
