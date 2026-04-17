@@ -201,14 +201,18 @@ export function ChatPage() {
 
   const [conversations, setConversations] = useState<Conversation[]>([
     {
-      id: '1',
+      id: 'local-seed',
       title: config.title,
       messages: [],
       preview: config.description,
       time: 'Just now',
     },
   ])
-  const [activeId, setActiveId] = useState('1')
+  const [activeId, setActiveId] = useState('local-seed')
+  const [serverLoaded, setServerLoaded] = useState(false)
+  // Tracks whether `activeId` is already a server-side row. Local conversations
+  // get promoted on their first successful save.
+  const isServerId = (id: string) => id !== 'local-seed' && !id.startsWith('local-')
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [showActionLibrary, setShowActionLibrary] = useState(true)
@@ -219,6 +223,52 @@ export function ChatPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [active?.messages])
+
+  // Hydrate from DB the first time AI mode is opened. Anything the user typed
+  // before we finished loading is preserved — we merge server rows in front.
+  useEffect(() => {
+    if (chatMode !== 'ai' || serverLoaded) return
+    let cancelled = false
+    api.listAiChats()
+      .then(({ conversations: rows }) => {
+        if (cancelled) return
+        if (rows.length > 0) {
+          setConversations(rows.map(r => ({
+            id: r.id,
+            title: r.title || config.title,
+            messages: (r.messages || []) as Message[],
+            preview: r.messages?.[r.messages.length - 1]?.content?.slice(0, 80) ?? config.description,
+            time: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : 'Just now',
+          })))
+          setActiveId(rows[0].id)
+        }
+      })
+      .catch(() => { /* silent — chat still works locally */ })
+      .finally(() => { if (!cancelled) setServerLoaded(true) })
+    return () => { cancelled = true }
+  }, [chatMode, serverLoaded, config.title, config.description])
+
+  // Persist the currently-active conversation. If it's still a local-only row,
+  // upgrade to a server row first and rewrite the activeId.
+  async function persistConversation(localId: string, convo: Conversation) {
+    try {
+      if (isServerId(localId)) {
+        await api.updateAiChat(localId, {
+          title: convo.title,
+          messages: convo.messages,
+        })
+      } else {
+        const created = await api.createAiChat({
+          title: convo.title,
+          messages: convo.messages,
+        })
+        setConversations(prev => prev.map(c => (c.id === localId ? { ...c, id: created.id } : c)))
+        setActiveId(prev => (prev === localId ? created.id : prev))
+      }
+    } catch {
+      // keep chat usable even if persistence fails; no toast spam
+    }
+  }
 
   // Hide action library once a message is sent
   useEffect(() => {
@@ -307,6 +357,15 @@ export function ChatPage() {
       )
     } finally {
       setIsStreaming(false)
+      // Persist AI conversation (create or update) after the turn finishes.
+      if (chatMode === 'ai') {
+        // Grab the latest active conversation from the state update above
+        setConversations(prev => {
+          const latest = prev.find(c => c.id === activeId)
+          if (latest) void persistConversation(activeId, latest)
+          return prev
+        })
+      }
     }
   }
 
@@ -316,13 +375,22 @@ export function ChatPage() {
     sendMessage(prompt)
   }
 
-  const newConversation = () => {
-    const id = Date.now().toString()
+  const newConversation = async () => {
+    const localId = `local-${Date.now()}`
     setConversations((prev) => [
       ...prev,
-      { id, title: 'New Chat', messages: [], preview: 'Start a new conversation', time: 'Just now' },
+      { id: localId, title: 'New Chat', messages: [], preview: 'Start a new conversation', time: 'Just now' },
     ])
-    setActiveId(id)
+    setActiveId(localId)
+    if (chatMode === 'ai') {
+      try {
+        const created = await api.createAiChat({ title: 'New Chat' })
+        setConversations(prev => prev.map(c => (c.id === localId ? { ...c, id: created.id } : c)))
+        setActiveId(prev => (prev === localId ? created.id : prev))
+      } catch {
+        // leave local id — first send will promote it.
+      }
+    }
   }
 
   const activeMode = modeOptions.find(m => m.id === chatMode) ?? modeOptions[0]
