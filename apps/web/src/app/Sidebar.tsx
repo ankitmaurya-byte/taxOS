@@ -121,9 +121,10 @@ const BOTTOM_PINNED: NavItem[] = [
 
 interface SidebarProps {
   collapsed: boolean
+  className?: string
 }
 
-export function Sidebar({ collapsed }: SidebarProps) {
+export function Sidebar({ collapsed, className }: SidebarProps) {
   const { user, logout } = useAuthStore()
   const location = useLocation()
   const navigate = useNavigate()
@@ -176,7 +177,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
 
   return (
     <aside
-      className="flex h-screen flex-col bg-white border-r border-[#e5edf5] transition-all duration-200"
+      className={`flex h-[100dvh] flex-col bg-white border-r border-[#e5edf5] transition-all duration-200 ${className ?? ''}`}
       style={{ width: collapsed ? 64 : 240, minWidth: collapsed ? 64 : 240 }}
     >
       {/* ── Logo + Workspace Switcher ──────────────────────────────────────── */}
