@@ -1,6 +1,3 @@
-import fs from 'fs'
-import path from 'path'
-
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
@@ -27,38 +24,7 @@ function c(color: string, text: string): string {
   return useColor ? `${color}${text}${RESET}` : text
 }
 
-// Strip ANSI codes for file output
-function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, '')
-}
-
 const BORDER = '///////////////////////////////////////////////////////////////////////////////';
-
-// ─── Log directory setup ─────────────────────────────────────────────────────
-const LOG_DIR = path.join(process.cwd(), 'logs')
-
-function ensureLogDir() {
-  if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, { recursive: true })
-  }
-}
-
-function getLogFilePath(level: LogLevel): string {
-  const date = new Date().toISOString().split('T')[0] // YYYY-MM-DD
-  return path.join(LOG_DIR, `${level}-${date}.log`)
-}
-
-function getRequestLogFilePath(): string {
-  const date = new Date().toISOString().split('T')[0]
-  return path.join(LOG_DIR, `requests-${date}.log`)
-}
-
-function writeToFile(filePath: string, content: string) {
-  try {
-    ensureLogDir()
-    fs.appendFileSync(filePath, stripAnsi(content) + '\n')
-  } catch { /* silent fail — don't crash app if log write fails */ }
-}
 
 // ─── Value summarizer — show shape not full data ─────────────────────────────
 
@@ -174,12 +140,8 @@ function log(level: LogLevel, msg: string, meta?: Record<string, unknown>) {
   const stack = meta?.stack ? formatStack(meta.stack as string) : undefined
   const output = buildBlock(level, msg, fields, stack)
 
-  // Console output
   const out = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log
   out(output)
-
-  // File output
-  // writeToFile(getLogFilePath(level), output)
 }
 
 // ─── HTTP request logger ─────────────────────────────────────────────────────
@@ -231,13 +193,8 @@ function logRequest(opts: {
 
   const output = buildBlock(level, title, fields)
 
-  // Console
   const out = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log
   out(output)
-
-  // File — all requests go to requests log + level-specific log
-  writeToFile(getRequestLogFilePath(), output)
-  if (level !== 'info') writeToFile(getLogFilePath(level), output)
 }
 
 export const logger = {
