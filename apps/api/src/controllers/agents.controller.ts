@@ -56,11 +56,11 @@ const taxQaAgent = new TaxQaAgent()
 export async function startIntake(req: Request, res: Response, next: NextFunction) {
   try {
     const { filingId } = requireBody(req, ['filingId'])
-    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
     assertAgentAllowed(filing, 'intake agent', ['intake', 'ai_prep'])
 
-    const entity = db.select().from(entities).where(eq(entities.id, filing.entityId)).get()
+    const entity = (await db.select().from(entities).where(eq(entities.id, filing.entityId)).limit(1))[0]
 
     const result = await intakeAgent.startConversation(
       filingId,
@@ -77,7 +77,7 @@ export async function streamIntakeMsg(req: Request, res: Response, next: NextFun
   try {
     const { filingId, message } = requireBody(req, ['filingId', 'message'])
 
-    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
     if (!filing) return res.status(404).json({ error: 'Filing not found' })
 
     await pumpSSE(res, intakeAgent.streamMessage(filingId, message, req.user!.orgId))
@@ -98,7 +98,7 @@ export async function runDeadlines(req: Request, res: Response, next: NextFuncti
 export async function extractDocument(req: Request, res: Response, next: NextFunction) {
   try {
     const { documentId } = requireBody(req, ['documentId'])
-    const doc = db.select().from(documents).where(eq(documents.id, documentId)).get()
+    const doc = (await db.select().from(documents).where(eq(documents.id, documentId)).limit(1))[0]
     if (!doc) throw new AppError('Document not found', 404)
     if (!doc.storageUrl || doc.uploadStatus !== 'uploaded') {
       throw new AppError(
@@ -116,21 +116,20 @@ export async function extractDocument(req: Request, res: Response, next: NextFun
     })
 
     if (result.overallConfidence < 0.75) {
-      const doc = db.select().from(documents).where(eq(documents.id, documentId)).get()
+      const doc = (await db.select().from(documents).where(eq(documents.id, documentId)).limit(1))[0]
       if (doc?.filingId) {
-        const existing = db.select().from(approvalQueue)
+        const queueRows = await db.select().from(approvalQueue)
           .where(eq(approvalQueue.filingId, doc.filingId))
-          .all()
-          .find(q => q.queueType === 'cpa' && q.status === 'pending')
+        const existing = queueRows.find(q => q.queueType === 'cpa' && q.status === 'pending')
         if (!existing) {
-          db.insert(approvalQueue).values({
+          await db.insert(approvalQueue).values({
             orgId: req.user!.orgId,
             filingId: doc.filingId,
             queueType: 'cpa',
             status: 'pending',
             summary: `Document "${doc.fileName}" extracted at ${(result.overallConfidence * 100).toFixed(0)}% confidence. CPA review required.`,
             aiRecommendation: result.flaggedIssues.join('; ') || null,
-          }).run()
+          })
         }
       }
     }
@@ -141,10 +140,9 @@ export async function extractDocument(req: Request, res: Response, next: NextFun
 
 // ─── POST /api/agents/prefill/run ────────────────────
 // HITL gating (low-confidence → CPA queue) lives inside the agent.
-function assertRequiredDocsSatisfied(filingId: string) {
-  const reqs = db.select().from(filingDocumentRequirements)
+async function assertRequiredDocsSatisfied(filingId: string) {
+  const reqs = await db.select().from(filingDocumentRequirements)
     .where(eq(filingDocumentRequirements.filingId, filingId))
-    .all()
   const unmet = reqs.filter((r: any) => r.required && !r.skipped && !r.documentId)
   if (unmet.length > 0) {
     throw new AppError(
@@ -157,10 +155,10 @@ function assertRequiredDocsSatisfied(filingId: string) {
 export async function runPrefill(req: Request, res: Response, next: NextFunction) {
   try {
     const { filingId } = requireBody(req, ['filingId'])
-    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
     assertAgentAllowed(filing, 'prefill agent', ['intake', 'ai_prep'])
-    assertRequiredDocsSatisfied(filingId)
+    await assertRequiredDocsSatisfied(filingId)
 
     const result = await prefillAgent.prefillForm(filingId, req.user!.orgId)
     res.json(result)
@@ -172,10 +170,10 @@ export async function runPrefill(req: Request, res: Response, next: NextFunction
 export async function runAuditRisk(req: Request, res: Response, next: NextFunction) {
   try {
     const { filingId } = requireBody(req, ['filingId'])
-    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
     assertAgentAllowed(filing, 'audit risk agent', ['intake', 'ai_prep', 'cpa_review', 'founder_approval'])
-    assertRequiredDocsSatisfied(filingId)
+    await assertRequiredDocsSatisfied(filingId)
 
     const result = await auditRiskAgent.scoreRisk(filingId, req.user!.orgId)
     res.json(result)

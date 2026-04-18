@@ -67,7 +67,7 @@ export class DocumentAgent extends BaseAgent {
    * onto the `documents` row.
    */
   async extract(documentId: string, orgId: string, source: ExtractionSource): Promise<DocumentExtraction> {
-    const doc = db.select().from(documents).where(eq(documents.id, documentId)).get()
+    const doc = (await db.select().from(documents).where(eq(documents.id, documentId)).limit(1))[0]
     if (!doc) throw new Error('Document not found')
 
     if (!isVisionMime(source.mimeType)) {
@@ -117,7 +117,7 @@ export class DocumentAgent extends BaseAgent {
     source: ExtractionSource,
     vaultId?: string | null,
   ): Promise<DocumentContext> {
-    const doc = db.select().from(documents).where(eq(documents.id, documentId)).get()
+    const doc = (await db.select().from(documents).where(eq(documents.id, documentId)).limit(1))[0]
     if (!doc) throw new Error('Document not found')
 
     let context: DocumentContext
@@ -150,8 +150,8 @@ export class DocumentAgent extends BaseAgent {
       context = buildFallbackContext(source.fileName)
     }
 
-    db.delete(documentContexts).where(eq(documentContexts.documentId, documentId)).run()
-    db.insert(documentContexts).values({
+    await db.delete(documentContexts).where(eq(documentContexts.documentId, documentId))
+    await db.insert(documentContexts).values({
       documentId,
       orgId,
       vaultId: vaultId || doc.vaultId || null,
@@ -159,7 +159,7 @@ export class DocumentAgent extends BaseAgent {
       summary: context.summary,
       keyEntities: context.keyEntities,
       metadata: context.metadata,
-    }).run()
+    })
 
     await this.log({
       orgId,
@@ -191,11 +191,11 @@ export class DocumentAgent extends BaseAgent {
     overrides: Partial<{ reasoning: string }> = {},
   ) {
     const tags = [extraction.documentType || 'unknown']
-    db.update(documents).set({
+    await db.update(documents).set({
       extractedData: extraction as any,
       aiTags: tags as any,
       confidenceScore: extraction.overallConfidence,
-    }).where(eq(documents.id, documentId)).run()
+    }).where(eq(documents.id, documentId))
 
     await this.log({
       orgId,

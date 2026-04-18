@@ -67,32 +67,32 @@ const ALLOWED_TRANSITIONS: Record<string, string[]> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getActiveLock(filingId: string) {
-  return db.select().from(filingReviewLocks)
+async function getActiveLock(filingId: string) {
+  return (await db.select().from(filingReviewLocks)
     .where(and(eq(filingReviewLocks.filingId, filingId), eq(filingReviewLocks.status, 'active')))
-    .get()
+    .limit(1))[0]
 }
 
-function getReviewerName(userId: string) {
-  return db.select({ name: users.name }).from(users).where(eq(users.id, userId)).get()?.name || 'Another CPA'
+async function getReviewerName(userId: string) {
+  return (await db.select({ name: users.name }).from(users).where(eq(users.id, userId)).limit(1))[0]?.name || 'Another CPA'
 }
 
-function getReviewerEmail(userId: string) {
-  return db.select({ email: users.email }).from(users).where(eq(users.id, userId)).get()?.email || ''
+async function getReviewerEmail(userId: string) {
+  return (await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1))[0]?.email || ''
 }
 
-function ensureCpaReviewAccess(req: Request, filingId: string, orgId: string) {
+async function ensureCpaReviewAccess(req: Request, filingId: string, orgId: string) {
   if (req.user!.role !== 'cpa') return null
-  if (!ensureCpaHasOrgAccess(req.user!.userId, orgId)) {
+  if (!(await ensureCpaHasOrgAccess(req.user!.userId, orgId))) {
     return 'CPA is not assigned to this organization'
   }
-  const existingLock = getActiveLock(filingId)
+  const existingLock = await getActiveLock(filingId)
   if (existingLock && existingLock.cpaUserId !== req.user!.userId) {
-    return `This filing is already being handled by ${getReviewerName(existingLock.cpaUserId)}.`
+    return `This filing is already being handled by ${await getReviewerName(existingLock.cpaUserId)}.`
   }
-  const completedLock = db.select().from(filingReviewLocks)
+  const completedLock = (await db.select().from(filingReviewLocks)
     .where(and(eq(filingReviewLocks.filingId, filingId), eq(filingReviewLocks.status, 'completed')))
-    .get()
+    .limit(1))[0]
   if (completedLock && completedLock.cpaUserId !== req.user!.userId) {
     return 'This filing was already approved by another CPA.'
   }
@@ -104,12 +104,11 @@ function ensureCpaReviewAccess(req: Request, filingId: string, orgId: string) {
  * - Non-CPAs: only their own org.
  * - CPAs: all orgs they are assigned to via cpaAssignments.
  */
-function getVisibleOrgIds(req: Request): string[] {
+async function getVisibleOrgIds(req: Request): Promise<string[]> {
   if (req.user!.role === 'cpa') {
-    return db.select({ orgId: cpaAssignments.organizationId })
+    return (await db.select({ orgId: cpaAssignments.organizationId })
       .from(cpaAssignments)
-      .where(eq(cpaAssignments.userId, req.user!.userId))
-      .all()
+      .where(eq(cpaAssignments.userId, req.user!.userId)))
       .map(a => a.orgId)
   }
   return [req.user!.orgId]
@@ -130,12 +129,16 @@ function getVisibleOrgIds(req: Request): string[] {
  *   - at least 5 filings handled
  *   - order by approval rate DESC, then approvedCount DESC
  */
-function selectTopPerformingCpas(limit = 5, excludeId?: string): string[] {
-  const allCpas = db.select().from(users).where(eq(users.role, 'cpa')).all()
+async function selectTopPerformingCpas(limit = 5, excludeId?: string): Promise<string[]> {
+  const allCpas = await db.select().from(users).where(eq(users.role, 'cpa'))
 
-  return allCpas
-    .filter(u => u.id !== excludeId)
-    .map(u => ({ ...u, stats: getCpaFilingStats(u.id) }))
+  const withStats = await Promise.all(
+    allCpas
+      .filter(u => u.id !== excludeId)
+      .map(async u => ({ ...u, stats: await getCpaFilingStats(u.id) })),
+  )
+
+  return withStats
     .filter(u => u.stats.totalFilings >= 5 && u.stats.approvalRate >= 0.8)
     .sort((a, b) => {
       if (b.stats.approvalRate !== a.stats.approvalRate) return b.stats.approvalRate - a.stats.approvalRate
@@ -147,19 +150,17 @@ function selectTopPerformingCpas(limit = 5, excludeId?: string): string[] {
 
 // ─── GET /api/filings ─────────────────────────────────────────────────────────
 
-export function listFilings(req: Request, res: Response) {
+export async function listFilings(req: Request, res: Response) {
   const { status, entityId, year } = req.query
 
-  const orgIds = getVisibleOrgIds(req)
+  const orgIds = await getVisibleOrgIds(req)
   if (orgIds.length === 0) return res.json([])
 
   const query = orgIds.length === 1
     ? db.select().from(filings).where(eq(filings.orgId, orgIds[0]))
     : db.select().from(filings).where(inArray(filings.orgId, orgIds))
 
-  let results = query
-    .orderBy(desc(filings.updatedAt))
-    .all()
+  let results = await query.orderBy(desc(filings.updatedAt))
 
   // CPAs only see filings they are *related* to:
   //   - received a claim notification
@@ -169,24 +170,21 @@ export function listFilings(req: Request, res: Response) {
   if (req.user!.role === 'cpa') {
     const cpaUserId = req.user!.userId
     const notifiedIds = new Set(
-      db.select({ filingId: cpaNotifications.filingId })
+      (await db.select({ filingId: cpaNotifications.filingId })
         .from(cpaNotifications)
-        .where(eq(cpaNotifications.cpaUserId, cpaUserId))
-        .all()
+        .where(eq(cpaNotifications.cpaUserId, cpaUserId)))
         .map(r => r.filingId),
     )
     const lockedIds = new Set(
-      db.select({ filingId: filingReviewLocks.filingId })
+      (await db.select({ filingId: filingReviewLocks.filingId })
         .from(filingReviewLocks)
-        .where(eq(filingReviewLocks.cpaUserId, cpaUserId))
-        .all()
+        .where(eq(filingReviewLocks.cpaUserId, cpaUserId)))
         .map(r => r.filingId),
     )
     const rejectedIds = new Set(
-      db.select({ filingId: cpaRejections.filingId })
+      (await db.select({ filingId: cpaRejections.filingId })
         .from(cpaRejections)
-        .where(eq(cpaRejections.cpaUserId, cpaUserId))
-        .all()
+        .where(eq(cpaRejections.cpaUserId, cpaUserId)))
         .map(r => r.filingId),
     )
     results = results.filter(f =>
@@ -204,7 +202,7 @@ export function listFilings(req: Request, res: Response) {
     return true
   })
 
-  const locks = db.select().from(filingReviewLocks).all()
+  const locks = await db.select().from(filingReviewLocks)
   res.json(results.map(item => ({
     ...item,
     reviewLock: locks.find(lock => lock.filingId === item.id && lock.status === 'active') || null,
@@ -216,27 +214,27 @@ export function listFilings(req: Request, res: Response) {
 export async function createFiling(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createFilingSchema.parse(req.body)
-    const filing = db.insert(filings).values({
+    const [filing] = await db.insert(filings).values({
       ...data,
       orgId: req.user!.orgId,
       status: 'intake',
-    }).returning().get()
+    }).returning()
 
     // Seed per-form document requirement checklist
     const templates = getRequirementsForFormType(filing.formType)
     for (let i = 0; i < templates.length; i++) {
       const t = templates[i]
-      db.insert(filingDocumentRequirements).values({
+      await db.insert(filingDocumentRequirements).values({
         filingId: filing.id,
         slotKey: t.slot,
         label: t.label,
         description: t.description ?? null,
         required: t.required,
         sortOrder: i,
-      }).run()
+      })
     }
 
-    auditLogger.log({
+    await auditLogger.log({
       orgId: req.user!.orgId,
       filingId: filing.id,
       actorType: 'system',
@@ -251,101 +249,97 @@ export async function createFiling(req: Request, res: Response, next: NextFuncti
 
 // ─── GET /api/filings/:id ─────────────────────────────────────────────────────
 
-export function getFiling(req: Request, res: Response) {
+export async function getFiling(req: Request, res: Response) {
   const filingId = req.params.id as string
 
   let filing
   if (req.user!.role === 'cpa') {
     // CPAs may access filings from any of their assigned orgs
-    filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
-    if (filing && !ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+    filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
+    if (filing && !(await ensureCpaHasOrgAccess(req.user!.userId, filing.orgId))) {
       return res.status(403).json({ error: 'CPA not authorized for this organization' })
     }
   } else {
-    filing = db.select().from(filings)
+    filing = (await db.select().from(filings)
       .where(and(eq(filings.id, filingId), eq(filings.orgId, req.user!.orgId)))
-      .get()
+      .limit(1))[0]
   }
 
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
 
-  const conversations = db.select().from(agentConversations)
-    .where(eq(agentConversations.filingId, filingId)).all()
-  const docs = db.select().from(documents)
-    .where(eq(documents.filingId, filingId)).all()
-  const approvals = db.select().from(approvalQueue)
-    .where(eq(approvalQueue.filingId, filingId)).all()
-  const reviewLock = getActiveLock(filingId)
+  const conversations = await db.select().from(agentConversations)
+    .where(eq(agentConversations.filingId, filingId))
+  const docs = await db.select().from(documents)
+    .where(eq(documents.filingId, filingId))
+  const approvals = await db.select().from(approvalQueue)
+    .where(eq(approvalQueue.filingId, filingId))
+  const reviewLock = await getActiveLock(filingId)
   const reviewLockWithName = reviewLock
-    ? { ...reviewLock, cpaName: getReviewerName(reviewLock.cpaUserId), cpaEmail: getReviewerEmail(reviewLock.cpaUserId) }
+    ? { ...reviewLock, cpaName: await getReviewerName(reviewLock.cpaUserId), cpaEmail: await getReviewerEmail(reviewLock.cpaUserId) }
     : null
 
   // Include pending CPA notification for this user (if any)
-  const myNotification = db.select().from(cpaNotifications)
+  const myNotification = (await db.select().from(cpaNotifications)
     .where(and(
       eq(cpaNotifications.filingId, filingId),
       eq(cpaNotifications.cpaUserId, req.user!.userId),
       eq(cpaNotifications.status, 'pending'),
-    )).get() || null
+    )).limit(1))[0] || null
 
   // Gather rejection remarks from approvalQueue and cpaRejections
   const rejectionRemarks = [
     ...approvals
       .filter((a: any) => a.rejectionReason)
       .map((a: any) => ({ source: a.queueType === 'founder' ? 'Founder' : 'CPA', reason: a.rejectionReason, date: a.resolvedAt })),
-    ...db.select().from(cpaRejections)
-      .where(eq(cpaRejections.filingId, filingId))
-      .all()
+    ...(await db.select().from(cpaRejections)
+      .where(eq(cpaRejections.filingId, filingId)))
       .map((r: any) => ({ source: 'CPA', reason: r.reason, date: r.createdAt })),
   ].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
 
   // CPAs who received claim notification for this filing
-  const notifiedCpas = db.select().from(cpaNotifications)
+  const notifiedCpaRows = await db.select().from(cpaNotifications)
     .where(eq(cpaNotifications.filingId, filingId))
-    .all()
-    .map((n: any) => ({
-      cpaUserId: n.cpaUserId,
-      cpaName: getReviewerName(n.cpaUserId),
-      cpaEmail: getReviewerEmail(n.cpaUserId),
-      status: n.status,
-      notifiedAt: n.notifiedAt || n.createdAt,
-    }))
+  const notifiedCpas = await Promise.all(notifiedCpaRows.map(async (n: any) => ({
+    cpaUserId: n.cpaUserId,
+    cpaName: await getReviewerName(n.cpaUserId),
+    cpaEmail: await getReviewerEmail(n.cpaUserId),
+    status: n.status,
+    notifiedAt: n.notifiedAt || n.createdAt,
+  })))
 
   // Founder who approved (if any)
   const founderApproval = approvals.find((a: any) => a.queueType === 'founder' && a.status === 'approved' && a.resolvedById)
   const approvedBy = founderApproval?.resolvedById
-    ? { name: getReviewerName(founderApproval.resolvedById), email: getReviewerEmail(founderApproval.resolvedById) }
+    ? { name: await getReviewerName(founderApproval.resolvedById), email: await getReviewerEmail(founderApproval.resolvedById) }
     : null
 
   const entity = filing.entityId
-    ? db.select().from(entities).where(eq(entities.id, filing.entityId)).get() ?? null
+    ? (await db.select().from(entities).where(eq(entities.id, filing.entityId)).limit(1))[0] ?? null
     : null
 
   // Lazy-backfill requirements for filings that pre-date this feature.
-  const existingCount = db.select({ id: filingDocumentRequirements.id })
+  const existingCount = (await db.select({ id: filingDocumentRequirements.id })
     .from(filingDocumentRequirements)
-    .where(eq(filingDocumentRequirements.filingId, filingId))
-    .all().length
+    .where(eq(filingDocumentRequirements.filingId, filingId))).length
   if (existingCount === 0) {
     const templates = getRequirementsForFormType(filing.formType)
     for (let i = 0; i < templates.length; i++) {
       const t = templates[i]
-      db.insert(filingDocumentRequirements).values({
+      await db.insert(filingDocumentRequirements).values({
         filingId,
         slotKey: t.slot,
         label: t.label,
         description: t.description ?? null,
         required: t.required,
         sortOrder: i,
-      }).run()
+      })
     }
   }
 
   // Requirements + linked docs
-  const reqRows = db.select().from(filingDocumentRequirements)
+  const reqRows = await db.select().from(filingDocumentRequirements)
     .where(eq(filingDocumentRequirements.filingId, filingId))
     .orderBy(filingDocumentRequirements.sortOrder)
-    .all()
 
   const requirements = reqRows.map((r: any) => {
     const doc = r.documentId ? docs.find((d: any) => d.id === r.documentId) : null
@@ -396,24 +390,24 @@ export function getFiling(req: Request, res: Response) {
 export async function updateFilingStatus(req: Request, res: Response, next: NextFunction) {
   try {
     const { status: newStatus } = updateFilingStatusSchema.parse(req.body)
-    const orgIds = getVisibleOrgIds(req)
+    const orgIds = await getVisibleOrgIds(req)
 
     let filing
     if (orgIds.length === 0) throw new AppError('No assigned organizations', 403)
     if (req.user!.role === 'cpa') {
-      filing = db.select().from(filings).where(eq(filings.id, req.params.id as string)).get()
-      if (filing && !ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+      filing = (await db.select().from(filings).where(eq(filings.id, req.params.id as string)).limit(1))[0]
+      if (filing && !(await ensureCpaHasOrgAccess(req.user!.userId, filing.orgId))) {
         throw new AppError('CPA not authorized for this organization', 403)
       }
     } else {
-      filing = db.select().from(filings)
+      filing = (await db.select().from(filings)
         .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
-        .get()
+        .limit(1))[0]
     }
 
     if (!filing) throw new AppError('Filing not found', 404)
 
-    const cpaReviewError = ensureCpaReviewAccess(req, filing.id, filing.orgId)
+    const cpaReviewError = await ensureCpaReviewAccess(req, filing.id, filing.orgId)
     if (cpaReviewError) throw new AppError(cpaReviewError, 409)
 
     const allowed = ALLOWED_TRANSITIONS[filing.status] || []
@@ -429,22 +423,22 @@ export async function updateFilingStatus(req: Request, res: Response, next: Next
     }
 
     const now = new Date().toISOString()
-    db.update(filings).set({
+    await db.update(filings).set({
       status: newStatus as FilingStatus,
       updatedAt: now,
       ...(newStatus === 'submitted' ? { submittedAt: now } : {}),
-    }).where(eq(filings.id, req.params.id as string)).run()
+    }).where(eq(filings.id, req.params.id as string))
 
     if (req.user!.role === 'cpa' && newStatus === 'founder_approval') {
-      const lock = getActiveLock(filing.id)
+      const lock = await getActiveLock(filing.id)
       if (lock) {
-        db.update(filingReviewLocks)
+        await db.update(filingReviewLocks)
           .set({ status: 'completed', releasedAt: now })
-          .where(eq(filingReviewLocks.id, lock.id)).run()
+          .where(eq(filingReviewLocks.id, lock.id))
       }
     }
 
-    auditLogger.log({
+    await auditLogger.log({
       orgId: filing.orgId,
       filingId: filing.id,
       actorType: req.user!.role === 'cpa' ? 'cpa' : 'founder',
@@ -461,38 +455,38 @@ export async function updateFilingStatus(req: Request, res: Response, next: Next
 
 export async function approveFiling(req: Request, res: Response, next: NextFunction) {
   try {
-    const filing = db.select().from(filings)
+    const filing = (await db.select().from(filings)
       .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
-      .get()
+      .limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
     if (filing.status !== 'founder_approval') {
       throw new AppError('Filing is not in founder_approval stage', 400)
     }
 
     const now = new Date().toISOString()
-    db.update(filings).set({
+    await db.update(filings).set({
       founderApprovedAt: now,
       status: 'submitted',
       submittedAt: now,
       updatedAt: now,
-    }).where(eq(filings.id, req.params.id as string)).run()
+    }).where(eq(filings.id, req.params.id as string))
 
-    const pending = db.select().from(approvalQueue)
+    const pending = await db.select().from(approvalQueue)
       .where(and(
         eq(approvalQueue.filingId, req.params.id as string),
         eq(approvalQueue.status, 'pending'),
         eq(approvalQueue.queueType, 'founder'),
-      )).all()
+      ))
 
     for (const item of pending) {
-      db.update(approvalQueue).set({
+      await db.update(approvalQueue).set({
         status: 'approved',
         resolvedAt: now,
         resolvedById: req.user!.userId,
-      }).where(eq(approvalQueue.id, item.id)).run()
+      }).where(eq(approvalQueue.id, item.id))
     }
 
-    auditLogger.log({
+    await auditLogger.log({
       orgId: req.user!.orgId,
       filingId: filing.id,
       actorType: 'founder',
@@ -512,43 +506,43 @@ export async function rejectFiling(req: Request, res: Response, next: NextFuncti
     const { reason } = req.body
     if (!reason) throw new AppError('Rejection reason is required', 400)
 
-    const filing = db.select().from(filings)
+    const filing = (await db.select().from(filings)
       .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
-      .get()
+      .limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
 
     const now = new Date().toISOString()
 
-    db.update(filings).set({
+    await db.update(filings).set({
       status: 'ai_prep',
       cpaAssignedId: null,
       updatedAt: now,
-    }).where(eq(filings.id, req.params.id as string)).run()
+    }).where(eq(filings.id, req.params.id as string))
 
     // Release any active CPA lock
-    const lock = getActiveLock(req.params.id as string)
+    const lock = await getActiveLock(req.params.id as string)
     if (lock) {
-      db.update(filingReviewLocks)
+      await db.update(filingReviewLocks)
         .set({ status: 'released', releasedAt: now })
-        .where(eq(filingReviewLocks.id, lock.id)).run()
+        .where(eq(filingReviewLocks.id, lock.id))
     }
 
-    const pending = db.select().from(approvalQueue)
+    const pending = await db.select().from(approvalQueue)
       .where(and(
         eq(approvalQueue.filingId, req.params.id as string),
         eq(approvalQueue.status, 'pending'),
-      )).all()
+      ))
 
     for (const item of pending) {
-      db.update(approvalQueue).set({
+      await db.update(approvalQueue).set({
         status: 'rejected',
         rejectionReason: reason,
         resolvedAt: now,
         resolvedById: req.user!.userId,
-      }).where(eq(approvalQueue.id, item.id)).run()
+      }).where(eq(approvalQueue.id, item.id))
     }
 
-    auditLogger.log({
+    await auditLogger.log({
       orgId: req.user!.orgId,
       filingId: filing.id,
       actorType: 'founder',
@@ -579,9 +573,9 @@ export async function rejectFiling(req: Request, res: Response, next: NextFuncti
 export async function cpaApproveFiling(req: Request, res: Response, next: NextFunction) {
   try {
     const filingId = req.params.id as string
-    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
-    if (!ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+    if (!(await ensureCpaHasOrgAccess(req.user!.userId, filing.orgId))) {
       throw new AppError('CPA not assigned to this organization', 403)
     }
     if (filing.status !== 'cpa_review') {
@@ -590,9 +584,8 @@ export async function cpaApproveFiling(req: Request, res: Response, next: NextFu
 
     // Enforce: every required + every uploaded optional requirement must be
     // marked viewed by the CPA before approval.
-    const reqRows = db.select().from(filingDocumentRequirements)
+    const reqRows = await db.select().from(filingDocumentRequirements)
       .where(eq(filingDocumentRequirements.filingId, filingId))
-      .all()
     const reviewable = reqRows.filter((r: any) => r.required || r.documentId)
     const unseen = reviewable.filter((r: any) => !r.skipped && !r.viewedByCpa)
     if (unseen.length > 0) {
@@ -605,43 +598,43 @@ export async function cpaApproveFiling(req: Request, res: Response, next: NextFu
     const now = new Date().toISOString()
 
     // Advance the filing
-    db.update(filings).set({
+    await db.update(filings).set({
       status: 'founder_approval',
       cpaAssignedId: req.user!.userId,
       updatedAt: now,
-    }).where(eq(filings.id, filingId)).run()
+    }).where(eq(filings.id, filingId))
 
     // Close the active review lock
-    const lock = getActiveLock(filingId)
+    const lock = await getActiveLock(filingId)
     if (lock) {
-      db.update(filingReviewLocks)
+      await db.update(filingReviewLocks)
         .set({ status: 'completed', releasedAt: now })
-        .where(eq(filingReviewLocks.id, lock.id)).run()
+        .where(eq(filingReviewLocks.id, lock.id))
     }
 
     // Mark this CPA's notification as approved
-    db.update(cpaNotifications).set({ status: 'approved', respondedAt: now })
+    await db.update(cpaNotifications).set({ status: 'approved', respondedAt: now })
       .where(and(
         eq(cpaNotifications.filingId, filingId),
         eq(cpaNotifications.cpaUserId, req.user!.userId),
-      )).run()
+      ))
 
     // Dismiss all other pending notifications for this filing and notify those CPAs
-    const otherPending = db.select().from(cpaNotifications)
+    const otherPending = await db.select().from(cpaNotifications)
       .where(and(
         eq(cpaNotifications.filingId, filingId),
         eq(cpaNotifications.status, 'pending'),
         ne(cpaNotifications.cpaUserId, req.user!.userId),
-      )).all()
+      ))
 
     for (const n of otherPending) {
-      db.update(cpaNotifications).set({ status: 'dismissed', respondedAt: now })
-        .where(eq(cpaNotifications.id, n.id)).run()
+      await db.update(cpaNotifications).set({ status: 'dismissed', respondedAt: now })
+        .where(eq(cpaNotifications.id, n.id))
     }
 
     // Push real-time event to other notified CPAs: filing already approved
-    const approverName = db.select({ name: users.name }).from(users)
-      .where(eq(users.id, req.user!.userId)).get()?.name ?? 'A CPA'
+    const approverName = (await db.select({ name: users.name }).from(users)
+      .where(eq(users.id, req.user!.userId)).limit(1))[0]?.name ?? 'A CPA'
 
     sendToUsers(
       otherPending.map(n => n.cpaUserId),
@@ -655,7 +648,7 @@ export async function cpaApproveFiling(req: Request, res: Response, next: NextFu
       },
     )
 
-    auditLogger.log({
+    await auditLogger.log({
       orgId: filing.orgId,
       filingId,
       actorType: 'cpa',
@@ -678,9 +671,9 @@ export async function cpaRejectFiling(req: Request, res: Response, next: NextFun
     const { reason } = req.body as { reason?: string }
     if (!reason?.trim()) throw new AppError('Rejection reason is required', 400)
 
-    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
-    if (!ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+    if (!(await ensureCpaHasOrgAccess(req.user!.userId, filing.orgId))) {
       throw new AppError('CPA not assigned to this organization', 403)
     }
     if (filing.status !== 'cpa_review') {
@@ -690,28 +683,28 @@ export async function cpaRejectFiling(req: Request, res: Response, next: NextFun
     const now = new Date().toISOString()
 
     // Record the rejection
-    db.insert(cpaRejections).values({
+    await db.insert(cpaRejections).values({
       filingId,
       cpaUserId: req.user!.userId,
       reason: reason.trim(),
-    }).run()
+    })
 
     // Release any active review lock
-    const lock = getActiveLock(filingId)
+    const lock = await getActiveLock(filingId)
     if (lock && lock.cpaUserId === req.user!.userId) {
-      db.update(filingReviewLocks)
+      await db.update(filingReviewLocks)
         .set({ status: 'released', releasedAt: now })
-        .where(eq(filingReviewLocks.id, lock.id)).run()
+        .where(eq(filingReviewLocks.id, lock.id))
     }
 
     // Set status back to ai_prep and unassign CPA
-    db.update(filings).set({
+    await db.update(filings).set({
       status: 'ai_prep',
       cpaAssignedId: null,
       updatedAt: now,
-    }).where(eq(filings.id, filingId)).run()
+    }).where(eq(filings.id, filingId))
 
-    auditLogger.log({
+    await auditLogger.log({
       orgId: filing.orgId,
       filingId,
       actorType: 'cpa',
@@ -735,15 +728,15 @@ export async function cpaRejectFiling(req: Request, res: Response, next: NextFun
 
     if (reason.trim().toLowerCase() === 'understanding issue') {
       // Select top-performing CPAs, excluding the rejecting CPA
-      topCpaIds = selectTopPerformingCpas(5, req.user!.userId)
+      topCpaIds = await selectTopPerformingCpas(5, req.user!.userId)
 
       // Create cpaNotification records for each top CPA
       for (const cpaId of topCpaIds) {
-        db.insert(cpaNotifications).values({
+        await db.insert(cpaNotifications).values({
           filingId,
           cpaUserId: cpaId,
           status: 'pending',
-        }).run()
+        })
       }
 
       // Push SSE notifications
@@ -768,18 +761,18 @@ export async function cpaRejectFiling(req: Request, res: Response, next: NextFun
 
 // ─── POST /api/filings/:id/pause ─────────────────────────────────────────────
 
-export function pauseFiling(req: Request, res: Response) {
-  const filing = db.select().from(filings)
+export async function pauseFiling(req: Request, res: Response) {
+  const filing = (await db.select().from(filings)
     .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
-    .get()
+    .limit(1))[0]
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
   if (filing.stopped) return res.status(409).json({ error: 'Filing is stopped' })
 
-  db.update(filings)
+  await db.update(filings)
     .set({ paused: true, updatedAt: new Date().toISOString() })
-    .where(eq(filings.id, filing.id)).run()
+    .where(eq(filings.id, filing.id))
 
-  auditLogger.log({
+  await auditLogger.log({
     orgId: req.user!.orgId,
     filingId: filing.id,
     actorType: 'founder',
@@ -790,7 +783,7 @@ export function pauseFiling(req: Request, res: Response) {
 
   // Notify claimed CPA — lock stays, but CPA sees filing is paused
   if (filing.status === 'cpa_review') {
-    const lock = getActiveLock(filing.id)
+    const lock = await getActiveLock(filing.id)
     if (lock) {
       sendToUsers([lock.cpaUserId], {
         type: 'filing_status_changed',
@@ -810,22 +803,22 @@ export function pauseFiling(req: Request, res: Response) {
 // Permanent stop. Releases any active CPA lock. Voids any pending approval
 // queue entries for this filing. Not reversible via /resume.
 
-export function stopFiling(req: Request, res: Response) {
-  const filing = db.select().from(filings)
+export async function stopFiling(req: Request, res: Response) {
+  const filing = (await db.select().from(filings)
     .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
-    .get()
+    .limit(1))[0]
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
 
-  db.update(filings)
+  await db.update(filings)
     .set({ stopped: true, paused: false, updatedAt: new Date().toISOString() })
-    .where(eq(filings.id, filing.id)).run()
+    .where(eq(filings.id, filing.id))
 
   // Release any active CPA review lock
-  const lock = getActiveLock(filing.id)
+  const lock = await getActiveLock(filing.id)
   if (lock) {
-    db.update(filingReviewLocks)
+    await db.update(filingReviewLocks)
       .set({ status: 'released', releasedAt: new Date().toISOString() })
-      .where(eq(filingReviewLocks.id, lock.id)).run()
+      .where(eq(filingReviewLocks.id, lock.id))
 
     sendToUsers([lock.cpaUserId], {
       type: 'filing_status_changed',
@@ -838,7 +831,7 @@ export function stopFiling(req: Request, res: Response) {
   }
 
   // Void pending approval queue entries for this filing — mark rejected with reason
-  db.update(approvalQueue)
+  await db.update(approvalQueue)
     .set({
       status: 'rejected',
       resolvedAt: new Date().toISOString(),
@@ -846,9 +839,8 @@ export function stopFiling(req: Request, res: Response) {
       rejectionReason: 'Workflow stopped by founder',
     })
     .where(and(eq(approvalQueue.filingId, filing.id), eq(approvalQueue.status, 'pending')))
-    .run()
 
-  auditLogger.log({
+  await auditLogger.log({
     orgId: req.user!.orgId,
     filingId: filing.id,
     actorType: 'founder',
@@ -862,18 +854,18 @@ export function stopFiling(req: Request, res: Response) {
 
 // ─── POST /api/filings/:id/resume ────────────────────────────────────────────
 
-export function resumeFiling(req: Request, res: Response) {
-  const filing = db.select().from(filings)
+export async function resumeFiling(req: Request, res: Response) {
+  const filing = (await db.select().from(filings)
     .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
-    .get()
+    .limit(1))[0]
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
   if (filing.stopped) return res.status(409).json({ error: 'Stopped workflows cannot be resumed' })
 
-  db.update(filings)
+  await db.update(filings)
     .set({ paused: false, updatedAt: new Date().toISOString() })
-    .where(eq(filings.id, filing.id)).run()
+    .where(eq(filings.id, filing.id))
 
-  auditLogger.log({
+  await auditLogger.log({
     orgId: req.user!.orgId,
     filingId: filing.id,
     actorType: req.user!.role === 'cpa' ? 'cpa' : 'founder',
@@ -891,16 +883,15 @@ export function resumeFiling(req: Request, res: Response) {
 //   2. If fewer than 5 active CPAs, fill from non-active CPAs ranked by performance.
 //   3. Create cpaNotification records and send SSE to selected CPAs.
 
-export function escalateToCpa(req: Request, res: Response) {
-  const filing = db.select().from(filings)
+export async function escalateToCpa(req: Request, res: Response) {
+  const filing = (await db.select().from(filings)
     .where(and(eq(filings.id, req.params.id as string), eq(filings.orgId, req.user!.orgId)))
-    .get()
+    .limit(1))[0]
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
 
   // Gate: every required requirement must be satisfied (uploaded OR skipped)
-  const reqRows = db.select().from(filingDocumentRequirements)
+  const reqRows = await db.select().from(filingDocumentRequirements)
     .where(eq(filingDocumentRequirements.filingId, filing.id))
-    .all()
   const required = reqRows.filter((r: any) => r.required)
   const unmet = required.filter((r: any) => !r.skipped && !r.documentId)
   if (unmet.length > 0) {
@@ -910,7 +901,7 @@ export function escalateToCpa(req: Request, res: Response) {
     })
   }
 
-  const { notifiedCpaIds } = escalateFilingToCpa({
+  const { notifiedCpaIds } = await escalateFilingToCpa({
     filingId: filing.id,
     orgId: req.user!.orgId,
     formType: filing.formType,
@@ -928,14 +919,14 @@ export function escalateToCpa(req: Request, res: Response) {
 // CPA pushes a filing back to the founder: transitions cpa_review → founder_approval,
 // closes any active review lock, creates a founder-queue approval row, notifies founder.
 
-export function escalateToFounder(req: Request, res: Response) {
+export async function escalateToFounder(req: Request, res: Response) {
   const filingId = req.params.id as string
-  const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+  const filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
 
   const role = req.user!.role
   const hasAccess = role === 'cpa'
-    ? ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)
+    ? await ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)
     : req.user!.orgId === filing.orgId
   if (!hasAccess) {
     return res.status(403).json({ error: 'Not authorized for this organization' })
@@ -948,21 +939,21 @@ export function escalateToFounder(req: Request, res: Response) {
   const { reason } = (req.body ?? {}) as { reason?: string }
   const trimmedReason = typeof reason === 'string' ? reason.trim().slice(0, 500) : ''
 
-  db.update(filings).set({
+  await db.update(filings).set({
     status: 'founder_approval',
     ...(role === 'cpa' ? { cpaAssignedId: req.user!.userId } : {}),
     updatedAt: now,
-  }).where(eq(filings.id, filingId)).run()
+  }).where(eq(filings.id, filingId))
 
-  const lock = getActiveLock(filingId)
+  const lock = await getActiveLock(filingId)
   if (lock && (role === 'cpa' ? lock.cpaUserId === req.user!.userId : true)) {
-    db.update(filingReviewLocks)
+    await db.update(filingReviewLocks)
       .set({ status: 'completed', releasedAt: now })
-      .where(eq(filingReviewLocks.id, lock.id)).run()
+      .where(eq(filingReviewLocks.id, lock.id))
   }
 
   // Founder queue entry so founder sees the action item
-  db.insert(approvalQueue).values({
+  await db.insert(approvalQueue).values({
     orgId: filing.orgId,
     filingId: filing.id,
     queueType: 'founder',
@@ -971,18 +962,18 @@ export function escalateToFounder(req: Request, res: Response) {
       ? `CPA escalated ${filing.formType} back to founder: ${trimmedReason}`
       : `CPA escalated ${filing.formType} back to founder for review.`,
     aiRecommendation: null,
-  }).run()
+  })
 
   // Dismiss any other pending CPA notifications for this filing
-  db.update(cpaNotifications).set({ status: 'dismissed', respondedAt: now })
+  await db.update(cpaNotifications).set({ status: 'dismissed', respondedAt: now })
     .where(and(
       eq(cpaNotifications.filingId, filingId),
       eq(cpaNotifications.status, 'pending'),
-    )).run()
+    ))
 
   // Notify all founders/team members of the org
-  const orgMembers = db.select({ id: users.id }).from(users)
-    .where(eq(users.orgId, filing.orgId)).all()
+  const orgMembers = await db.select({ id: users.id }).from(users)
+    .where(eq(users.orgId, filing.orgId))
   if (orgMembers.length > 0) {
     sendToUsers(orgMembers.map(u => u.id), {
       type: 'filing_needs_founder',
@@ -996,7 +987,7 @@ export function escalateToFounder(req: Request, res: Response) {
     })
   }
 
-  auditLogger.log({
+  await auditLogger.log({
     orgId: filing.orgId,
     filingId,
     actorType: role === 'cpa' ? 'cpa' : 'founder',
@@ -1010,57 +1001,57 @@ export function escalateToFounder(req: Request, res: Response) {
 
 // ─── POST /api/filings/:id/claim-review ──────────────────────────────────────
 
-export function claimFilingReview(req: Request, res: Response) {
+export async function claimFilingReview(req: Request, res: Response) {
   const filingId = req.params.id as string
   let filing
   if (req.user!.role === 'cpa') {
-    filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
-    if (filing && !ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+    filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
+    if (filing && !(await ensureCpaHasOrgAccess(req.user!.userId, filing.orgId))) {
       return res.status(403).json({ error: 'CPA not assigned to this organization' })
     }
   } else {
-    filing = db.select().from(filings)
-      .where(and(eq(filings.id, filingId), eq(filings.orgId, req.user!.orgId))).get()
+    filing = (await db.select().from(filings)
+      .where(and(eq(filings.id, filingId), eq(filings.orgId, req.user!.orgId))).limit(1))[0]
   }
 
   if (!filing) return res.status(404).json({ error: 'Filing not found' })
   if (req.user!.role !== 'cpa') return res.status(403).json({ error: 'Only CPAs can claim filings' })
 
-  const conflict = ensureCpaReviewAccess(req, filing.id, filing.orgId)
+  const conflict = await ensureCpaReviewAccess(req, filing.id, filing.orgId)
   if (conflict) return res.status(409).json({ error: conflict })
 
-  const lock = getActiveLock(filing.id)
+  const lock = await getActiveLock(filing.id)
   if (lock) return res.json(lock)
 
   // Assign CPA to filing
-  db.update(filings).set({
+  await db.update(filings).set({
     cpaAssignedId: req.user!.userId,
     updatedAt: new Date().toISOString(),
-  }).where(eq(filings.id, filing.id)).run()
+  }).where(eq(filings.id, filing.id))
 
-  const created = db.insert(filingReviewLocks).values({
+  const [created] = await db.insert(filingReviewLocks).values({
     filingId: filing.id,
     cpaUserId: req.user!.userId,
     status: 'active',
-  }).returning().get()
+  }).returning()
 
   // Dismiss all other CPA notifications for this filing (someone claimed it)
-  db.update(cpaNotifications)
+  await db.update(cpaNotifications)
     .set({ status: 'dismissed', respondedAt: new Date().toISOString() })
     .where(and(
       eq(cpaNotifications.filingId, filing.id),
       ne(cpaNotifications.cpaUserId, req.user!.userId),
       eq(cpaNotifications.status, 'pending'),
-    )).run()
+    ))
 
   // Notify other CPAs that this filing was claimed
-  const dismissedCpas = db.select({ cpaUserId: cpaNotifications.cpaUserId })
+  const dismissedCpas = await db.select({ cpaUserId: cpaNotifications.cpaUserId })
     .from(cpaNotifications)
     .where(and(
       eq(cpaNotifications.filingId, filing.id),
       ne(cpaNotifications.cpaUserId, req.user!.userId),
       eq(cpaNotifications.status, 'dismissed'),
-    )).all()
+    ))
 
   if (dismissedCpas.length > 0) {
     sendToUsers(dismissedCpas.map(c => c.cpaUserId), {
@@ -1077,15 +1068,15 @@ export function claimFilingReview(req: Request, res: Response) {
 
 // ─── POST /api/filings/:id/release-review ────────────────────────────────────
 
-export function releaseFilingReview(req: Request, res: Response) {
-  const lock = getActiveLock(req.params.id as string)
+export async function releaseFilingReview(req: Request, res: Response) {
+  const lock = await getActiveLock(req.params.id as string)
   if (!lock) return res.json({ message: 'No active review lock' })
   if (lock.cpaUserId !== req.user!.userId) {
     return res.status(403).json({ error: 'Only the assigned CPA can release this lock' })
   }
-  db.update(filingReviewLocks)
+  await db.update(filingReviewLocks)
     .set({ status: 'released', releasedAt: new Date().toISOString() })
-    .where(eq(filingReviewLocks.id, lock.id)).run()
+    .where(eq(filingReviewLocks.id, lock.id))
   res.json({ message: 'Review lock released' })
 }
 
@@ -1096,7 +1087,7 @@ export function releaseFilingReview(req: Request, res: Response) {
  * Merges incoming fields into the existing filingData JSON object.
  * Roles: founder (own org), CPA (assigned org), admin.
  */
-export function updateFilingData(req: Request, res: Response, next: NextFunction) {
+export async function updateFilingData(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params as { id: string }
     const { fields } = req.body as { fields?: Record<string, unknown> }
@@ -1104,12 +1095,12 @@ export function updateFilingData(req: Request, res: Response, next: NextFunction
       return res.status(400).json({ error: 'fields must be a plain object' })
     }
 
-    const row = db.select().from(filings).where(eq(filings.id, id)).get()
+    const row = (await db.select().from(filings).where(eq(filings.id, id)).limit(1))[0]
     if (!row) return res.status(404).json({ error: 'Filing not found' })
 
     // Access check
     if (req.user!.role === 'cpa') {
-      if (!ensureCpaHasOrgAccess(req.user!.userId, row.orgId)) {
+      if (!(await ensureCpaHasOrgAccess(req.user!.userId, row.orgId))) {
         return res.status(403).json({ error: 'CPA not assigned to this organization' })
       }
     } else if (req.user!.role !== 'admin' && req.user!.orgId !== row.orgId) {
@@ -1119,10 +1110,9 @@ export function updateFilingData(req: Request, res: Response, next: NextFunction
     const current = (row.filingData as Record<string, unknown>) ?? {}
     const merged = { ...current, ...fields }
 
-    db.update(filings)
+    await db.update(filings)
       .set({ filingData: merged, updatedAt: new Date().toISOString() })
       .where(eq(filings.id, id))
-      .run()
 
     res.json({ message: 'Filing data updated', filingData: merged })
   } catch (err) { next(withContext(err as Error, 'updateFilingData')) }

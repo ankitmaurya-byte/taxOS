@@ -33,8 +33,8 @@ const DOC_CONTEXT_PER_DOC_CHARS = 3_000
 const DOC_CONTEXT_TOTAL_CHARS = 30_000
 
 export class TaxQaAgent extends BaseAgent {
-  private getDocumentContext(orgId: string): string {
-    const contexts = db.select({
+  private async getDocumentContext(orgId: string): Promise<string> {
+    const contexts = await db.select({
       rawText: documentContexts.rawText,
       summary: documentContexts.summary,
       keyEntities: documentContexts.keyEntities,
@@ -43,7 +43,6 @@ export class TaxQaAgent extends BaseAgent {
       .from(documentContexts)
       .innerJoin(documents, eq(documents.id, documentContexts.documentId))
       .where(eq(documentContexts.orgId, orgId))
-      .all()
 
     if (contexts.length === 0) return ''
 
@@ -65,13 +64,12 @@ export class TaxQaAgent extends BaseAgent {
   }
 
   async *streamAnswer(orgId: string, question: string): AsyncGenerator<SsePayload> {
-    const orgEntities = db.select().from(entities).where(eq(entities.orgId, orgId)).all()
-    const activeFilings = db.select().from(filings)
+    const orgEntities = await db.select().from(entities).where(eq(entities.orgId, orgId))
+    const allFilings = await db.select().from(filings)
       .where(eq(filings.orgId, orgId))
-      .all()
-      .filter(f => f.status !== 'archived')
+    const activeFilings = allFilings.filter(f => f.status !== 'archived')
 
-    const docContext = this.getDocumentContext(orgId)
+    const docContext = await this.getDocumentContext(orgId)
 
     const systemPrompt = `${TAX_QA_SYSTEM_PROMPT}
 

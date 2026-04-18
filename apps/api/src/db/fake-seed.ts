@@ -1,17 +1,14 @@
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { Pool } from 'pg'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { sql, and, eq } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
-import path from 'path'
 import crypto from 'crypto'
 import * as schema from './schema'
 import { getRequirementsForFormType } from '../lib/documentRequirements'
 
-const dbPath = process.env.DATABASE_URL || path.join(__dirname, '../../taxos.db')
-const sqlite = new Database(dbPath)
-sqlite.pragma('journal_mode = WAL')
-sqlite.pragma('foreign_keys = OFF')
-
-const db = drizzle(sqlite, { schema })
+const connectionString = process.env.DATABASE_URL || 'postgres://taxos:taxos@localhost:5432/taxos'
+const pool = new Pool({ connectionString })
+const db = drizzle(pool, { schema })
 
 // ─── Helpers ─────────────────────────────────────────
 const uuid = () => crypto.randomUUID()
@@ -269,147 +266,37 @@ const ORG_CHAT_MSGS_PER_ORG = { min: 25, max: 80 }
 async function fakeSeed() {
   console.log('🌱 Starting fake data seed (10x scale)...\n')
 
-  // ─── Ensure tables exist ──────────────────────────
-  sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS cpa_notifications (
-      id TEXT PRIMARY KEY NOT NULL,
-      filing_id TEXT NOT NULL,
-      cpa_user_id TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'pending',
-      notified_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      responded_at TEXT,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS cpa_rejections (
-      id TEXT PRIMARY KEY NOT NULL,
-      filing_id TEXT NOT NULL,
-      cpa_user_id TEXT NOT NULL,
-      reason TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS org_chat_messages (
-      id TEXT PRIMARY KEY NOT NULL,
-      org_id TEXT NOT NULL,
-      sender_id TEXT NOT NULL,
-      message TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS founder_chat_messages (
-      id TEXT PRIMARY KEY NOT NULL,
-      sender_id TEXT NOT NULL,
-      message TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS cpa_chat_messages (
-      id TEXT PRIMARY KEY NOT NULL,
-      sender_id TEXT NOT NULL,
-      message TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS vaults (
-      id TEXT PRIMARY KEY NOT NULL,
-      org_id TEXT NOT NULL,
-      name TEXT NOT NULL,
-      description TEXT,
-      created_by_id TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS folders (
-      id TEXT PRIMARY KEY NOT NULL,
-      vault_id TEXT NOT NULL,
-      parent_id TEXT,
-      name TEXT NOT NULL,
-      created_by_id TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS document_contexts (
-      id TEXT PRIMARY KEY NOT NULL,
-      document_id TEXT NOT NULL,
-      org_id TEXT NOT NULL,
-      vault_id TEXT,
-      raw_text TEXT,
-      summary TEXT,
-      key_entities TEXT DEFAULT '[]',
-      metadata TEXT DEFAULT '{}',
-      chunk_index INTEGER DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS filing_document_requirements (
-      id TEXT PRIMARY KEY NOT NULL,
-      filing_id TEXT NOT NULL,
-      slot_key TEXT NOT NULL,
-      label TEXT NOT NULL,
-      description TEXT,
-      required INTEGER NOT NULL DEFAULT 1,
-      sort_order INTEGER NOT NULL DEFAULT 0,
-      document_id TEXT,
-      skipped INTEGER NOT NULL DEFAULT 0,
-      skip_reason TEXT,
-      viewed_by_cpa INTEGER NOT NULL DEFAULT 0,
-      viewed_at TEXT,
-      viewed_by_user_id TEXT,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS ai_chat_conversations (
-      id TEXT PRIMARY KEY NOT NULL,
-      user_id TEXT NOT NULL,
-      org_id TEXT,
-      title TEXT NOT NULL DEFAULT 'Untitled',
-      messages TEXT NOT NULL DEFAULT '[]',
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-  `)
-
-  // Ensure documents has the newer columns (Cloudinary + status tracking)
-  const addCol = (ddl: string) => { try { sqlite.exec(ddl) } catch {} }
-  addCol(`ALTER TABLE documents ADD COLUMN cloudinary_public_id TEXT`)
-  addCol(`ALTER TABLE documents ADD COLUMN cloudinary_resource_type TEXT`)
-  addCol(`ALTER TABLE documents ADD COLUMN file_size INTEGER`)
-  addCol(`ALTER TABLE documents ADD COLUMN upload_status TEXT DEFAULT 'pending'`)
-  addCol(`ALTER TABLE documents ADD COLUMN extraction_status TEXT DEFAULT 'pending'`)
-  addCol(`ALTER TABLE documents ADD COLUMN upload_error TEXT`)
-  addCol(`ALTER TABLE documents ADD COLUMN extraction_error TEXT`)
-  // Ensure filings has paused/stopped
-  addCol(`ALTER TABLE filings ADD COLUMN paused INTEGER NOT NULL DEFAULT 0`)
-  addCol(`ALTER TABLE filings ADD COLUMN stopped INTEGER NOT NULL DEFAULT 0`)
-
-  // Ensure vault/folder columns on documents
-  try { sqlite.exec(`ALTER TABLE documents ADD COLUMN vault_id TEXT`) } catch {}
-  try { sqlite.exec(`ALTER TABLE documents ADD COLUMN folder_id TEXT`) } catch {}
-
   // ─── Clean existing data ──────────────────────────
   console.log('Cleaning existing tables...')
-  sqlite.exec(`
-    DELETE FROM ai_chat_conversations;
-    DELETE FROM filing_document_requirements;
-    DELETE FROM document_contexts;
-    DELETE FROM folders;
-    DELETE FROM vaults;
-    DELETE FROM cpa_notifications;
-    DELETE FROM cpa_rejections;
-    DELETE FROM org_chat_messages;
-    DELETE FROM founder_chat_messages;
-    DELETE FROM cpa_chat_messages;
-    DELETE FROM filing_review_locks;
-    DELETE FROM cpa_assignments;
-    DELETE FROM email_verification_tokens;
-    DELETE FROM invites;
-    DELETE FROM permissions;
-    DELETE FROM role_templates;
-    DELETE FROM founder_applications;
-    DELETE FROM agent_conversations;
-    DELETE FROM audit_log;
-    DELETE FROM approval_queue;
-    DELETE FROM documents;
-    DELETE FROM filings;
-    DELETE FROM deadlines;
-    DELETE FROM entities;
-    DELETE FROM users;
-    DELETE FROM organizations;
-  `)
+  const TABLES = [
+    'document_contexts',
+    'filing_document_requirements',
+    'cpa_notifications',
+    'cpa_rejections',
+    'filing_review_locks',
+    'approval_queue',
+    'audit_log',
+    'agent_conversations',
+    'ai_chat_conversations',
+    'org_chat_messages',
+    'founder_chat_messages',
+    'cpa_chat_messages',
+    'documents',
+    'folders',
+    'vaults',
+    'filings',
+    'deadlines',
+    'entities',
+    'cpa_assignments',
+    'email_verification_tokens',
+    'invites',
+    'permissions',
+    'role_templates',
+    'founder_applications',
+    'users',
+    'organizations',
+  ]
+  await db.execute(sql.raw(`TRUNCATE TABLE ${TABLES.map(t => `"${t}"`).join(', ')} RESTART IDENTITY CASCADE`))
 
   const passwordHash = await bcrypt.hash('password123', 10)
 
@@ -433,7 +320,7 @@ async function fakeSeed() {
     const name = isDemo ? 'Acme Technologies' : genCompanyName()
     const orgId = uuid()
     if (isDemo) demoOrgId = orgId
-    db.insert(schema.organizations).values({
+    await db.insert(schema.organizations).values({
       id: orgId,
       name,
       legalName: `${name} Inc.`,
@@ -442,22 +329,22 @@ async function fakeSeed() {
       incorporationState: isDemo ? 'Delaware' : pick(usStates),
       incorporationDate: pastDate(1500),
       plan: isDemo ? 'pro' : pick(['free', 'starter', 'pro', 'pro', 'pro']),
-    }).run()
+    })
     allOrgs.push(orgId)
   }
 
   // ─── 2. Admin org + admin user ────────────────────
   const adminOrgId = uuid()
-  db.insert(schema.organizations).values({
+  await db.insert(schema.organizations).values({
     id: adminOrgId,
     name: 'TaxOS Platform',
     legalName: 'TaxOS Platform Inc.',
     plan: 'pro',
-  }).run()
+  })
 
   const adminId = uuid()
   const adminHash = await bcrypt.hash('admin1234', 10)
-  db.insert(schema.users).values({
+  await db.insert(schema.users).values({
     id: adminId,
     orgId: adminOrgId,
     email: 'superadmin@taxos.ai',
@@ -466,7 +353,7 @@ async function fakeSeed() {
     role: 'admin',
     status: 'active',
     isVerified: true,
-  }).run()
+  })
   allUsers.push({ id: adminId, orgId: adminOrgId, role: 'admin', email: 'superadmin@taxos.ai', name: 'Platform Admin' })
 
   // ─── 3. CPAs ──────────────────────────────────────
@@ -490,7 +377,7 @@ async function fakeSeed() {
     const status = i < 15 ? 'active' as const : pick(['active', 'active', 'pending_admin_review'] as const)
     const cpaName = `${name}, CPA`
 
-    db.insert(schema.users).values({
+    await db.insert(schema.users).values({
       id: cpaId,
       orgId: adminOrgId,
       email,
@@ -502,7 +389,7 @@ async function fakeSeed() {
       approvedByUserId: status === 'active' ? adminId : undefined,
       approvalReviewedAt: status === 'active' ? pastDate(90) : undefined,
       lastLoginAt: status === 'active' ? pastDate(7) : undefined,
-    }).run()
+    })
 
     allCpas.push({ id: cpaId, orgId: adminOrgId, role: 'cpa', email, status, name: cpaName })
     allUsers.push({ id: cpaId, orgId: adminOrgId, role: 'cpa', email, name: cpaName })
@@ -512,7 +399,7 @@ async function fakeSeed() {
   for (let i = 1; i < Math.min(6, allCpas.length); i++) {
     const cpa = allCpas[i]
     const newEmail = `cpa${i}@taxos.ai`
-    sqlite.prepare("UPDATE users SET email = ?, name = ? WHERE id = ?").run(newEmail, cpa.name, cpa.id)
+    await db.update(schema.users).set({ email: newEmail, name: cpa.name }).where(eq(schema.users.id, cpa.id))
     cpa.email = newEmail
     usedEmails.add(newEmail)
   }
@@ -546,7 +433,7 @@ async function fakeSeed() {
       const role = roles[j] || 'team_member'
       const status = (j === 0 || isTeamDemo) ? 'active' as const : pick(['active', 'active', 'active', 'pending_admin_review'] as const)
 
-      db.insert(schema.users).values({
+      await db.insert(schema.users).values({
         id: userId,
         orgId,
         email,
@@ -558,7 +445,7 @@ async function fakeSeed() {
         approvedByUserId: status === 'active' ? adminId : undefined,
         approvalReviewedAt: status === 'active' ? pastDate(90) : undefined,
         lastLoginAt: status === 'active' ? pastDate(7) : undefined,
-      }).run()
+      })
 
       allUsers.push({ id: userId, orgId, role, email, name })
     }
@@ -576,10 +463,10 @@ async function fakeSeed() {
 
   for (const tpl of templateDefs) {
     const tplId = uuid()
-    db.insert(schema.roleTemplates).values({
+    await db.insert(schema.roleTemplates).values({
       id: tplId, name: tpl.name, scope: 'global', organizationId: null,
       createdByUserId: adminId, permissions: tpl.perms, isSystemTemplate: true,
-    }).run()
+    })
     allTemplates.push({ id: tplId, orgId: null })
   }
 
@@ -587,12 +474,12 @@ async function fakeSeed() {
     const founder = allUsers.find(u => u.orgId === orgId && u.role === 'founder')
     if (!founder) continue
     const tplId = uuid()
-    db.insert(schema.roleTemplates).values({
+    await db.insert(schema.roleTemplates).values({
       id: tplId,
       name: `${pick(['Ops', 'Tax', 'Finance', 'Compliance', 'Legal'])} Specialist`,
       scope: 'organization', organizationId: orgId, createdByUserId: founder.id,
       permissions: pick(templateDefs).perms, isSystemTemplate: false,
-    }).run()
+    })
     allTemplates.push({ id: tplId, orgId })
   }
 
@@ -604,10 +491,10 @@ async function fakeSeed() {
     const founder = allUsers.find(u => u.orgId === orgId && u.role === 'founder')
     if (!founder) continue
     for (const user of orgUsers) {
-      db.insert(schema.permissions).values({
+      await db.insert(schema.permissions).values({
         id: uuid(), userId: user.id, organizationId: orgId,
         permissions: pick(templateDefs).perms, createdByUserId: founder.id,
-      }).run()
+      })
       permCount++
     }
   }
@@ -620,11 +507,13 @@ async function fakeSeed() {
     const numCpas = rand(2, 4)
     const selectedCpas = pickN(allCpas.filter(c => c.status === 'active'), numCpas)
     for (const cpa of selectedCpas) {
-      const exists = sqlite.prepare('SELECT 1 FROM cpa_assignments WHERE user_id = ? AND organization_id = ?').get(cpa.id, orgId)
+      const exists = (await db.select().from(schema.cpaAssignments)
+        .where(and(eq(schema.cpaAssignments.userId, cpa.id), eq(schema.cpaAssignments.organizationId, orgId)))
+        .limit(1))[0]
       if (exists) continue
-      db.insert(schema.cpaAssignments).values({
+      await db.insert(schema.cpaAssignments).values({
         id: uuid(), userId: cpa.id, organizationId: orgId, createdByUserId: adminId,
-      }).run()
+      })
       const list = orgCpaMap.get(orgId) ?? []
       list.push(cpa.id)
       orgCpaMap.set(orgId, list)
@@ -632,11 +521,13 @@ async function fakeSeed() {
     }
   }
   // Ensure demo CPA is assigned to demo org
-  const demoCpaAssigned = sqlite.prepare('SELECT 1 FROM cpa_assignments WHERE user_id = ? AND organization_id = ?').get(demoCpaId, demoOrgId)
+  const demoCpaAssigned = (await db.select().from(schema.cpaAssignments)
+    .where(and(eq(schema.cpaAssignments.userId, demoCpaId), eq(schema.cpaAssignments.organizationId, demoOrgId)))
+    .limit(1))[0]
   if (!demoCpaAssigned) {
-    db.insert(schema.cpaAssignments).values({
+    await db.insert(schema.cpaAssignments).values({
       id: uuid(), userId: demoCpaId, organizationId: demoOrgId, createdByUserId: adminId,
-    }).run()
+    })
     const list = orgCpaMap.get(demoOrgId) ?? []
     list.push(demoCpaId)
     orgCpaMap.set(demoOrgId, list)
@@ -656,12 +547,12 @@ async function fakeSeed() {
       while (usedEmails.has(email)) email = genEmail(name + rand(1, 999), 'invited.com')
       usedEmails.add(email)
       const status = pick(['pending', 'pending', 'accepted', 'expired'] as const)
-      db.insert(schema.invites).values({
+      await db.insert(schema.invites).values({
         id: uuid(), email, role: 'team_member', organizationId: orgId,
         invitedByUserId: founder.id, permissions: pick(templateDefs).perms,
         token: crypto.randomBytes(32).toString('hex'), status, expiresAt: futureDate(30),
         acceptedAt: status === 'accepted' ? pastDate(10) : undefined,
-      }).run()
+      })
       inviteCount++
     }
   }
@@ -674,7 +565,7 @@ async function fakeSeed() {
     const founder = allUsers.find(u => u.orgId === orgId && u.role === 'founder')
     if (!founder) continue
     const status = pick(['pending', 'approved', 'approved', 'approved']) as 'pending' | 'approved' | 'rejected'
-    db.insert(schema.founderApplications).values({
+    await db.insert(schema.founderApplications).values({
       id: uuid(), userId: founder.id, organizationId: orgId, email: founder.email,
       passwordHash, name: founder.name, organizationName: genCompanyName(),
       brandName: pick(companyPrefixes), entityType: pick([...entityTypes]),
@@ -687,7 +578,7 @@ async function fakeSeed() {
       reviewedByUserId: status === 'approved' ? adminId : undefined,
       reviewedAt: status === 'approved' ? pastDate(50) : undefined,
       approvedUserId: status === 'approved' ? founder.id : undefined,
-    }).run()
+    })
     appCount++
   }
   console.log(`  → ${appCount} founder applications`)
@@ -703,7 +594,7 @@ async function fakeSeed() {
       const officers = [{ name: genName(), title: 'CEO' }, { name: genName(), title: 'CFO' }, ...(rand(0, 1) ? [{ name: genName(), title: 'CTO' }] : [])]
       const shareholders = Array.from({ length: rand(2, 6) }, () => ({ name: genName(), shares: rand(1000, 100000), percentage: randFloat(1, 40) }))
 
-      db.insert(schema.entities).values({
+      await db.insert(schema.entities).values({
         id: entityId, orgId,
         legalName: `${name} ${entityType === 'LLC' ? 'LLC' : 'Inc.'}`,
         entityType, stateOfIncorporation: pick(usStates), ein: genEIN(),
@@ -715,7 +606,7 @@ async function fakeSeed() {
         capTable: shareholders.map(s => ({ ...s, type: pick(['Common', 'Preferred A', 'Preferred B']) })) as any,
         sensitiveData: [] as any, country: pick(countries),
         status: pick(['active', 'active', 'active', 'inactive']),
-      }).run()
+      })
       allEntities.push({ id: entityId, orgId, entityType })
     }
   }
@@ -729,13 +620,13 @@ async function fakeSeed() {
     for (const form of pickN(applicableForms, numDeadlines)) {
       const deadlineId = uuid()
       const status = pick([...deadlineStatuses])
-      db.insert(schema.deadlines).values({
+      await db.insert(schema.deadlines).values({
         id: deadlineId, entityId: entity.id, formType: form.type, formName: form.name,
         dueDate: (status === 'overdue' ? pastDate(60) : futureDate(180)).split('T')[0],
         status, aiPredicted: pick([true, true, true, false]),
         urgencyScore: status === 'overdue' ? rand(80, 100) : rand(10, 70),
         description: `${form.name} for tax year ${rand(2024, 2025)}.`,
-      }).run()
+      })
       allDeadlines.push({ id: deadlineId, entityId: entity.id, formType: form.type, formName: form.name })
     }
   }
@@ -774,7 +665,7 @@ async function fakeSeed() {
       const chosenFormType = deadline?.formType || pick(formTypes).type
       const chosenFormName = deadline?.formName || pick(formTypes).name
 
-      db.insert(schema.filings).values({
+      await db.insert(schema.filings).values({
         id: filingId, entityId: entity.id, deadlineId: deadline?.id, orgId,
         formType: chosenFormType,
         formName: chosenFormName,
@@ -791,7 +682,7 @@ async function fakeSeed() {
         taxYear,
         paused,
         stopped,
-      }).run()
+      })
 
       allFilings.push({ id: filingId, orgId, entityId: entity.id, status, cpaAssignedId: cpaId, formType: chosenFormType })
     }
@@ -809,12 +700,12 @@ async function fakeSeed() {
 
     for (const vName of chosenVaultNames) {
       const vaultId = uuid()
-      db.insert(schema.vaults).values({
+      await db.insert(schema.vaults).values({
         id: vaultId, orgId, name: vName,
         description: pick(vaultDescriptions),
         createdById: founder.id,
         createdAt: pastDate(120), updatedAt: pastDate(30),
-      }).run()
+      })
       allVaults.push({ id: vaultId, orgId })
 
       // Folders within vault
@@ -822,22 +713,22 @@ async function fakeSeed() {
       const chosenFolderNames = pickN(folderNames, numFolders)
       for (const fName of chosenFolderNames) {
         const folderId = uuid()
-        db.insert(schema.folders).values({
+        await db.insert(schema.folders).values({
           id: folderId, vaultId, parentId: null,
           name: fName, createdById: founder.id,
           createdAt: pastDate(90),
-        }).run()
+        })
         allFolders.push({ id: folderId, vaultId })
         folderCount++
 
         // Occasional sub-folder
         if (rand(0, 3) === 0) {
           const subId = uuid()
-          db.insert(schema.folders).values({
+          await db.insert(schema.folders).values({
             id: subId, vaultId, parentId: folderId,
             name: pick(['Archive', 'Reviewed', 'Drafts', 'Final']),
             createdById: founder.id, createdAt: pastDate(60),
-          }).run()
+          })
           allFolders.push({ id: subId, vaultId })
           folderCount++
         }
@@ -925,7 +816,7 @@ async function fakeSeed() {
         : '' // sentinel for "not uploaded" — column is NOT NULL in legacy schema
 
       const docId = uuid()
-      db.insert(schema.documents).values({
+      await db.insert(schema.documents).values({
         id: docId, filingId: filing?.id, orgId, fileName,
         vaultId: vault?.id || null,
         folderId: folder?.id || null,
@@ -947,7 +838,7 @@ async function fakeSeed() {
         extractionError,
         reviewedByHuman: false,
         uploadedById: uploader.id,
-      }).run()
+      })
       allDocIds.push({
         id: docId,
         orgId,
@@ -973,7 +864,7 @@ async function fakeSeed() {
     const revenue = rand(50000, 10000000)
     const expenses = rand(30000, revenue)
 
-    db.insert(schema.documentContexts).values({
+    await db.insert(schema.documentContexts).values({
       id: uuid(),
       documentId: doc.id,
       orgId: doc.orgId,
@@ -989,7 +880,7 @@ async function fakeSeed() {
         references: [`EIN: ${genEIN()}`, `Ref: ${rand(100000, 999999)}`],
       } as any,
       chunkIndex: 0,
-    }).run()
+    })
     contextCount++
   }
   console.log(`  → ${contextCount} document contexts`)
@@ -1069,7 +960,7 @@ async function fakeSeed() {
         }
       }
 
-      db.insert(schema.filingDocumentRequirements).values({
+      await db.insert(schema.filingDocumentRequirements).values({
         id: uuid(),
         filingId: filing.id,
         slotKey: t.slot,
@@ -1083,7 +974,7 @@ async function fakeSeed() {
         viewedByCpa,
         viewedAt: viewedAt ?? undefined,
         viewedByUserId: viewedByUserId ?? undefined,
-      }).run()
+      })
       reqCount++
     }
   }
@@ -1102,7 +993,7 @@ async function fakeSeed() {
       ? 'approved' as const
       : pick(['pending', 'pending', 'approved', 'rejected'] as const)
 
-    db.insert(schema.approvalQueue).values({
+    await db.insert(schema.approvalQueue).values({
       id: uuid(), orgId: filing.orgId, filingId: filing.id, queueType: 'cpa', status: cpaStatus,
       summary: `CPA review for filing ${filing.id.slice(0, 8)}. AI confidence: ${randFloat(0.7, 0.99)}.`,
       aiRecommendation: pick([
@@ -1114,25 +1005,25 @@ async function fakeSeed() {
       rejectionReason: cpaStatus === 'rejected' ? pick(rejectionReasons) : null,
       resolvedAt: cpaStatus !== 'pending' ? pastDate(30) : null,
       resolvedById: cpaStatus !== 'pending' ? resolver.id : null,
-    }).run()
+    })
     approvalCount++
 
     // Founder approval entries
     if (['submitted', 'archived'].includes(filing.status)) {
-      db.insert(schema.approvalQueue).values({
+      await db.insert(schema.approvalQueue).values({
         id: uuid(), orgId: filing.orgId, filingId: filing.id, queueType: 'founder', status: 'approved',
         summary: `Founder approval for filing ${filing.id.slice(0, 8)}. Ready for submission.`,
         aiRecommendation: 'All items reviewed by CPA. Recommend approval for submission.',
         resolvedAt: pastDate(15), resolvedById: founder?.id || resolver.id,
-      }).run()
+      })
       approvalCount++
     }
     if (filing.status === 'founder_approval') {
-      db.insert(schema.approvalQueue).values({
+      await db.insert(schema.approvalQueue).values({
         id: uuid(), orgId: filing.orgId, filingId: filing.id, queueType: 'founder', status: 'pending',
         summary: `Awaiting founder approval for filing ${filing.id.slice(0, 8)}.`,
         aiRecommendation: 'CPA review complete. Filing is ready for founder sign-off.',
-      }).run()
+      })
       approvalCount++
     }
   }
@@ -1149,20 +1040,20 @@ async function fakeSeed() {
     if (rand(0, 10) > 6) continue
 
     const cpaId = filing.cpaAssignedId || pick(assignedCpaIds)
-    db.insert(schema.filingReviewLocks).values({
+    await db.insert(schema.filingReviewLocks).values({
       id: uuid(), filingId: filing.id, cpaUserId: cpaId,
       status: pick(['active', 'active', 'active', 'completed']),
       releasedAt: rand(0, 5) === 0 ? pastDate(5) : null,
-    }).run()
+    })
     lockCount++
   }
   // Completed locks for approved filings
   const approvedFilings = allFilings.filter(f => ['founder_approval', 'submitted', 'archived'].includes(f.status) && f.cpaAssignedId)
   for (const filing of approvedFilings) {
-    db.insert(schema.filingReviewLocks).values({
+    await db.insert(schema.filingReviewLocks).values({
       id: uuid(), filingId: filing.id, cpaUserId: filing.cpaAssignedId!,
       status: 'completed', releasedAt: pastDate(20),
-    }).run()
+    })
     lockCount++
   }
   console.log(`  → ${lockCount} filing review locks`)
@@ -1181,10 +1072,10 @@ async function fakeSeed() {
         : isOtherClaimed ? 'dismissed' as const
         : pick(['pending', 'pending', 'dismissed'] as const)
 
-      db.insert(schema.cpaNotifications).values({
+      await db.insert(schema.cpaNotifications).values({
         id: uuid(), filingId: filing.id, cpaUserId: cpa.id, status: notifStatus,
         respondedAt: notifStatus !== 'pending' ? pastDate(10) : undefined,
-      }).run()
+      })
       notifCount++
     }
   }
@@ -1198,10 +1089,10 @@ async function fakeSeed() {
   for (const filing of rejectedFilings) {
     const assignedCpaIds = orgCpaMap.get(filing.orgId) ?? []
     if (assignedCpaIds.length === 0) continue
-    db.insert(schema.cpaRejections).values({
+    await db.insert(schema.cpaRejections).values({
       id: uuid(), filingId: filing.id, cpaUserId: pick(assignedCpaIds),
       reason: pick(rejectionReasons),
-    }).run()
+    })
     rejCount++
   }
   console.log(`  → ${rejCount} CPA rejections`)
@@ -1217,7 +1108,7 @@ async function fakeSeed() {
       const actor = actorType !== 'system' && actorType !== 'ai' ? pick(orgUsers) : null
       const filing = orgFilings.length > 0 && rand(0, 1) ? pick(orgFilings) : null
 
-      db.insert(schema.auditLog).values({
+      await db.insert(schema.auditLog).values({
         id: uuid(), orgId, filingId: filing?.id, actorType,
         actorId: actorType === 'ai' ? 'gemini-2.5-flash' : actor?.id,
         action: pick(auditActions),
@@ -1235,7 +1126,7 @@ async function fakeSeed() {
         modelVersion: actorType === 'ai' ? pick(['gemini-2.5-flash', 'gemini-2.5-pro']) : null,
         confidenceScore: actorType === 'ai' ? randFloat(0.5, 0.99) : null,
         createdAt: pastDate(90),
-      }).run()
+      })
       auditCount++
     }
   }
@@ -1254,12 +1145,12 @@ async function fakeSeed() {
         ...m, timestamp: pastDate(30),
       }))
 
-      db.insert(schema.agentConversations).values({
+      await db.insert(schema.agentConversations).values({
         id: uuid(), filingId: filing?.id, orgId, agentType,
         messages: messages as any,
         status: pick(['active', 'completed', 'completed', 'completed', 'escalated']),
         createdAt: pastDate(60), updatedAt: pastDate(10),
-      }).run()
+      })
       convCount++
     }
   }
@@ -1342,9 +1233,12 @@ async function fakeSeed() {
   const founders = allUsers.filter(u => u.role === 'founder')
   for (let i = 0; i < Math.min(founders.length * 8, 1500); i++) {
     const sender = pick(founders)
-    sqlite.prepare(`INSERT INTO founder_chat_messages (id, sender_id, message, created_at) VALUES (?, ?, ?, ?)`).run(
-      uuid(), sender.id, pick(founderChatPool), pastDate(60)
-    )
+    await db.insert(schema.founderChatMessages).values({
+      id: uuid(),
+      senderId: sender.id,
+      message: pick(founderChatPool),
+      createdAt: pastDate(60),
+    })
     founderMsgCount++
   }
   console.log(`  → ${founderMsgCount} founder network messages`)
@@ -1354,9 +1248,12 @@ async function fakeSeed() {
   const activeCpas = allCpas.filter(c => c.status === 'active')
   for (let i = 0; i < Math.min(activeCpas.length * 10, 1200); i++) {
     const sender = pick(activeCpas)
-    sqlite.prepare(`INSERT INTO cpa_chat_messages (id, sender_id, message, created_at) VALUES (?, ?, ?, ?)`).run(
-      uuid(), sender.id, pick(cpaChatPool), pastDate(45)
-    )
+    await db.insert(schema.cpaChatMessages).values({
+      id: uuid(),
+      senderId: sender.id,
+      message: pick(cpaChatPool),
+      createdAt: pastDate(45),
+    })
     cpaMsgCount++
   }
   console.log(`  → ${cpaMsgCount} CPA network messages`)
@@ -1369,9 +1266,13 @@ async function fakeSeed() {
     const numMsgs = rand(ORG_CHAT_MSGS_PER_ORG.min, ORG_CHAT_MSGS_PER_ORG.max)
     for (let i = 0; i < numMsgs; i++) {
       const sender = pick(orgMembers)
-      sqlite.prepare(`INSERT INTO org_chat_messages (id, org_id, sender_id, message, created_at) VALUES (?, ?, ?, ?, ?)`).run(
-        uuid(), orgId, sender.id, pick(orgChatPool), pastDate(30)
-      )
+      await db.insert(schema.orgChatMessages).values({
+        id: uuid(),
+        orgId,
+        senderId: sender.id,
+        message: pick(orgChatPool),
+        createdAt: pastDate(30),
+      })
       orgMsgCount++
     }
   }
@@ -1405,9 +1306,15 @@ async function fakeSeed() {
         messages.push({ role: 'assistant', content: ex.a, timestamp: baseDate })
       }
       const title = exchanges[0].q.length > 60 ? exchanges[0].q.slice(0, 57) + '...' : exchanges[0].q
-      sqlite.prepare(
-        `INSERT INTO ai_chat_conversations (id, user_id, org_id, title, messages, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      ).run(uuid(), user.id, user.orgId, title, JSON.stringify(messages), baseDate, pastDate(15))
+      await db.insert(schema.aiChatConversations).values({
+        id: uuid(),
+        userId: user.id,
+        orgId: user.orgId,
+        title,
+        messages: messages as any,
+        createdAt: baseDate,
+        updatedAt: pastDate(15),
+      })
       aiChatCount++
     }
   }
@@ -1417,11 +1324,11 @@ async function fakeSeed() {
   console.log('Creating email verification tokens...')
   let tokenCount = 0
   for (const user of allUsers.slice(-250)) {
-    db.insert(schema.emailVerificationTokens).values({
+    await db.insert(schema.emailVerificationTokens).values({
       id: uuid(), userId: user.id,
       token: crypto.randomBytes(32).toString('hex'),
       expiresAt: futureDate(7), usedAt: pick([pastDate(5), null, null]),
-    }).run()
+    })
     tokenCount++
   }
   console.log(`  → ${tokenCount} email verification tokens`)
@@ -1468,6 +1375,6 @@ async function fakeSeed() {
 fakeSeed().catch((error) => {
   console.error('Seed failed:', error)
   process.exit(1)
-}).finally(() => {
-  sqlite.close()
+}).finally(async () => {
+  await pool.end()
 })

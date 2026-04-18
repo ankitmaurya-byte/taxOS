@@ -38,7 +38,7 @@ import { auditLog, filings } from '../db/schema'
 //   ?actorType=ai        → filter by actor type (ai, cpa, founder, system)
 //   ?from=2025-01-01     → entries created on or after this date
 //   ?to=2025-12-31       → entries created on or before this date
-export function listAuditLogs(req: Request, res: Response) {
+export async function listAuditLogs(req: Request, res: Response) {
   const { filingId, actorType, from, to } = req.query
   const role = req.user!.role
   const userId = req.user!.userId
@@ -46,14 +46,14 @@ export function listAuditLogs(req: Request, res: Response) {
 
   // Build filing ID set for CPA — filings assigned to this CPA
   const cpaFilingIdSet = role === 'cpa'
-    ? new Set(db.select({ id: filings.id }).from(filings)
-        .where(eq(filings.cpaAssignedId, userId)).all().map(f => f.id))
+    ? new Set((await db.select({ id: filings.id }).from(filings)
+        .where(eq(filings.cpaAssignedId, userId))).map(f => f.id))
     : null
 
   // Fetch org-scoped entries (admin gets all)
   const allEntries = role === 'admin'
-    ? db.select().from(auditLog).orderBy(desc(auditLog.createdAt)).all()
-    : db.select().from(auditLog).where(eq(auditLog.orgId, orgId)).orderBy(desc(auditLog.createdAt)).all()
+    ? await db.select().from(auditLog).orderBy(desc(auditLog.createdAt))
+    : await db.select().from(auditLog).where(eq(auditLog.orgId, orgId)).orderBy(desc(auditLog.createdAt))
 
   // Role-based filtering
   const results = allEntries.filter(entry => {
@@ -88,20 +88,20 @@ export function listAuditLogs(req: Request, res: Response) {
 //
 // CSV columns: Timestamp, Actor Type, Actor ID, Action, Reasoning, Confidence, Model Version
 // Special handling: double-quotes in reasoning field are escaped as ""
-export function exportAuditCsv(req: Request, res: Response) {
+export async function exportAuditCsv(req: Request, res: Response) {
   const { filingId: exportFilingId } = req.query
   const role = req.user!.role
   const userId = req.user!.userId
   const orgId = req.user!.orgId
 
   const exportCpaFilingIdSet = role === 'cpa'
-    ? new Set(db.select({ id: filings.id }).from(filings)
-        .where(eq(filings.cpaAssignedId, userId)).all().map(f => f.id))
+    ? new Set((await db.select({ id: filings.id }).from(filings)
+        .where(eq(filings.cpaAssignedId, userId))).map(f => f.id))
     : null
 
   const allExportEntries = role === 'admin'
-    ? db.select().from(auditLog).orderBy(desc(auditLog.createdAt)).all()
-    : db.select().from(auditLog).where(eq(auditLog.orgId, orgId)).orderBy(desc(auditLog.createdAt)).all()
+    ? await db.select().from(auditLog).orderBy(desc(auditLog.createdAt))
+    : await db.select().from(auditLog).where(eq(auditLog.orgId, orgId)).orderBy(desc(auditLog.createdAt))
 
   const results = allExportEntries.filter(entry => {
     if (role === 'cpa') {

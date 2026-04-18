@@ -23,26 +23,26 @@ const documentAgent = new DocumentAgent()
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function loadRequirement(req: Request) {
+async function loadRequirement(req: Request) {
   // CPAs are members of the admin org but are assigned to client orgs, so we
   // can\'t filter by req.user.orgId for them — fall back to an org-access check.
   const filingId = req.params.id as string
   const filing = req.user!.role === 'cpa'
-    ? db.select().from(filings).where(eq(filings.id, filingId)).get()
-    : db.select().from(filings)
+    ? (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
+    : (await db.select().from(filings)
         .where(and(eq(filings.id, filingId), eq(filings.orgId, req.user!.orgId)))
-        .get()
+        .limit(1))[0]
   if (!filing) throw new AppError('Filing not found', 404)
-  if (req.user!.role === 'cpa' && !ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+  if (req.user!.role === 'cpa' && !(await ensureCpaHasOrgAccess(req.user!.userId, filing.orgId))) {
     throw new AppError('CPA not authorised for this organisation', 403)
   }
 
-  const requirement = db.select().from(filingDocumentRequirements)
+  const requirement = (await db.select().from(filingDocumentRequirements)
     .where(and(
       eq(filingDocumentRequirements.filingId, filing.id),
       eq(filingDocumentRequirements.slotKey, req.params.slot as string),
     ))
-    .get()
+    .limit(1))[0]
   if (!requirement) throw new AppError('Requirement slot not found', 404)
 
   return { filing, requirement }
@@ -51,58 +51,58 @@ function loadRequirement(req: Request) {
 
 async function runUpload(docId: string, source: ExtractionSource) {
   if (source.buffer.length > CLOUDINARY_SIZE_LIMIT) {
-    db.update(documents).set({
+    await db.update(documents).set({
       uploadStatus: 'skipped',
       uploadError: null,
       storageUrl: null,
-    }).where(eq(documents.id, docId)).run()
+    }).where(eq(documents.id, docId))
     return
   }
   if (!cloudinaryConfigured) {
-    db.update(documents).set({
+    await db.update(documents).set({
       uploadStatus: 'failed',
       uploadError: 'Cloudinary is not configured on the server',
-    }).where(eq(documents.id, docId)).run()
+    }).where(eq(documents.id, docId))
     return
   }
-  db.update(documents).set({ uploadStatus: 'uploading', uploadError: null })
-    .where(eq(documents.id, docId)).run()
+  await db.update(documents).set({ uploadStatus: 'uploading', uploadError: null })
+    .where(eq(documents.id, docId))
   try {
     const result = await uploadBufferToCloudinary(source.buffer, source.fileName, source.mimeType)
-    db.update(documents).set({
+    await db.update(documents).set({
       uploadStatus: 'uploaded',
       storageUrl: result.secureUrl,
       cloudinaryPublicId: result.publicId,
       cloudinaryResourceType: result.resourceType,
       uploadError: null,
-    }).where(eq(documents.id, docId)).run()
+    }).where(eq(documents.id, docId))
   } catch (err: any) {
-    db.update(documents).set({
+    await db.update(documents).set({
       uploadStatus: 'failed',
       uploadError: err?.message?.slice(0, 500) || 'Upload failed',
-    }).where(eq(documents.id, docId)).run()
+    }).where(eq(documents.id, docId))
   }
 }
 
 async function runExtract(docId: string, orgId: string, source: ExtractionSource) {
-  db.update(documents).set({ extractionStatus: 'extracting', extractionError: null })
-    .where(eq(documents.id, docId)).run()
+  await db.update(documents).set({ extractionStatus: 'extracting', extractionError: null })
+    .where(eq(documents.id, docId))
   try {
     await documentAgent.extractContext(docId, orgId, source)
-    db.update(documents).set({ extractionStatus: 'processing' })
-      .where(eq(documents.id, docId)).run()
+    await db.update(documents).set({ extractionStatus: 'processing' })
+      .where(eq(documents.id, docId))
     await documentAgent.extract(docId, orgId, source)
-    db.update(documents).set({ extractionStatus: 'done', extractionError: null })
-      .where(eq(documents.id, docId)).run()
+    await db.update(documents).set({ extractionStatus: 'done', extractionError: null })
+      .where(eq(documents.id, docId))
   } catch (err: any) {
-    db.update(documents).set({
+    await db.update(documents).set({
       extractionStatus: 'failed',
       extractionError: err?.message?.slice(0, 500) || 'Extraction failed',
-    }).where(eq(documents.id, docId)).run()
+    }).where(eq(documents.id, docId))
   }
 }
 
-function touchRequirement(requirementId: string, patch: Partial<{
+async function touchRequirement(requirementId: string, patch: Partial<{
   documentId: string | null
   skipped: boolean
   skipReason: string | null
@@ -110,36 +110,34 @@ function touchRequirement(requirementId: string, patch: Partial<{
   viewedAt: string | null
   viewedByUserId: string | null
 }>) {
-  db.update(filingDocumentRequirements)
+  await db.update(filingDocumentRequirements)
     .set({ ...patch, updatedAt: new Date().toISOString() })
     .where(eq(filingDocumentRequirements.id, requirementId))
-    .run()
 }
 
 // ─── GET /api/filings/:id/requirements ────────────────────────────────────────
 
-export function listRequirements(req: Request, res: Response, next: NextFunction) {
+export async function listRequirements(req: Request, res: Response, next: NextFunction) {
   try {
     const filingId = req.params.id as string
     const filing = req.user!.role === 'cpa'
-      ? db.select().from(filings).where(eq(filings.id, filingId)).get()
-      : db.select().from(filings)
+      ? (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
+      : (await db.select().from(filings)
           .where(and(eq(filings.id, filingId), eq(filings.orgId, req.user!.orgId)))
-          .get()
+          .limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
-    if (req.user!.role === 'cpa' && !ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+    if (req.user!.role === 'cpa' && !(await ensureCpaHasOrgAccess(req.user!.userId, filing.orgId))) {
       throw new AppError('CPA not authorised for this organisation', 403)
     }
 
-    const rows = db.select().from(filingDocumentRequirements)
+    const rows = await db.select().from(filingDocumentRequirements)
       .where(eq(filingDocumentRequirements.filingId, filing.id))
       .orderBy(filingDocumentRequirements.sortOrder)
-      .all()
 
-    const enriched = rows.map((r: any) => {
-      const doc = r.documentId ? db.select().from(documents).where(eq(documents.id, r.documentId)).get() : null
+    const enriched = await Promise.all(rows.map(async (r: any) => {
+      const doc = r.documentId ? (await db.select().from(documents).where(eq(documents.id, r.documentId)).limit(1))[0] : null
       return { ...r, document: doc }
-    })
+    }))
     res.json(enriched)
   } catch (err) { next(withContext(err as Error, 'listRequirements')) }
 }
@@ -149,7 +147,7 @@ export function listRequirements(req: Request, res: Response, next: NextFunction
 export async function uploadRequirement(req: Request, res: Response, next: NextFunction) {
   try {
     if (!req.file) throw new AppError('No file uploaded', 400)
-    const { filing, requirement } = loadRequirement(req)
+    const { filing, requirement } = await loadRequirement(req)
 
     // Delete prior attached document (Cloudinary + DB) so reuploads don\'t orphan assets.
     // Previous document (if any) stays in the DB + Cloudinary — the slot just
@@ -159,7 +157,7 @@ export async function uploadRequirement(req: Request, res: Response, next: NextF
     const buffer = req.file.buffer
     const isLarge = buffer.length > CLOUDINARY_SIZE_LIMIT
 
-    const doc = db.insert(documents).values({
+    const [doc] = await db.insert(documents).values({
       filingId: filing.id,
       orgId: req.user!.orgId,
       fileName: req.file.originalname,
@@ -168,9 +166,9 @@ export async function uploadRequirement(req: Request, res: Response, next: NextF
       uploadStatus: isLarge ? 'skipped' : 'uploading',
       extractionStatus: 'extracting',
       uploadedById: req.user!.userId,
-    }).returning().get()
+    }).returning()
 
-    touchRequirement(requirement.id, {
+    await touchRequirement(requirement.id, {
       documentId: doc.id,
       skipped: false,
       skipReason: null,
@@ -206,18 +204,18 @@ export async function importRequirementFromVault(req: Request, res: Response, ne
     const { documentId: sourceDocId } = req.body as { documentId?: string }
     if (!sourceDocId) throw new AppError('documentId is required', 400)
 
-    const { filing, requirement } = loadRequirement(req)
+    const { filing, requirement } = await loadRequirement(req)
 
-    const source = db.select().from(documents)
+    const source = (await db.select().from(documents)
       .where(and(eq(documents.id, sourceDocId), eq(documents.orgId, req.user!.orgId)))
-      .get()
+      .limit(1))[0]
     if (!source) throw new AppError('Source document not found', 404)
 
     // Previous document (if any) stays in the DB + Cloudinary — the slot just
     // unlinks from it. That preserves vault originals and lets auditors see
     // the full upload history for the filing.
 
-    const clone = db.insert(documents).values({
+    const [clone] = await db.insert(documents).values({
       filingId: filing.id,
       orgId: req.user!.orgId,
       vaultId: source.vaultId,
@@ -234,15 +232,15 @@ export async function importRequirementFromVault(req: Request, res: Response, ne
       uploadStatus: source.uploadStatus ?? 'uploaded',
       extractionStatus: source.extractionStatus ?? 'done',
       uploadedById: req.user!.userId,
-    }).returning().get()
+    }).returning()
 
     // If the source had extracted context, copy it to the new doc id so the
     // AI advisor picks it up under the filing scope.
-    const sourceCtx = db.select().from(documentContexts)
+    const sourceCtx = (await db.select().from(documentContexts)
       .where(eq(documentContexts.documentId, source.id))
-      .get()
+      .limit(1))[0]
     if (sourceCtx) {
-      db.insert(documentContexts).values({
+      await db.insert(documentContexts).values({
         documentId: clone.id,
         orgId: sourceCtx.orgId,
         vaultId: sourceCtx.vaultId,
@@ -250,10 +248,10 @@ export async function importRequirementFromVault(req: Request, res: Response, ne
         summary: sourceCtx.summary,
         keyEntities: sourceCtx.keyEntities as any,
         metadata: sourceCtx.metadata as any,
-      }).run()
+      })
     }
 
-    touchRequirement(requirement.id, {
+    await touchRequirement(requirement.id, {
       documentId: clone.id,
       skipped: false,
       skipReason: null,
@@ -283,12 +281,12 @@ export async function skipRequirement(req: Request, res: Response, next: NextFun
     const trimmed = (reason ?? '').trim()
     if (!trimmed) throw new AppError('A remark is required to skip a document.', 400)
 
-    const { filing, requirement } = loadRequirement(req)
+    const { filing, requirement } = await loadRequirement(req)
     // Previous document (if any) stays in the DB + Cloudinary — the slot just
     // unlinks from it. That preserves vault originals and lets auditors see
     // the full upload history for the filing.
 
-    touchRequirement(requirement.id, {
+    await touchRequirement(requirement.id, {
       documentId: null,
       skipped: true,
       skipReason: trimmed,
@@ -314,8 +312,8 @@ export async function skipRequirement(req: Request, res: Response, next: NextFun
 
 export async function unskipRequirement(req: Request, res: Response, next: NextFunction) {
   try {
-    const { filing, requirement } = loadRequirement(req)
-    touchRequirement(requirement.id, {
+    const { filing, requirement } = await loadRequirement(req)
+    await touchRequirement(requirement.id, {
       skipped: false,
       skipReason: null,
     })
@@ -336,16 +334,16 @@ export async function unskipRequirement(req: Request, res: Response, next: NextF
 export async function retryRequirementUpload(req: Request, res: Response, next: NextFunction) {
   try {
     if (!req.file) throw new AppError('No file provided for retry', 400)
-    const { requirement } = loadRequirement(req)
+    const { requirement } = await loadRequirement(req)
     if (!requirement.documentId) throw new AppError('No document attached to retry.', 400)
 
-    db.update(documents).set({
+    await db.update(documents).set({
       uploadStatus: 'uploading',
       uploadError: null,
       fileSize: req.file.buffer.length,
       fileName: req.file.originalname,
       mimeType: req.file.mimetype,
-    }).where(eq(documents.id, requirement.documentId)).run()
+    }).where(eq(documents.id, requirement.documentId))
 
     res.json({ ok: true })
 
@@ -363,9 +361,9 @@ export async function retryRequirementUpload(req: Request, res: Response, next: 
 
 export async function retryRequirementExtract(req: Request, res: Response, next: NextFunction) {
   try {
-    const { requirement } = loadRequirement(req)
+    const { requirement } = await loadRequirement(req)
     if (!requirement.documentId) throw new AppError('No document attached.', 400)
-    const doc = db.select().from(documents).where(eq(documents.id, requirement.documentId)).get()
+    const doc = (await db.select().from(documents).where(eq(documents.id, requirement.documentId)).limit(1))[0]
     if (!doc) throw new AppError('Document missing.', 404)
 
     let buffer: Buffer | null = null
@@ -391,10 +389,10 @@ export async function retryRequirementExtract(req: Request, res: Response, next:
 // ─── POST /api/filings/:id/requirements/:slot/view ────────────────────────────
 // CPA marks a single requirement as viewed.
 
-export function markRequirementViewed(req: Request, res: Response, next: NextFunction) {
+export async function markRequirementViewed(req: Request, res: Response, next: NextFunction) {
   try {
-    const { filing, requirement } = loadRequirement(req)
-    touchRequirement(requirement.id, {
+    const { filing, requirement } = await loadRequirement(req)
+    await touchRequirement(requirement.id, {
       viewedByCpa: true,
       viewedAt: new Date().toISOString(),
       viewedByUserId: req.user!.userId,
@@ -413,21 +411,20 @@ export function markRequirementViewed(req: Request, res: Response, next: NextFun
 
 // ─── POST /api/filings/:id/requirements/mark-all-viewed ───────────────────────
 
-export function markAllRequirementsViewed(req: Request, res: Response, next: NextFunction) {
+export async function markAllRequirementsViewed(req: Request, res: Response, next: NextFunction) {
   try {
-    const filing = db.select().from(filings)
+    const filing = (await db.select().from(filings)
       .where(eq(filings.id, req.params.id as string))
-      .get()
+      .limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
-    if (!ensureCpaHasOrgAccess(req.user!.userId, filing.orgId)) {
+    if (!(await ensureCpaHasOrgAccess(req.user!.userId, filing.orgId))) {
       throw new AppError('CPA not authorised for this organisation', 403)
     }
 
     const now = new Date().toISOString()
-    db.update(filingDocumentRequirements)
+    await db.update(filingDocumentRequirements)
       .set({ viewedByCpa: true, viewedAt: now, viewedByUserId: req.user!.userId, updatedAt: now })
       .where(eq(filingDocumentRequirements.filingId, filing.id))
-      .run()
 
     auditLogger.log({
       orgId: filing.orgId,

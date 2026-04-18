@@ -40,14 +40,15 @@ import { resolveApprovalSchema } from 'shared'
 import { auditLogger } from '../lib/auditLog'
 import { AppError, withContext } from '../lib/errors'
 
-function getActiveLock(filingId: string) {
-  return db.select().from(filingReviewLocks)
+async function getActiveLock(filingId: string) {
+  return (await db.select().from(filingReviewLocks)
     .where(and(eq(filingReviewLocks.filingId, filingId), eq(filingReviewLocks.status, 'active')))
-    .get()
+    .limit(1))[0]
 }
 
-function getReviewerName(userId: string) {
-  return db.select({ name: users.name }).from(users).where(eq(users.id, userId)).get()?.name || 'Another CPA'
+async function getReviewerName(userId: string) {
+  const row = (await db.select({ name: users.name }).from(users).where(eq(users.id, userId)).limit(1))[0]
+  return row?.name || 'Another CPA'
 }
 
 // ─── GET /api/approvals ──────────────────────────────
@@ -57,17 +58,16 @@ function getReviewerName(userId: string) {
 //   cpa     → only sees queueType='cpa' items (CPA reviews)
 //   admin   → sees all items
 // Connected fields: req.user.orgId → approvalQueue.orgId, req.user.role → filter logic
-export function listApprovals(req: Request, res: Response) {
-  const results = db
+export async function listApprovals(req: Request, res: Response) {
+  const allRows = await db
     .select()
     .from(approvalQueue)
     .orderBy(desc(approvalQueue.createdAt))
-    .all()
-    .filter(a => {
-      if (req.user!.role === 'founder') return a.queueType === 'founder' && a.orgId === req.user!.orgId
-      if (req.user!.role === 'cpa') return a.queueType === 'cpa' && a.orgId === req.user!.orgId
-      return true
-    })
+  const results = allRows.filter(a => {
+    if (req.user!.role === 'founder') return a.queueType === 'founder' && a.orgId === req.user!.orgId
+    if (req.user!.role === 'cpa') return a.queueType === 'cpa' && a.orgId === req.user!.orgId
+    return true
+  })
 
   res.json(results)
 }
@@ -89,49 +89,49 @@ export function listApprovals(req: Request, res: Response) {
 export async function resolveApproval(req: Request, res: Response, next: NextFunction) {
   try {
     const data = resolveApprovalSchema.parse(req.body)
-    const approval = db.select().from(approvalQueue)
+    const approval = (await db.select().from(approvalQueue)
       .where(and(eq(approvalQueue.id, req.params.id as string), eq(approvalQueue.orgId, req.user!.orgId)))
-      .get()
+      .limit(1))[0]
     if (!approval) throw new AppError('Approval not found', 404)
     if (approval.status !== 'pending') throw new AppError('Approval already resolved', 400)
 
     if (req.user!.role === 'cpa') {
-      const lock = getActiveLock(approval.filingId)
+      const lock = await getActiveLock(approval.filingId)
       if (lock && lock.cpaUserId !== req.user!.userId) {
-        throw new AppError(`This filing is already being handled by ${getReviewerName(lock.cpaUserId)}.`, 409)
+        throw new AppError(`This filing is already being handled by ${await getReviewerName(lock.cpaUserId)}.`, 409)
       }
-      const completed = db.select().from(filingReviewLocks)
+      const completed = (await db.select().from(filingReviewLocks)
         .where(and(eq(filingReviewLocks.filingId, approval.filingId), eq(filingReviewLocks.status, 'completed')))
-        .get()
+        .limit(1))[0]
       if (completed && completed.cpaUserId !== req.user!.userId) {
         throw new AppError('This filing was already approved by another CPA.', 409)
       }
     }
 
     const now = new Date().toISOString()
-    db.update(approvalQueue).set({
+    await db.update(approvalQueue).set({
       status: data.status,
       rejectionReason: data.status === 'rejected' ? data.reason : null,
       resolvedAt: now,
       resolvedById: req.user!.userId,
-    }).where(eq(approvalQueue.id, req.params.id as string)).run()
+    }).where(eq(approvalQueue.id, req.params.id as string))
 
     // If founder approves → advance filing to submitted
     if (data.status === 'approved' && approval.queueType === 'founder') {
-      db.update(filings).set({
+      await db.update(filings).set({
         founderApprovedAt: now,
         status: 'submitted',
         submittedAt: now,
         updatedAt: now,
-      }).where(eq(filings.id, approval.filingId)).run()
+      }).where(eq(filings.id, approval.filingId))
     }
 
     // If founder rejects → send filing back to CPA review
     if (data.status === 'rejected' && approval.queueType === 'founder') {
-      db.update(filings).set({
+      await db.update(filings).set({
         status: 'cpa_review',
         updatedAt: now,
-      }).where(eq(filings.id, approval.filingId)).run()
+      }).where(eq(filings.id, approval.filingId))
     }
 
     auditLogger.log({
@@ -144,12 +144,12 @@ export async function resolveApproval(req: Request, res: Response, next: NextFun
     })
 
     if (req.user!.role === 'cpa') {
-      const lock = getActiveLock(approval.filingId)
+      const lock = await getActiveLock(approval.filingId)
       if (lock) {
-        db.update(filingReviewLocks).set({
+        await db.update(filingReviewLocks).set({
           status: data.status === 'approved' ? 'completed' : 'released',
           releasedAt: now,
-        }).where(eq(filingReviewLocks.id, lock.id)).run()
+        }).where(eq(filingReviewLocks.id, lock.id))
       }
     }
 
@@ -166,25 +166,25 @@ export async function resolveApproval(req: Request, res: Response, next: NextFun
 //   approvalQueue.status   ← 'escalated' (original item)
 //   new approvalQueue row  ← queueType='cpa', filingId from original item
 //   auditLog.action        ← 'approval_escalated'
-export function escalateApproval(req: Request, res: Response) {
-  const approval = db.select().from(approvalQueue)
+export async function escalateApproval(req: Request, res: Response) {
+  const approval = (await db.select().from(approvalQueue)
     .where(and(eq(approvalQueue.id, req.params.id as string), eq(approvalQueue.orgId, req.user!.orgId)))
-    .get()
+    .limit(1))[0]
   if (!approval) return res.status(404).json({ error: 'Approval not found' })
 
   // Mark original as escalated
-  db.update(approvalQueue).set({ status: 'escalated' })
-    .where(eq(approvalQueue.id, req.params.id as string)).run()
+  await db.update(approvalQueue).set({ status: 'escalated' })
+    .where(eq(approvalQueue.id, req.params.id as string))
 
   // Create new CPA queue item with context from original
-  db.insert(approvalQueue).values({
+  await db.insert(approvalQueue).values({
     orgId: req.user!.orgId,
     filingId: approval.filingId,
     queueType: 'cpa',
     status: 'pending',
     summary: `Escalated from founder review: ${approval.summary}`,
     aiRecommendation: approval.aiRecommendation,
-  }).run()
+  })
 
   auditLogger.log({
     orgId: req.user!.orgId,

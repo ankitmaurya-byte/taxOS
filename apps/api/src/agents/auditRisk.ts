@@ -41,10 +41,10 @@ export interface AuditRiskOutcome {
 
 export class AuditRiskAgent extends BaseAgent {
   async scoreRisk(filingId: string, orgId: string): Promise<AuditRiskOutcome> {
-    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
     if (!filing) throw new Error('Filing not found')
 
-    const entity = db.select().from(entities).where(eq(entities.id, filing.entityId)).get()
+    const entity = (await db.select().from(entities).where(eq(entities.id, filing.entityId)).limit(1))[0]
 
     const prompt = `${AUDIT_RISK_PROMPT}
 
@@ -90,29 +90,29 @@ AI confidence: ${filing.aiConfidenceScore ?? 'unknown'}
     const shouldHalt = queuedForCpa && blockingStatuses.includes(filing.status)
     const nextStatus = shouldHalt ? 'cpa_review' : filing.status
     if (shouldHalt && filing.status !== 'cpa_review') {
-      db.update(filings).set({
+      await db.update(filings).set({
         status: 'cpa_review',
         updatedAt: new Date().toISOString(),
-      }).where(eq(filings.id, filingId)).run()
+      }).where(eq(filings.id, filingId))
     }
 
     if (queuedForCpa) {
-      const existing = db.select().from(approvalQueue)
+      const existing = (await db.select().from(approvalQueue)
         .where(and(
           eq(approvalQueue.filingId, filingId),
           eq(approvalQueue.queueType, 'cpa'),
           eq(approvalQueue.status, 'pending'),
         ))
-        .get()
+        .limit(1))[0]
       if (!existing) {
-        db.insert(approvalQueue).values({
+        await db.insert(approvalQueue).values({
           orgId,
           filingId,
           queueType: 'cpa',
           status: 'pending',
           summary: `Audit risk score ${result.overallRiskScore}/100 (${result.riskLevel}) — mandatory CPA review.`,
           aiRecommendation: result.reasoning,
-        }).run()
+        })
       }
     }
 

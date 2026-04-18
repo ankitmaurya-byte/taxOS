@@ -4,12 +4,6 @@
  * Consumed by:
  *   - filings.controller.ts (escalateToCpa endpoint, cpaRejectFiling top-match logic)
  *   - agents/prefill.ts     (auto-escalate on low AI confidence)
- *
- * escalateFilingToCpa() performs the full side-effect bundle:
- *   - status → cpa_review
- *   - approvalQueue row (queueType='cpa', status='pending')
- *   - round-robin notify N CPAs via cpaNotifications + SSE 'filing_assigned'
- *   - audit log entry
  */
 
 import { and, eq } from 'drizzle-orm'
@@ -25,23 +19,22 @@ import {
 import { auditLogger } from './auditLog'
 import { sendToUsers } from '../services/sse.service'
 
-export function getCpaFilingStats(cpaId: string) {
-  const approvedCount = db.select().from(filingReviewLocks)
+export async function getCpaFilingStats(cpaId: string) {
+  const approvedRows = await db.select().from(filingReviewLocks)
     .where(and(eq(filingReviewLocks.cpaUserId, cpaId), eq(filingReviewLocks.status, 'completed')))
-    .all().length
-
-  const rejectedCount = db.select().from(cpaRejections)
+  const rejectedRows = await db.select().from(cpaRejections)
     .where(eq(cpaRejections.cpaUserId, cpaId))
-    .all().length
 
+  const approvedCount = approvedRows.length
+  const rejectedCount = rejectedRows.length
   const totalFilings = approvedCount + rejectedCount
   const approvalRate = totalFilings > 0 ? approvedCount / totalFilings : 0
 
   return { approvedCount, rejectedCount, totalFilings, approvalRate }
 }
 
-export function selectCpasForEscalation(limit = 5): string[] {
-  const allCpas = db.select().from(users).where(eq(users.role, 'cpa')).all()
+export async function selectCpasForEscalation(limit = 5): Promise<string[]> {
+  const allCpas = await db.select().from(users).where(eq(users.role, 'cpa'))
 
   const activeCpas = allCpas
     .filter(u => u.status === 'active')
@@ -52,15 +45,16 @@ export function selectCpasForEscalation(limit = 5): string[] {
   }
 
   const nonActiveCpas = allCpas.filter(u => u.status !== 'active')
-  const ranked = nonActiveCpas
-    .map(u => ({ ...u, stats: getCpaFilingStats(u.id) }))
-    .sort((a, b) => {
-      const aZeroRej = a.stats.rejectedCount === 0 ? 1 : 0
-      const bZeroRej = b.stats.rejectedCount === 0 ? 1 : 0
-      if (bZeroRej !== aZeroRej) return bZeroRej - aZeroRej
-      if (b.stats.approvedCount !== a.stats.approvedCount) return b.stats.approvedCount - a.stats.approvedCount
-      return a.createdAt.localeCompare(b.createdAt)
-    })
+  const ranked = await Promise.all(
+    nonActiveCpas.map(async (u) => ({ ...u, stats: await getCpaFilingStats(u.id) })),
+  )
+  ranked.sort((a, b) => {
+    const aZeroRej = a.stats.rejectedCount === 0 ? 1 : 0
+    const bZeroRej = b.stats.rejectedCount === 0 ? 1 : 0
+    if (bZeroRej !== aZeroRej) return bZeroRej - aZeroRej
+    if (b.stats.approvedCount !== a.stats.approvedCount) return b.stats.approvedCount - a.stats.approvedCount
+    return a.createdAt.localeCompare(b.createdAt)
+  })
 
   const needed = limit - activeCpas.length
   return [
@@ -81,47 +75,44 @@ export interface EscalateFilingParams {
   limit?: number
 }
 
-export function escalateFilingToCpa(params: EscalateFilingParams): { notifiedCpaIds: string[] } {
+export async function escalateFilingToCpa(params: EscalateFilingParams): Promise<{ notifiedCpaIds: string[] }> {
   const { filingId, orgId, formType, formName, summary, aiRecommendation, actor, auditReasoning } = params
 
-  // Transition to cpa_review
-  db.update(filings).set({
+  await db.update(filings).set({
     status: 'cpa_review',
     updatedAt: new Date().toISOString(),
-  }).where(eq(filings.id, filingId)).run()
+  }).where(eq(filings.id, filingId))
 
-  // Create approval queue row (skip if one already pending for CPA on this filing)
-  const existing = db.select().from(approvalQueue)
+  const existing = (await db.select().from(approvalQueue)
     .where(and(
       eq(approvalQueue.filingId, filingId),
       eq(approvalQueue.queueType, 'cpa'),
       eq(approvalQueue.status, 'pending'),
-    )).get()
+    )).limit(1))[0]
   if (!existing) {
-    db.insert(approvalQueue).values({
+    await db.insert(approvalQueue).values({
       orgId,
       filingId,
       queueType: 'cpa',
       status: 'pending',
       summary,
       aiRecommendation: aiRecommendation ?? null,
-    }).run()
+    })
   }
 
-  // Round-robin notify CPAs
-  const selectedCpaIds = selectCpasForEscalation(params.limit ?? 5)
+  const selectedCpaIds = await selectCpasForEscalation(params.limit ?? 5)
   for (const cpaId of selectedCpaIds) {
-    const already = db.select().from(cpaNotifications)
+    const already = (await db.select().from(cpaNotifications)
       .where(and(
         eq(cpaNotifications.filingId, filingId),
         eq(cpaNotifications.cpaUserId, cpaId),
-      )).get()
+      )).limit(1))[0]
     if (!already) {
-      db.insert(cpaNotifications).values({
+      await db.insert(cpaNotifications).values({
         filingId,
         cpaUserId: cpaId,
         status: 'pending',
-      }).run()
+      })
     }
   }
 
@@ -138,7 +129,7 @@ export function escalateFilingToCpa(params: EscalateFilingParams): { notifiedCpa
     })
   }
 
-  auditLogger.log({
+  await auditLogger.log({
     orgId,
     filingId,
     actorType: actor.type,

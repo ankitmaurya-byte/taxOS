@@ -43,39 +43,39 @@ async function processDocument(
 
 async function runUpload(documentId: string, source: ExtractionSource) {
   if (source.buffer.length > CLOUDINARY_SIZE_LIMIT) {
-    db.update(documents).set({
+    await db.update(documents).set({
       uploadStatus: 'skipped',
       uploadError: null,
       storageUrl: null,
-    }).where(eq(documents.id, documentId)).run()
+    }).where(eq(documents.id, documentId))
     return
   }
 
   if (!cloudinaryConfigured) {
-    db.update(documents).set({
+    await db.update(documents).set({
       uploadStatus: 'failed',
       uploadError: 'Cloudinary is not configured on the server',
-    }).where(eq(documents.id, documentId)).run()
+    }).where(eq(documents.id, documentId))
     return
   }
 
-  db.update(documents).set({ uploadStatus: 'uploading', uploadError: null })
-    .where(eq(documents.id, documentId)).run()
+  await db.update(documents).set({ uploadStatus: 'uploading', uploadError: null })
+    .where(eq(documents.id, documentId))
 
   try {
     const result = await uploadBufferToCloudinary(source.buffer, source.fileName, source.mimeType)
-    db.update(documents).set({
+    await db.update(documents).set({
       uploadStatus: 'uploaded',
       storageUrl: result.secureUrl,
       cloudinaryPublicId: result.publicId,
       cloudinaryResourceType: result.resourceType,
       uploadError: null,
-    }).where(eq(documents.id, documentId)).run()
+    }).where(eq(documents.id, documentId))
   } catch (err: any) {
-    db.update(documents).set({
+    await db.update(documents).set({
       uploadStatus: 'failed',
       uploadError: err?.message?.slice(0, 500) || 'Upload failed',
-    }).where(eq(documents.id, documentId)).run()
+    }).where(eq(documents.id, documentId))
     throw err
   }
 }
@@ -86,32 +86,31 @@ async function runExtract(
   source: ExtractionSource,
   vaultId: string | null,
 ) {
-  db.update(documents).set({ extractionStatus: 'extracting', extractionError: null })
-    .where(eq(documents.id, documentId)).run()
+  await db.update(documents).set({ extractionStatus: 'extracting', extractionError: null })
+    .where(eq(documents.id, documentId))
 
   try {
     await documentAgent.extractContext(documentId, orgId, source, vaultId)
-    db.update(documents).set({ extractionStatus: 'processing' })
-      .where(eq(documents.id, documentId)).run()
+    await db.update(documents).set({ extractionStatus: 'processing' })
+      .where(eq(documents.id, documentId))
     await documentAgent.extract(documentId, orgId, source)
-    db.update(documents).set({ extractionStatus: 'done', extractionError: null })
-      .where(eq(documents.id, documentId)).run()
+    await db.update(documents).set({ extractionStatus: 'done', extractionError: null })
+      .where(eq(documents.id, documentId))
   } catch (err: any) {
-    db.update(documents).set({
+    await db.update(documents).set({
       extractionStatus: 'failed',
       extractionError: err?.message?.slice(0, 500) || 'Extraction failed',
-    }).where(eq(documents.id, documentId)).run()
+    }).where(eq(documents.id, documentId))
     throw err
   }
 }
 
 // ─── GET /api/documents ──────────────────────────────
-export function listDocuments(req: Request, res: Response) {
+export async function listDocuments(req: Request, res: Response) {
   const { filingId } = req.query
-  const results = db.select().from(documents)
+  const results = (await db.select().from(documents)
     .where(eq(documents.orgId, req.user!.orgId))
-    .orderBy(desc(documents.createdAt))
-    .all()
+    .orderBy(desc(documents.createdAt)))
     .filter(d => {
       if (filingId && d.filingId !== filingId) return false
       return true
@@ -127,7 +126,7 @@ export async function uploadDocument(req: Request, res: Response, next: NextFunc
     const buffer = req.file.buffer
     const isLarge = buffer.length > CLOUDINARY_SIZE_LIMIT
 
-    const doc = db.insert(documents).values({
+    const [doc] = await db.insert(documents).values({
       filingId: req.body.filingId || null,
       orgId: req.user!.orgId,
       vaultId: req.body.vaultId || null,
@@ -138,7 +137,7 @@ export async function uploadDocument(req: Request, res: Response, next: NextFunc
       uploadStatus: isLarge ? 'skipped' : 'uploading',
       extractionStatus: 'extracting',
       uploadedById: req.user!.userId,
-    }).returning().get()
+    }).returning()
 
     res.status(201).json(doc)
 
@@ -157,19 +156,19 @@ export async function uploadDocument(req: Request, res: Response, next: NextFunc
 export async function retryUpload(req: Request, res: Response, next: NextFunction) {
   try {
     if (!req.file) throw new AppError('No file provided for retry', 400)
-    const doc = db.select().from(documents)
+    const doc = (await db.select().from(documents)
       .where(and(eq(documents.id, req.params.id as string), eq(documents.orgId, req.user!.orgId)))
-      .get()
+      .limit(1))[0]
     if (!doc) return res.status(404).json({ error: 'Document not found' })
 
     const buffer = req.file.buffer
-    db.update(documents).set({
+    await db.update(documents).set({
       uploadStatus: 'uploading',
       uploadError: null,
       fileSize: buffer.length,
       fileName: req.file.originalname,
       mimeType: req.file.mimetype,
-    }).where(eq(documents.id, doc.id)).run()
+    }).where(eq(documents.id, doc.id))
 
     res.json({ message: 'Upload retry started', document: { ...doc, uploadStatus: 'uploading' } })
 
@@ -188,9 +187,9 @@ export async function retryUpload(req: Request, res: Response, next: NextFunctio
 // Otherwise the client must send a fresh file (multipart) so we can re-extract.
 export async function retryExtract(req: Request, res: Response, next: NextFunction) {
   try {
-    const doc = db.select().from(documents)
+    const doc = (await db.select().from(documents)
       .where(and(eq(documents.id, req.params.id as string), eq(documents.orgId, req.user!.orgId)))
-      .get()
+      .limit(1))[0]
     if (!doc) return res.status(404).json({ error: 'Document not found' })
 
     let buffer: Buffer | null = null
@@ -213,8 +212,8 @@ export async function retryExtract(req: Request, res: Response, next: NextFuncti
       })
     }
 
-    db.update(documents).set({ extractionStatus: 'extracting', extractionError: null })
-      .where(eq(documents.id, doc.id)).run()
+    await db.update(documents).set({ extractionStatus: 'extracting', extractionError: null })
+      .where(eq(documents.id, doc.id))
 
     res.json({ message: 'Extraction retry started' })
 
@@ -231,9 +230,9 @@ export async function retryExtract(req: Request, res: Response, next: NextFuncti
 // generating it still requires the caller to be authenticated.
 export async function downloadDocument(req: Request, res: Response, next: NextFunction) {
   try {
-    const doc = db.select().from(documents)
+    const doc = (await db.select().from(documents)
       .where(and(eq(documents.id, req.params.id as string), eq(documents.orgId, req.user!.orgId)))
-      .get()
+      .limit(1))[0]
     if (!doc) return res.status(404).json({ error: 'Document not found' })
     if (!doc.storageUrl || doc.uploadStatus !== 'uploaded') {
       return res.status(409).json({
@@ -246,10 +245,10 @@ export async function downloadDocument(req: Request, res: Response, next: NextFu
 }
 
 // ─── GET /api/documents/:id ──────────────────────────
-export function getDocument(req: Request, res: Response) {
-  const doc = db.select().from(documents)
+export async function getDocument(req: Request, res: Response) {
+  const doc = (await db.select().from(documents)
     .where(and(eq(documents.id, req.params.id as string), eq(documents.orgId, req.user!.orgId)))
-    .get()
+    .limit(1))[0]
   if (!doc) return res.status(404).json({ error: 'Document not found' })
   res.json(doc)
 }
@@ -257,9 +256,9 @@ export function getDocument(req: Request, res: Response) {
 // ─── DELETE /api/documents/:id ───────────────────────
 export async function deleteDocument(req: Request, res: Response, next: NextFunction) {
   try {
-    const doc = db.select().from(documents)
+    const doc = (await db.select().from(documents)
       .where(and(eq(documents.id, req.params.id as string), eq(documents.orgId, req.user!.orgId)))
-      .get()
+      .limit(1))[0]
     if (!doc) return res.status(404).json({ error: 'Document not found' })
 
     // Best-effort Cloudinary cleanup.
@@ -271,22 +270,21 @@ export async function deleteDocument(req: Request, res: Response, next: NextFunc
       }
     }
 
-    db.delete(documentContexts).where(eq(documentContexts.documentId, doc.id)).run()
-    db.delete(documents).where(eq(documents.id, doc.id)).run()
+    await db.delete(documentContexts).where(eq(documentContexts.documentId, doc.id))
+    await db.delete(documents).where(eq(documents.id, doc.id))
     res.json({ message: 'Document deleted' })
   } catch (err) { next(withContext(err as Error, 'deleteDocument')) }
 }
 
 // ─── GET /api/documents/:id/context ──────────────────
-export function getDocumentContext(req: Request, res: Response) {
-  const doc = db.select().from(documents)
+export async function getDocumentContext(req: Request, res: Response) {
+  const doc = (await db.select().from(documents)
     .where(and(eq(documents.id, req.params.id as string), eq(documents.orgId, req.user!.orgId)))
-    .get()
+    .limit(1))[0]
   if (!doc) return res.status(404).json({ error: 'Document not found' })
 
-  const context = db.select().from(documentContexts)
+  const context = await db.select().from(documentContexts)
     .where(eq(documentContexts.documentId, doc.id))
-    .all()
 
   res.json(context)
 }

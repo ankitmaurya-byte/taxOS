@@ -142,30 +142,29 @@ export function canManageTemplateScope(actorRole: string, scope: string) {
   return actorRole === 'founder' && scope === 'organization'
 }
 
-export function getEffectivePermissionsForUser(userId: string) {
-  const user = db.select().from(users).where(eq(users.id, userId)).get()
+export async function getEffectivePermissionsForUser(userId: string) {
+  const user = (await db.select().from(users).where(eq(users.id, userId)).limit(1))[0]
   if (!user) return null
   if (user.role === 'admin' || user.role === 'founder' || user.role === 'cpa') {
     return getRoleDefaultPermissions(user.role)
   }
   if (!user.orgId) return EMPTY_PERMISSIONS
-  const record = db.select().from(permissions)
+  const record = (await db.select().from(permissions)
     .where(and(eq(permissions.userId, userId), eq(permissions.organizationId, user.orgId)))
-    .get()
+    .limit(1))[0]
   return { ...EMPTY_PERMISSIONS, ...(record?.permissions || {}) }
 }
 
-export function ensureCpaHasOrgAccess(userId: string, orgId: string) {
-  const assignment = db.select().from(cpaAssignments)
+export async function ensureCpaHasOrgAccess(userId: string, orgId: string) {
+  const assignment = (await db.select().from(cpaAssignments)
     .where(and(eq(cpaAssignments.userId, userId), eq(cpaAssignments.organizationId, orgId)))
-    .get()
+    .limit(1))[0]
   return Boolean(assignment)
 }
 
-export function listVisibleTemplates(actorRole: string, actorOrgId: string | null) {
-  if (actorRole === 'admin') return db.select().from(roleTemplates).all()
+export async function listVisibleTemplates(actorRole: string, actorOrgId: string | null) {
+  if (actorRole === 'admin') return await db.select().from(roleTemplates)
   if (!actorOrgId) return []
-  return db.select().from(roleTemplates)
+  return await db.select().from(roleTemplates)
     .where(or(eq(roleTemplates.organizationId, actorOrgId), and(eq(roleTemplates.scope, 'global'), isNull(roleTemplates.organizationId))))
-    .all()
 }

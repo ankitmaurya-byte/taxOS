@@ -16,7 +16,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production-mi
  * EventSource in browsers cannot set custom headers, so query-param fallback
  * is required for SSE streams.
  */
-function sseAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+async function sseAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization
   const queryToken = req.query.token as string | undefined
 
@@ -30,7 +30,7 @@ function sseAuthMiddleware(req: Request, res: Response, next: NextFunction) {
 
   try {
     const decoded = jwt.verify(rawToken, JWT_SECRET) as AuthUser
-    const dbUser = db.select().from(users).where(eq(users.id, decoded.userId)).get()
+    const dbUser = (await db.select().from(users).where(eq(users.id, decoded.userId)).limit(1))[0]
     if (
       !dbUser ||
       !dbUser.isVerified ||
@@ -48,7 +48,7 @@ function sseAuthMiddleware(req: Request, res: Response, next: NextFunction) {
       orgId: dbUser.orgId,
       role: dbUser.role as AuthUser['role'],
       status: dbUser.status,
-      permissions: getEffectivePermissionsForUser(dbUser.id) ?? EMPTY_PERMISSIONS,
+      permissions: (await getEffectivePermissionsForUser(dbUser.id)) ?? EMPTY_PERMISSIONS,
     }
     next()
   } catch {

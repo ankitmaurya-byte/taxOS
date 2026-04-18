@@ -19,7 +19,7 @@ import { db } from '../db'
 import { cpaAssignments } from '../db/schema'
 import { addConnection, removeConnection } from '../services/sse.service'
 
-export function sseNotifications(req: Request, res: Response): void {
+export async function sseNotifications(req: Request, res: Response): Promise<void> {
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
@@ -31,13 +31,12 @@ export function sseNotifications(req: Request, res: Response): void {
   // Determine which org IDs this user can receive org-scoped events for
   let orgIds: string[] = []
   if (role === 'cpa') {
-    orgIds = db.select({ orgId: cpaAssignments.organizationId })
+    const rows = await db.select({ orgId: cpaAssignments.organizationId })
       .from(cpaAssignments)
       .where(eq(cpaAssignments.userId, userId))
-      .all()
-      .map(a => a.orgId)
+    orgIds = rows.map(a => a.orgId)
   } else if (orgId) {
-    orgIds = [orgId]   
+    orgIds = [orgId]
   }
 
   addConnection({ userId, role, orgIds, response: res, connectedAt: new Date().toISOString() })

@@ -73,11 +73,10 @@ function getQuarterStatus(dueDate: string) {
 // Returns all entities belonging to the authenticated user's organization.
 // Scoped by: req.user.orgId → entities.orgId
 // Frontend caller: api.getEntities() in lib/api.ts → pages/EntitiesOverview.tsx, pages/Entities.tsx
-export function listEntities(req: Request, res: Response) {
-  const result = db.select().from(entities)
+export async function listEntities(req: Request, res: Response) {
+  const result = await db.select().from(entities)
     .where(eq(entities.orgId, req.user!.orgId))
     .orderBy(desc(entities.createdAt))
-    .all()
   res.json(result)
 }
 
@@ -100,12 +99,12 @@ export async function createEntity(req: Request, res: Response, next: NextFuncti
   try {
     const data = createEntitySchema.parse(req.body)
     const majorBusinessActivity = data.majorBusinessActivity ?? undefined
-    const entity = db.insert(entities).values({
+    const [entity] = await db.insert(entities).values({
       ...data,
       orgId: req.user!.orgId,
       majorBusinessActivity,
       foreignSubsidiaries: data.foreignSubsidiaries as any,
-    }).returning().get()
+    }).returning()
 
     // Auto-calculate deadlines based on entity type and state
     const applicableDeadlines = getApplicableDeadlines(
@@ -115,7 +114,7 @@ export async function createEntity(req: Request, res: Response, next: NextFuncti
     )
 
     for (const dl of applicableDeadlines) {
-      db.insert(deadlines).values({
+      await db.insert(deadlines).values({
         entityId: entity.id,
         formType: dl.formType,
         formName: dl.formName,
@@ -123,7 +122,7 @@ export async function createEntity(req: Request, res: Response, next: NextFuncti
         urgencyScore: calculateUrgencyScore(dl.dueDate),
         description: dl.description,
         aiPredicted: true,
-      }).run()
+      })
     }
 
     auditLogger.log({
@@ -141,10 +140,10 @@ export async function createEntity(req: Request, res: Response, next: NextFuncti
 
 // ─── GET /api/entities/:id ───────────────────────────
 // Returns a single entity by ID, scoped to the user's org (admin bypasses scope).
-export function getEntity(req: Request, res: Response) {
+export async function getEntity(req: Request, res: Response) {
   const entity = req.user!.role === 'admin'
-    ? db.select().from(entities).where(eq(entities.id, req.params.id as string)).get()
-    : db.select().from(entities).where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId))).get()
+    ? (await db.select().from(entities).where(eq(entities.id, req.params.id as string)).limit(1))[0]
+    : (await db.select().from(entities).where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId))).limit(1))[0]
   if (!entity) return res.status(404).json({ error: 'Entity not found' })
   res.json(entity)
 }
@@ -156,10 +155,10 @@ export function getEntity(req: Request, res: Response) {
 //   2. Form 7004 filingData.estimatedTax
 //   3. filingData.taxableIncome × entity tax rate
 //   4. fallback formula from open filing count × entity tax rate
-export function getEstimatedTaxProjection(req: Request, res: Response) {
-  const entity = db.select().from(entities)
+export async function getEstimatedTaxProjection(req: Request, res: Response) {
+  const entity = (await db.select().from(entities)
     .where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId)))
-    .get()
+    .limit(1))[0]
 
   if (!entity) return res.status(404).json({ error: 'Entity not found' })
 
@@ -168,9 +167,8 @@ export function getEstimatedTaxProjection(req: Request, res: Response) {
     ? requestedTaxYear
     : new Date().getFullYear()
 
-  const entityFilings = db.select().from(filings)
-    .where(and(eq(filings.entityId, entity.id), eq(filings.orgId, req.user!.orgId)))
-    .all()
+  const entityFilings = (await db.select().from(filings)
+    .where(and(eq(filings.entityId, entity.id), eq(filings.orgId, req.user!.orgId))))
     .filter((filing) => filing.taxYear == null || filing.taxYear === taxYear)
 
   const filing1120 = entityFilings.find((filing) => filing.formType === '1120')
@@ -240,15 +238,15 @@ export async function updateEntity(req: Request, res: Response, next: NextFuncti
   try {
     const data = updateEntitySchema.parse(req.body)
     const existing = req.user!.role === 'admin'
-      ? db.select().from(entities).where(eq(entities.id, req.params.id as string)).get()
-      : db.select().from(entities).where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId))).get()
+      ? (await db.select().from(entities).where(eq(entities.id, req.params.id as string)).limit(1))[0]
+      : (await db.select().from(entities).where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId))).limit(1))[0]
     if (!existing) return res.status(404).json({ error: 'Entity not found' })
 
     const majorBusinessActivity = data.majorBusinessActivity ?? undefined
-    const updated = db.update(entities)
+    const [updated] = await db.update(entities)
       .set({ ...data, majorBusinessActivity, foreignSubsidiaries: data.foreignSubsidiaries as any })
       .where(eq(entities.id, req.params.id as string))
-      .returning().get()
+      .returning()
     res.json(updated)
   } catch (err) { next(withContext(err as Error, 'updateEntity')) }
 }
@@ -256,12 +254,12 @@ export async function updateEntity(req: Request, res: Response, next: NextFuncti
 // ─── DELETE /api/entities/:id ────────────────────────
 // Soft delete: sets entities.status = 'dissolved' (does NOT remove the row).
 // Connected fields: req.params.id as string → entities.id
-export function deleteEntity(req: Request, res: Response) {
+export async function deleteEntity(req: Request, res: Response) {
   const existing = req.user!.role === 'admin'
-    ? db.select().from(entities).where(eq(entities.id, req.params.id as string)).get()
-    : db.select().from(entities).where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId))).get()
+    ? (await db.select().from(entities).where(eq(entities.id, req.params.id as string)).limit(1))[0]
+    : (await db.select().from(entities).where(and(eq(entities.id, req.params.id as string), eq(entities.orgId, req.user!.orgId))).limit(1))[0]
   if (!existing) return res.status(404).json({ error: 'Entity not found' })
 
-  db.update(entities).set({ status: 'dissolved' }).where(eq(entities.id, req.params.id as string)).run()
+  await db.update(entities).set({ status: 'dissolved' }).where(eq(entities.id, req.params.id as string))
   res.json({ message: 'Entity dissolved' })
 }

@@ -15,8 +15,8 @@ interface AuditLogParams {
 }
 
 export const auditLogger = {
-  log(params: AuditLogParams) {
-    return db.insert(auditLog).values({
+  async log(params: AuditLogParams) {
+    await db.insert(auditLog).values({
       orgId: params.orgId,
       filingId: params.filingId ?? null,
       actorType: params.actorType,
@@ -27,6 +27,6 @@ export const auditLogger = {
       outputs: params.outputs ?? null,
       modelVersion: params.modelVersion ?? null,
       confidenceScore: params.confidenceScore ?? null,
-    }).run()
+    })
   },
 }

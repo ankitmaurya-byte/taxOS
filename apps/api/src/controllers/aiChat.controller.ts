@@ -21,48 +21,47 @@ function isMessage(v: unknown): v is Msg {
   return !!v && typeof v === 'object' && typeof (v as Msg).role === 'string' && typeof (v as Msg).content === 'string'
 }
 
-function ownedConversation(id: string, userId: string) {
-  const row = db.select().from(aiChatConversations)
+async function ownedConversation(id: string, userId: string) {
+  const row = (await db.select().from(aiChatConversations)
     .where(and(eq(aiChatConversations.id, id), eq(aiChatConversations.userId, userId)))
-    .get()
+    .limit(1))[0]
   if (!row) throw new AppError('Conversation not found', 404)
   return row
 }
 
-export function listAiChats(req: Request, res: Response, next: NextFunction) {
+export async function listAiChats(req: Request, res: Response, next: NextFunction) {
   try {
-    const rows = db.select().from(aiChatConversations)
+    const rows = await db.select().from(aiChatConversations)
       .where(eq(aiChatConversations.userId, req.user!.userId))
       .orderBy(desc(aiChatConversations.updatedAt))
-      .all()
     res.json({ conversations: rows })
   } catch (err) { next(withContext(err as Error, 'listAiChats')) }
 }
 
-export function createAiChat(req: Request, res: Response, next: NextFunction) {
+export async function createAiChat(req: Request, res: Response, next: NextFunction) {
   try {
     const { title, messages } = req.body as { title?: string; messages?: unknown }
     const safeMessages: Msg[] = Array.isArray(messages) ? messages.filter(isMessage) : []
-    const saved = db.insert(aiChatConversations).values({
+    const [saved] = await db.insert(aiChatConversations).values({
       userId: req.user!.userId,
       orgId: req.user!.orgId,
       title: (typeof title === 'string' && title.trim()) ? title.trim().slice(0, 100) : 'Untitled',
       messages: safeMessages,
-    }).returning().get()
+    }).returning()
     res.status(201).json(saved)
   } catch (err) { next(withContext(err as Error, 'createAiChat')) }
 }
 
-export function getAiChat(req: Request, res: Response, next: NextFunction) {
+export async function getAiChat(req: Request, res: Response, next: NextFunction) {
   try {
-    const row = ownedConversation(String(req.params.id), req.user!.userId)
+    const row = await ownedConversation(String(req.params.id), req.user!.userId)
     res.json(row)
   } catch (err) { next(withContext(err as Error, 'getAiChat')) }
 }
 
-export function updateAiChat(req: Request, res: Response, next: NextFunction) {
+export async function updateAiChat(req: Request, res: Response, next: NextFunction) {
   try {
-    const existing = ownedConversation(String(req.params.id), req.user!.userId)
+    const existing = await ownedConversation(String(req.params.id), req.user!.userId)
     const { title, messages } = req.body as { title?: string; messages?: unknown }
 
     const patch: { title?: string; messages?: Msg[]; updatedAt: ReturnType<typeof sql> } = {
@@ -75,19 +74,18 @@ export function updateAiChat(req: Request, res: Response, next: NextFunction) {
       patch.messages = messages.filter(isMessage)
     }
 
-    const saved = db.update(aiChatConversations)
+    const [saved] = await db.update(aiChatConversations)
       .set(patch)
       .where(eq(aiChatConversations.id, existing.id))
       .returning()
-      .get()
     res.json(saved)
   } catch (err) { next(withContext(err as Error, 'updateAiChat')) }
 }
 
-export function deleteAiChat(req: Request, res: Response, next: NextFunction) {
+export async function deleteAiChat(req: Request, res: Response, next: NextFunction) {
   try {
-    const existing = ownedConversation(String(req.params.id), req.user!.userId)
-    db.delete(aiChatConversations).where(eq(aiChatConversations.id, existing.id)).run()
+    const existing = await ownedConversation(String(req.params.id), req.user!.userId)
+    await db.delete(aiChatConversations).where(eq(aiChatConversations.id, existing.id))
     res.status(204).end()
   } catch (err) { next(withContext(err as Error, 'deleteAiChat')) }
 }

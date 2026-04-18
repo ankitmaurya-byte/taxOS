@@ -48,13 +48,13 @@ export interface PrefillOutcome extends PrefillResult {
 
 export class PrefillAgent extends BaseAgent {
   async prefillForm(filingId: string, orgId: string): Promise<PrefillOutcome> {
-    const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
     if (!filing) throw new Error('Filing not found')
 
-    const entity = db.select().from(entities).where(eq(entities.id, filing.entityId)).get()
-    const docs = db.select().from(documents).where(eq(documents.filingId, filingId)).all()
-    const conversations = db.select().from(agentConversations)
-      .where(eq(agentConversations.filingId, filingId)).all()
+    const entity = (await db.select().from(entities).where(eq(entities.id, filing.entityId)).limit(1))[0]
+    const docs = await db.select().from(documents).where(eq(documents.filingId, filingId))
+    const conversations = await db.select().from(agentConversations)
+      .where(eq(agentConversations.filingId, filingId))
     const intakeTurns = conversations
       .filter(c => c.agentType === 'intake')
       .flatMap(c => (c.messages as any[]) || [])
@@ -95,7 +95,7 @@ Filing data so far: ${JSON.stringify(filing.filingData)}
     // cpaReviewSkipped flag so the UI can surface a manual "Escalate to founder" shortcut.
     const nextStatus: typeof filing.status = canTransitionFromPrefill ? 'cpa_review' : filing.status
 
-    db.update(filings).set({
+    await db.update(filings).set({
       filingData: { ...(filing.filingData || {}), ...fields } as any,
       aiConfidenceScore: result.overallConfidence,
       aiSummary: result.summary,
@@ -103,7 +103,7 @@ Filing data so far: ${JSON.stringify(filing.filingData)}
       cpaReviewSkipped: canTransitionFromPrefill && !queuedForCpa,
       ...(canTransitionFromPrefill ? { status: nextStatus } : {}),
       updatedAt: now,
-    }).where(eq(filings.id, filingId)).run()
+    }).where(eq(filings.id, filingId))
 
     // HITL: low-confidence → full CPA round-robin escalation (notify 5 CPAs, queue entry, SSE).
     if (queuedForCpa) {

@@ -8,15 +8,15 @@ import { sendFounderApprovedEmail, sendFounderRejectedEmail, sendInviteEmail } f
 import { generateAppToken, getFutureIso } from '../lib/tokens'
 import { AppError, withContext } from '../lib/errors'
 
-export function listFounderApplications(_req: Request, res: Response) {
-  const items = db.select().from(founderApplications).orderBy(desc(founderApplications.createdAt)).all()
+export async function listFounderApplications(_req: Request, res: Response) {
+  const items = await db.select().from(founderApplications).orderBy(desc(founderApplications.createdAt))
   res.json(items)
 }
 
 export async function reviewFounderApplication(req: Request, res: Response, next: NextFunction) {
   try {
     const data = founderApplicationReviewSchema.parse(req.body)
-    const application = db.select().from(founderApplications).where(eq(founderApplications.id, req.params.id as string)).get()
+    const application = (await db.select().from(founderApplications).where(eq(founderApplications.id, req.params.id as string)).limit(1))[0]
     if (!application) throw new AppError('Founder application not found', 404)
     if (application.status !== 'pending') throw new AppError('Founder application already reviewed', 400)
     if (!application.emailVerifiedAt || !application.onboardingCompletedAt) {
@@ -26,29 +26,29 @@ export async function reviewFounderApplication(req: Request, res: Response, next
     const reviewedAt = new Date().toISOString()
 
     if (data.decision === 'rejected') {
-      db.update(founderApplications).set({
+      await db.update(founderApplications).set({
         status: 'rejected',
         reviewNotes: data.reviewNotes || null,
         reviewedByUserId: req.user!.userId,
         reviewedAt,
-      }).where(eq(founderApplications.id, application.id)).run()
+      }).where(eq(founderApplications.id, application.id))
       await sendFounderRejectedEmail(application.email, data.reviewNotes)
       return res.json({ message: 'Founder application rejected' })
     }
 
-    db.update(users).set({
+    await db.update(users).set({
       status: 'active',
       approvedByUserId: req.user!.userId,
       approvalReviewedAt: reviewedAt,
-    }).where(eq(users.id, application.userId)).run()
+    }).where(eq(users.id, application.userId))
 
-    db.update(founderApplications).set({
+    await db.update(founderApplications).set({
       status: 'approved',
       reviewNotes: data.reviewNotes || null,
       reviewedByUserId: req.user!.userId,
       reviewedAt,
       approvedUserId: application.userId,
-    }).where(eq(founderApplications.id, application.id)).run()
+    }).where(eq(founderApplications.id, application.id))
     await sendFounderApprovedEmail(application.email)
 
     res.json({ message: 'Founder application approved', organizationId: application.organizationId, userId: application.userId })
@@ -58,13 +58,12 @@ export async function reviewFounderApplication(req: Request, res: Response, next
 export async function createCpa(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createCpaSchema.parse(req.body)
-    const existing = db.select().from(users).where(eq(users.email, data.email)).get()
+    const existing = (await db.select().from(users).where(eq(users.email, data.email)).limit(1))[0]
     if (existing) throw new AppError('A user already exists for this email', 409)
 
     // Check for already-pending invite for this email
-    const existingInvite = db.select().from(invites)
-      .where(and(eq(invites.email, data.email), eq(invites.status, 'pending')))
-      .all()
+    const existingInvite = (await db.select().from(invites)
+      .where(and(eq(invites.email, data.email), eq(invites.status, 'pending'))))
       .find(i => i.role === 'cpa')
     if (existingInvite) throw new AppError('A pending CPA invite already exists for this email', 409)
 
@@ -72,7 +71,7 @@ export async function createCpa(req: Request, res: Response, next: NextFunction)
     const adminOrgId = req.user!.orgId!
 
     const inviteToken = generateAppToken()
-    const invite = db.insert(invites).values({
+    const [invite] = await db.insert(invites).values({
       email: data.email,
       role: 'cpa',
       organizationId: adminOrgId,
@@ -81,7 +80,7 @@ export async function createCpa(req: Request, res: Response, next: NextFunction)
       permissions: {},
       token: inviteToken,
       expiresAt: getFutureIso(24), // 24-hour window
-    }).returning().get()
+    }).returning()
 
     await sendInviteEmail(data.email, inviteToken, 'TaxOS Admin')
     res.status(201).json({ message: 'CPA invite sent', inviteId: invite.id })
@@ -91,21 +90,21 @@ export async function createCpa(req: Request, res: Response, next: NextFunction)
 export async function assignCpaOrganization(req: Request, res: Response, next: NextFunction) {
   try {
     const { organizationId } = assignCpaOrgSchema.parse(req.body)
-    const user = db.select().from(users).where(eq(users.id, req.params.id as string)).get()
+    const user = (await db.select().from(users).where(eq(users.id, req.params.id as string)).limit(1))[0]
     if (!user || user.role !== 'cpa') throw new AppError('CPA not found', 404)
-    const org = db.select().from(organizations).where(eq(organizations.id, organizationId)).get()
+    const org = (await db.select().from(organizations).where(eq(organizations.id, organizationId)).limit(1))[0]
     if (!org) throw new AppError('Organization not found', 404)
 
-    const existing = db.select().from(cpaAssignments)
+    const existing = (await db.select().from(cpaAssignments)
       .where(and(eq(cpaAssignments.userId, user.id), eq(cpaAssignments.organizationId, organizationId)))
-      .get()
+      .limit(1))[0]
     if (existing) throw new AppError('CPA already assigned to this organization', 409)
 
-    db.insert(cpaAssignments).values({
+    await db.insert(cpaAssignments).values({
       userId: user.id,
       organizationId,
       createdByUserId: req.user!.userId,
-    }).run()
+    })
 
     // CPAs keep their home orgId (admin org). Access to client orgs is tracked
     // exclusively in cpaAssignments — we never reassign users.orgId for CPAs.
@@ -114,19 +113,19 @@ export async function assignCpaOrganization(req: Request, res: Response, next: N
   } catch (err) { next(withContext(err as Error, 'assignCpaOrganization')) }
 }
 
-export function listCpas(_req: Request, res: Response) {
-  const cpas = db.select().from(users).where(eq(users.role, 'cpa')).orderBy(desc(users.createdAt)).all()
-  const assignments = db.select().from(cpaAssignments).all()
+export async function listCpas(_req: Request, res: Response) {
+  const cpas = await db.select().from(users).where(eq(users.role, 'cpa')).orderBy(desc(users.createdAt))
+  const assignments = await db.select().from(cpaAssignments)
   res.json(cpas.map((cpa) => ({
     ...cpa,
     assignments: assignments.filter((assignment) => assignment.userId === cpa.id),
   })))
 }
 
-export function listOrganizationOverview(_req: Request, res: Response) {
-  const allOrganizations = db.select().from(organizations).orderBy(desc(organizations.createdAt)).all()
-  const allUsers = db.select().from(users).all()
-  const assignments = db.select().from(cpaAssignments).all()
+export async function listOrganizationOverview(_req: Request, res: Response) {
+  const allOrganizations = await db.select().from(organizations).orderBy(desc(organizations.createdAt))
+  const allUsers = await db.select().from(users)
+  const assignments = await db.select().from(cpaAssignments)
 
   const overview = allOrganizations.map((organization) => {
     const organizationUsers = allUsers.filter((user) => user.orgId === organization.id)
@@ -149,9 +148,9 @@ export function listOrganizationOverview(_req: Request, res: Response) {
   res.json(overview)
 }
 
-export function listSystemUsers(_req: Request, res: Response) {
-  const allUsers = db.select().from(users).orderBy(desc(users.createdAt)).all()
-  const allOrganizations = db.select().from(organizations).all()
+export async function listSystemUsers(_req: Request, res: Response) {
+  const allUsers = await db.select().from(users).orderBy(desc(users.createdAt))
+  const allOrganizations = await db.select().from(organizations)
 
   const orgDict = Object.fromEntries(allOrganizations.map(o => [o.id, o]))
 
@@ -172,50 +171,50 @@ export function listSystemUsers(_req: Request, res: Response) {
 
 // ---- ADVANCED ORG MANAGEMENT ----
 
-export function createOrganization(req: Request, res: Response, next: NextFunction) {
+export async function createOrganization(req: Request, res: Response, next: NextFunction) {
   try {
     const { name, legalName, plan } = req.body
     if (!name) throw new AppError('Organization name is required', 400)
-    const org = db.insert(organizations).values({ name, legalName, plan: plan || 'free' }).returning().get()
+    const [org] = await db.insert(organizations).values({ name, legalName, plan: plan || 'free' }).returning()
     res.status(201).json(org)
   } catch (err) { next(withContext(err as Error, 'createOrganization')) }
 }
 
-export function getOrganizationDetails(req: Request, res: Response, next: NextFunction) {
+export async function getOrganizationDetails(req: Request, res: Response, next: NextFunction) {
   try {
-    const org = db.select().from(organizations).where(eq(organizations.id, req.params.id as string)).get()
+    const org = (await db.select().from(organizations).where(eq(organizations.id, req.params.id as string)).limit(1))[0]
     if (!org) throw new AppError('Organization not found', 404)
-    
-    const orgUsers = db.select().from(users).where(eq(users.orgId, org.id)).orderBy(desc(users.createdAt)).all()
-    const orgEntities = db.select().from(entities).where(eq(entities.orgId, org.id)).orderBy(desc(entities.createdAt)).all()
-    const assignedCpasIds = db.select().from(cpaAssignments).where(eq(cpaAssignments.organizationId, org.id)).all().map(a => a.userId)
-    const assignedCpas = assignedCpasIds.length ? db.select().from(users).where(sql`${users.id} IN ${assignedCpasIds}`).all() : []
-    const orgFilings = db.select().from(filings).where(eq(filings.orgId, org.id)).orderBy(desc(filings.updatedAt)).all()
+
+    const orgUsers = await db.select().from(users).where(eq(users.orgId, org.id)).orderBy(desc(users.createdAt))
+    const orgEntities = await db.select().from(entities).where(eq(entities.orgId, org.id)).orderBy(desc(entities.createdAt))
+    const assignedCpasIds = (await db.select().from(cpaAssignments).where(eq(cpaAssignments.organizationId, org.id))).map(a => a.userId)
+    const assignedCpas = assignedCpasIds.length ? await db.select().from(users).where(sql`${users.id} IN ${assignedCpasIds}`) : []
+    const orgFilings = await db.select().from(filings).where(eq(filings.orgId, org.id)).orderBy(desc(filings.updatedAt))
 
     res.json({ ...org, users: orgUsers, entities: orgEntities, cpas: assignedCpas, filings: orgFilings })
   } catch (err) { next(withContext(err as Error, 'getOrganizationDetails')) }
 }
 
-export function updateOrganization(req: Request, res: Response, next: NextFunction) {
+export async function updateOrganization(req: Request, res: Response, next: NextFunction) {
   try {
     const { name, legalName, plan } = req.body
-    const org = db.update(organizations).set({ name, legalName, plan }).where(eq(organizations.id, req.params.id as string)).returning().get()
+    const [org] = await db.update(organizations).set({ name, legalName, plan }).where(eq(organizations.id, req.params.id as string)).returning()
     res.json(org)
   } catch (err) { next(withContext(err as Error, 'updateOrganization')) }
 }
 
 // Note: Soft delete (effectively rename/mark, but org has no status, so we append [SUSPENDED] to name for now, or just leave it)
-export function toggleSuspendOrganization(req: Request, res: Response, next: NextFunction) {
+export async function toggleSuspendOrganization(req: Request, res: Response, next: NextFunction) {
   try {
-    const org = db.select().from(organizations).where(eq(organizations.id, req.params.id as string)).get()
+    const org = (await db.select().from(organizations).where(eq(organizations.id, req.params.id as string)).limit(1))[0]
     if (!org) throw new AppError('Organization not found', 404)
-    
+
     const newName = org.name.startsWith('[SUSPENDED]') ? org.name.replace('[SUSPENDED] ', '') : `[SUSPENDED] ${org.name}`
-    db.update(organizations).set({ name: newName }).where(eq(organizations.id, org.id)).run()
-    
+    await db.update(organizations).set({ name: newName }).where(eq(organizations.id, org.id))
+
     // Auto cascade suspend users
     if (newName.startsWith('[SUSPENDED]')) {
-      db.update(users).set({ status: 'suspended' }).where(eq(users.orgId, org.id)).run()
+      await db.update(users).set({ status: 'suspended' }).where(eq(users.orgId, org.id))
     }
     res.json({ message: 'Organization suspend status toggled', newName })
   } catch (err) { next(withContext(err as Error, 'toggleSuspendOrganization')) }
@@ -226,41 +225,41 @@ export function toggleSuspendOrganization(req: Request, res: Response, next: Nex
 export async function createAnyUser(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, password, name, role, orgId, status } = req.body
-    const existing = db.select().from(users).where(eq(users.email, email)).get()
+    const existing = (await db.select().from(users).where(eq(users.email, email)).limit(1))[0]
     if (existing) throw new AppError('Email already registered', 409)
     const passwordHash = await bcrypt.hash(password, 10)
-    const user = db.insert(users).values({
+    const [user] = await db.insert(users).values({
       email, passwordHash, name, role, orgId, status: status || 'active',
       isVerified: true, approvedByUserId: req.user!.userId, approvalReviewedAt: new Date().toISOString()
-    }).returning().get()
+    }).returning()
     res.status(201).json(user)
   } catch (err) { next(withContext(err as Error, 'createAnyUser')) }
 }
 
-export function getUserDetails(req: Request, res: Response, next: NextFunction) {
+export async function getUserDetails(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = db.select().from(users).where(eq(users.id, req.params.id as string)).get()
+    const user = (await db.select().from(users).where(eq(users.id, req.params.id as string)).limit(1))[0]
     if (!user) throw new AppError('User not found', 404)
     let org = null
     let cpaOrgs: typeof organizations.$inferSelect[] = []
     let assignedFilings: typeof filings.$inferSelect[] = []
     if (user.orgId) {
-      org = db.select().from(organizations).where(eq(organizations.id, user.orgId)).get()
+      org = (await db.select().from(organizations).where(eq(organizations.id, user.orgId)).limit(1))[0]
     }
     if (user.role === 'cpa') {
-       const assignments = db.select().from(cpaAssignments).where(eq(cpaAssignments.userId, user.id)).all()
+       const assignments = await db.select().from(cpaAssignments).where(eq(cpaAssignments.userId, user.id))
        if (assignments.length) {
-         cpaOrgs = db.select().from(organizations).where(sql`${organizations.id} IN ${assignments.map(a => a.organizationId)}`).all()
+         cpaOrgs = await db.select().from(organizations).where(sql`${organizations.id} IN ${assignments.map(a => a.organizationId)}`)
        }
-       assignedFilings = db.select().from(filings).where(eq(filings.cpaAssignedId, user.id)).orderBy(desc(filings.updatedAt)).all()
+       assignedFilings = await db.select().from(filings).where(eq(filings.cpaAssignedId, user.id)).orderBy(desc(filings.updatedAt))
     }
     res.json({ ...user, organization: org, cpaOrganizations: cpaOrgs, assignedFilings })
   } catch (err) { next(withContext(err as Error, 'getUserDetails')) }
 }
 
-export function updateUser(req: Request, res: Response, next: NextFunction) {
+export async function updateUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const existing = db.select().from(users).where(eq(users.id, req.params.id as string)).get()
+    const existing = (await db.select().from(users).where(eq(users.id, req.params.id as string)).limit(1))[0]
     if (!existing) throw new AppError('User not found', 404)
     const { name, email, role, status, orgId } = req.body
     // Only update fields that were explicitly provided — never overwrite orgId with undefined
@@ -270,41 +269,41 @@ export function updateUser(req: Request, res: Response, next: NextFunction) {
     if (role !== undefined) patch.role = role
     if (status !== undefined) patch.status = status
     if (orgId !== undefined) patch.orgId = orgId
-    const user = db.update(users).set(patch as any).where(eq(users.id, req.params.id as string)).returning().get()
+    const [user] = await db.update(users).set(patch as any).where(eq(users.id, req.params.id as string)).returning()
     res.json(user)
   } catch (err) { next(withContext(err as Error, 'updateUser')) }
 }
 
-export function deleteUser(req: Request, res: Response, next: NextFunction) {
+export async function deleteUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = db.select().from(users).where(eq(users.id, req.params.id as string)).get()
+    const user = (await db.select().from(users).where(eq(users.id, req.params.id as string)).limit(1))[0]
     if (!user) throw new AppError('User not found', 404)
-    db.update(users).set({ status: 'suspended' }).where(eq(users.id, user.id)).run()
+    await db.update(users).set({ status: 'suspended' }).where(eq(users.id, user.id))
     res.json({ message: 'User suspended' })
   } catch (err) { next(withContext(err as Error, 'deleteUser')) }
 }
 
 // ---- ENTITY & FILING MANAGEMENT (admin cross-org) ----
 
-export function updateAnyEntity(req: Request, res: Response, next: NextFunction) {
+export async function updateAnyEntity(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateEntitySchema.parse(req.body)
-    const existing = db.select().from(entities).where(eq(entities.id, req.params.id as string)).get()
+    const existing = (await db.select().from(entities).where(eq(entities.id, req.params.id as string)).limit(1))[0]
     if (!existing) throw new AppError('Entity not found', 404)
     const { majorBusinessActivity: mba, ...rest } = data
-    const updated = db.update(entities)
+    const [updated] = await db.update(entities)
       .set({ ...rest, majorBusinessActivity: mba ?? undefined, foreignSubsidiaries: data.foreignSubsidiaries as any })
       .where(eq(entities.id, req.params.id as string))
-      .returning().get()
+      .returning()
     res.json(updated)
   } catch (err) { next(withContext(err as Error, 'updateAnyEntity')) }
 }
 
-export function dissolveAnyEntity(req: Request, res: Response, next: NextFunction) {
+export async function dissolveAnyEntity(req: Request, res: Response, next: NextFunction) {
   try {
-    const existing = db.select().from(entities).where(eq(entities.id, req.params.id as string)).get()
+    const existing = (await db.select().from(entities).where(eq(entities.id, req.params.id as string)).limit(1))[0]
     if (!existing) throw new AppError('Entity not found', 404)
-    db.update(entities).set({ status: 'dissolved' }).where(eq(entities.id, req.params.id as string)).run()
+    await db.update(entities).set({ status: 'dissolved' }).where(eq(entities.id, req.params.id as string))
     res.json({ message: 'Entity dissolved' })
   } catch (err) { next(withContext(err as Error, 'dissolveAnyEntity')) }
 }
@@ -312,55 +311,55 @@ export function dissolveAnyEntity(req: Request, res: Response, next: NextFunctio
 export async function updateAnyFilingStatus(req: Request, res: Response, next: NextFunction) {
   try {
     const { status } = updateFilingStatusSchema.parse(req.body)
-    const filing = db.select().from(filings).where(eq(filings.id, req.params.id as string)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, req.params.id as string)).limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
-    const updated = db.update(filings).set({ status, updatedAt: new Date().toISOString() })
-      .where(eq(filings.id, filing.id)).returning().get()
+    const [updated] = await db.update(filings).set({ status, updatedAt: new Date().toISOString() })
+      .where(eq(filings.id, filing.id)).returning()
     res.json(updated)
   } catch (err) { next(withContext(err as Error, 'updateAnyFilingStatus')) }
 }
 
 // ---- FILING DETAILS & DATA (admin cross-org) ----
 
-export function getFilingDetails(req: Request, res: Response, next: NextFunction) {
+export async function getFilingDetails(req: Request, res: Response, next: NextFunction) {
   try {
-    const filing = db.select().from(filings).where(eq(filings.id, req.params.id as string)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, req.params.id as string)).limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
-    const org = filing.orgId ? db.select().from(organizations).where(eq(organizations.id, filing.orgId)).get() : null
-    const entity = filing.entityId ? db.select().from(entities).where(eq(entities.id, filing.entityId)).get() : null
-    const cpa = filing.cpaAssignedId ? db.select().from(users).where(eq(users.id, filing.cpaAssignedId)).get() : null
-    const docs = db.select().from(documents).where(eq(documents.filingId, filing.id)).orderBy(desc(documents.createdAt)).all()
-    const conversations = db.select().from(agentConversations).where(eq(agentConversations.filingId, filing.id)).orderBy(desc(agentConversations.createdAt)).all()
+    const org = filing.orgId ? (await db.select().from(organizations).where(eq(organizations.id, filing.orgId)).limit(1))[0] : null
+    const entity = filing.entityId ? (await db.select().from(entities).where(eq(entities.id, filing.entityId)).limit(1))[0] : null
+    const cpa = filing.cpaAssignedId ? (await db.select().from(users).where(eq(users.id, filing.cpaAssignedId)).limit(1))[0] : null
+    const docs = await db.select().from(documents).where(eq(documents.filingId, filing.id)).orderBy(desc(documents.createdAt))
+    const conversations = await db.select().from(agentConversations).where(eq(agentConversations.filingId, filing.id)).orderBy(desc(agentConversations.createdAt))
     res.json({ ...filing, org, entity, cpa, documents: docs, conversations })
   } catch (err) { next(withContext(err as Error, 'getFilingDetails')) }
 }
 
-export function updateAnyFilingData(req: Request, res: Response, next: NextFunction) {
+export async function updateAnyFilingData(req: Request, res: Response, next: NextFunction) {
   try {
-    const filing = db.select().from(filings).where(eq(filings.id, req.params.id as string)).get()
+    const filing = (await db.select().from(filings).where(eq(filings.id, req.params.id as string)).limit(1))[0]
     if (!filing) throw new AppError('Filing not found', 404)
     const { fields } = req.body as { fields: Record<string, unknown> }
     const merged = { ...(filing.filingData || {}), ...fields }
-    const updated = db.update(filings)
+    const [updated] = await db.update(filings)
       .set({ filingData: merged, updatedAt: new Date().toISOString() })
-      .where(eq(filings.id, filing.id)).returning().get()
+      .where(eq(filings.id, filing.id)).returning()
     res.json({ message: 'Filing data updated', filingData: updated.filingData })
   } catch (err) { next(withContext(err as Error, 'updateAnyFilingData')) }
 }
 
 // ---- AGENT CONVERSATIONS (admin) ----
 
-export function listAllAgentConversations(req: Request, res: Response, next: NextFunction) {
+export async function listAllAgentConversations(req: Request, res: Response, next: NextFunction) {
   try {
     const { orgId, userId, limit: limitStr, offset: offsetStr } = req.query as { orgId?: string; userId?: string; limit?: string; offset?: string }
     const limit = Math.min(Number(limitStr) || 20, 100)
     const offset = Number(offsetStr) || 0
 
-    let convos = db.select().from(agentConversations).orderBy(desc(agentConversations.updatedAt)).all()
+    let convos = await db.select().from(agentConversations).orderBy(desc(agentConversations.updatedAt))
     if (orgId) convos = convos.filter(c => c.orgId === orgId)
 
-    const allFilings = db.select().from(filings).all()
-    const allOrgs = db.select().from(organizations).all()
+    const allFilings = await db.select().from(filings)
+    const allOrgs = await db.select().from(organizations)
     const orgDict = Object.fromEntries(allOrgs.map(o => [o.id, o]))
     const filingDict = Object.fromEntries(allFilings.map(f => [f.id, f]))
 
@@ -372,7 +371,7 @@ export function listAllAgentConversations(req: Request, res: Response, next: Nex
     }))
 
     if (userId) {
-      const targetUser = db.select().from(users).where(eq(users.id, userId)).get()
+      const targetUser = (await db.select().from(users).where(eq(users.id, userId)).limit(1))[0]
       if (targetUser?.orgId) {
         result = result.filter(c => c.orgId === targetUser.orgId)
       }
@@ -386,12 +385,12 @@ export function listAllAgentConversations(req: Request, res: Response, next: Nex
 
 // ---- GLOBAL DISCOVERY ----
 
-export function listAllEntities(_req: Request, res: Response, next: NextFunction) {
+export async function listAllEntities(_req: Request, res: Response, next: NextFunction) {
   try {
-    const allEntities = db.select().from(entities).orderBy(desc(entities.createdAt)).all()
-    const allOrganizations = db.select().from(organizations).all()
+    const allEntities = await db.select().from(entities).orderBy(desc(entities.createdAt))
+    const allOrganizations = await db.select().from(organizations)
     const orgDict = Object.fromEntries(allOrganizations.map(o => [o.id, o]))
-    
+
     res.json(allEntities.map(e => ({
       ...e,
       orgName: orgDict[e.orgId]?.name || 'Unknown'
@@ -399,17 +398,17 @@ export function listAllEntities(_req: Request, res: Response, next: NextFunction
   } catch (err) { next(withContext(err as Error, 'listAllEntities')) }
 }
 
-export function listAllFilings(_req: Request, res: Response, next: NextFunction) {
+export async function listAllFilings(_req: Request, res: Response, next: NextFunction) {
   try {
-    const allFilings = db.select().from(filings).orderBy(desc(filings.updatedAt)).all()
-    const allOrganizations = db.select().from(organizations).all()
-    const allEntities = db.select().from(entities).all()
-    const allUsers = db.select().from(users).all()
-    
+    const allFilings = await db.select().from(filings).orderBy(desc(filings.updatedAt))
+    const allOrganizations = await db.select().from(organizations)
+    const allEntities = await db.select().from(entities)
+    const allUsers = await db.select().from(users)
+
     const orgDict = Object.fromEntries(allOrganizations.map(o => [o.id, o]))
     const entDict = Object.fromEntries(allEntities.map(e => [e.id, e]))
     const cpaDict = Object.fromEntries(allUsers.filter(u => u.role === 'cpa').map(u => [u.id, u]))
-    
+
     res.json(allFilings.map(f => ({
       ...f,
       orgName: orgDict[f.orgId]?.name || 'Unknown',
@@ -418,4 +417,3 @@ export function listAllFilings(_req: Request, res: Response, next: NextFunction)
     })))
   } catch (err) { next(withContext(err as Error, 'listAllFilings')) }
 }
-

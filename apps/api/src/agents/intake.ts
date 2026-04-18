@@ -60,7 +60,7 @@ Entity context: ${JSON.stringify(entityContext)}
     const { visibleText } = extractCollected(raw)
 
     const now = new Date().toISOString()
-    const convo = db.insert(agentConversations).values({
+    const [convo] = await db.insert(agentConversations).values({
       filingId,
       orgId,
       agentType: 'intake',
@@ -69,10 +69,10 @@ Entity context: ${JSON.stringify(entityContext)}
         { role: 'assistant', content: raw, timestamp: now },
       ] as any,
       status: 'active',
-    }).returning().get()
+    }).returning()
 
-    db.update(filings).set({ status: 'ai_prep', updatedAt: now })
-      .where(eq(filings.id, filingId)).run()
+    await db.update(filings).set({ status: 'ai_prep', updatedAt: now })
+      .where(eq(filings.id, filingId))
 
     await this.log({
       orgId,
@@ -85,10 +85,9 @@ Entity context: ${JSON.stringify(entityContext)}
   }
 
   async *streamMessage(filingId: string, userMessage: string, orgId: string): AsyncGenerator<SsePayload> {
-    const convo = db.select().from(agentConversations)
+    const convos = await db.select().from(agentConversations)
       .where(eq(agentConversations.filingId, filingId))
-      .all()
-      .find(c => c.agentType === 'intake' && c.status === 'active')
+    const convo = convos.find(c => c.agentType === 'intake' && c.status === 'active')
 
     if (!convo) throw new Error('No active intake conversation found')
 
@@ -125,19 +124,19 @@ Entity context: ${JSON.stringify(entityContext)}
 
     // Persist collected fields onto the filing
     if (Object.keys(collected).length > 0) {
-      const filing = db.select().from(filings).where(eq(filings.id, filingId)).get()
+      const filing = (await db.select().from(filings).where(eq(filings.id, filingId)).limit(1))[0]
       const merged = { ...(filing?.filingData || {}), ...collected }
-      db.update(filings).set({
+      await db.update(filings).set({
         filingData: merged as any,
         updatedAt: new Date().toISOString(),
-      }).where(eq(filings.id, filingId)).run()
+      }).where(eq(filings.id, filingId))
     }
 
-    db.update(agentConversations).set({
+    await db.update(agentConversations).set({
       messages: messages as any,
       status: isComplete ? 'completed' : 'active',
       updatedAt: new Date().toISOString(),
-    }).where(eq(agentConversations.id, convo.id)).run()
+    }).where(eq(agentConversations.id, convo.id))
 
     if (isComplete) {
       await this.log({

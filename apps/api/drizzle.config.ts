@@ -3,8 +3,8 @@ import { defineConfig } from 'drizzle-kit'
 export default defineConfig({
   schema: './src/db/schema.ts',
   out: './src/db/migrations',
-  dialect: 'sqlite',
+  dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL || './taxos.db',
+    url: process.env.DATABASE_URL || 'postgres://taxos:taxos@localhost:5432/taxos',
   },
 })

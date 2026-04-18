@@ -7,7 +7,7 @@ import { safeJsonParse } from './lib/json'
 
 export class DeadlineAgent extends BaseAgent {
   async calculateDeadlines(entityId: string, orgId: string): Promise<void> {
-    const entity = db.select().from(entities).where(eq(entities.id, entityId)).get()
+    const entity = (await db.select().from(entities).where(eq(entities.id, entityId)).limit(1))[0]
     if (!entity) throw new Error('Entity not found')
 
     const taxYear = new Date().getFullYear() - 1
@@ -29,19 +29,18 @@ export class DeadlineAgent extends BaseAgent {
     for (const dl of applicable) {
       const urgency = calculateUrgencyScore(dl.dueDate)
       const status = urgency === 100 ? 'overdue' : 'upcoming'
-      const existing = db.select().from(deadlines)
+      const existingRows = await db.select().from(deadlines)
         .where(eq(deadlines.entityId, entityId))
-        .all()
-        .find(d => d.formType === dl.formType)
+      const existing = existingRows.find(d => d.formType === dl.formType)
 
       if (existing) {
-        db.update(deadlines).set({
+        await db.update(deadlines).set({
           dueDate: dl.dueDate,
           urgencyScore: urgency,
           status,
-        }).where(eq(deadlines.id, existing.id)).run()
+        }).where(eq(deadlines.id, existing.id))
       } else {
-        db.insert(deadlines).values({
+        await db.insert(deadlines).values({
           entityId,
           formType: dl.formType,
           formName: dl.formName,
@@ -50,7 +49,7 @@ export class DeadlineAgent extends BaseAgent {
           status,
           description: dl.description,
           aiPredicted: true,
-        }).run()
+        })
       }
     }
 

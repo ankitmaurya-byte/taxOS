@@ -1,13 +1,33 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=taxos
+      - POSTGRES_PASSWORD=taxos
+      - POSTGRES_DB=taxos
+    volumes:
+      - taxos-pg:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taxos -d taxos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   api:
     image: node:20-alpine
     working_dir: /app
-    command: sh -c "corepack enable pnpm && pnpm install --frozen-lockfile --prod && pnpm build && node dist/index.js"
+    command: sh -c "corepack enable pnpm && pnpm install --frozen-lockfile --prod && pnpm build && pnpm db:migrate && node dist/index.js"
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=/app/taxos.db
+      - DATABASE_URL=postgres://taxos:taxos@postgres:5432/taxos
       - JWT_SECRET=your-super-secret-jwt-key-min-32-chars
       - GEMINI_API_KEY=AIzaSyAEAQKXU96mFxO6xj5bAxk-xH9AEAdQRto
       - SMTP_HOST=smtp.gmail.com
@@ -16,7 +36,6 @@ services:
       - SMTP_PASS=mjsy xbtd nlbg wdhp
     volumes:
       - ./apps/api:/app
-      - taxos-db:/app
     ports:
       - "3001:3001"
     restart: unless-stopped
@@ -32,4 +51,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  taxos-db:
+  taxos-pg:
